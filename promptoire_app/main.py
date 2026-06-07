@@ -130,10 +130,21 @@ class App:
     # ---- window control -----------------------------------------------------
 
     def toggle_window(self):
-        if self._visible:
+        # Proper launcher toggle: hide only if we're already the focused window;
+        # if visible-but-behind-something, bring forward instead.
+        if self._visible and self._is_foreground():
             self.hide_window()
         else:
             self.show_window()
+
+    def _is_foreground(self) -> bool:
+        if not sys.platform.startswith("win") or not self._hwnd:
+            return True
+        try:
+            import ctypes
+            return ctypes.windll.user32.GetForegroundWindow() == self._hwnd
+        except Exception:
+            return True
 
     def show_window(self, at_cursor: bool | None = None):
         if self.window is None:
