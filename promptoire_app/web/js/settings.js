@@ -57,9 +57,60 @@
       rowBtn("Back up now", "Save a timestamped copy of your library.", "Backup", async () => { await PR.bridge.call("backup_now"); toast("Backup saved"); }),
     ])));
 
+    /* AI (optional direct improve) */
+    host.appendChild(aiBlock(s));
+
     /* About */
     host.appendChild(aboutBlock());
   }
+
+  function aiBlock(s) {
+    const ai = s.ai || {};
+    const sec = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: "AI · optional" })]);
+    const body = el("div", { class: "set-card", style: { padding: "14px" } });
+
+    body.appendChild(el("p", { class: "hint", style: { marginBottom: "12px" },
+      html: "Set this up to <b>Improve with AI now</b> (one click, no copy-paste) from the Improve&nbsp;Library panel. Your key is stored locally on this machine only. Leave blank to just use copy-paste." }));
+
+    let provider = ai.provider || "anthropic";
+    const baseField = el("div", { class: "field" });
+
+    const seg = el("div", { class: "segmented", style: { marginBottom: "12px" } }, [
+      sBtn("Anthropic", provider === "anthropic", () => setProv("anthropic")),
+      sBtn("OpenAI-compatible", provider === "openai", () => setProv("openai")),
+    ]);
+    function setProv(p) {
+      provider = p;
+      [...seg.children].forEach((b, i) => b.classList.toggle("on", (i === 0) === (p === "anthropic")));
+      baseField.style.display = p === "openai" ? "block" : "none";
+      model.placeholder = p === "anthropic" ? "claude-opus-4-8 (default)" : "gpt-4o";
+      save({ ai: { provider: p } });
+    }
+
+    const key = el("input", { class: "input", type: "password", value: ai.api_key || "",
+      placeholder: "API key (stored locally)", id: "aiKeyField" });
+    key.addEventListener("change", () => save({ ai: { api_key: key.value.trim() } }));
+
+    const model = el("input", { class: "input", value: ai.model || "",
+      placeholder: provider === "anthropic" ? "claude-opus-4-8 (default)" : "gpt-4o" });
+    model.addEventListener("change", () => save({ ai: { model: model.value.trim() } }));
+
+    const base = el("input", { class: "input", value: ai.base_url || "",
+      placeholder: "https://api.openai.com/v1" });
+    base.addEventListener("change", () => save({ ai: { base_url: base.value.trim() } }));
+    baseField.appendChild(el("label", { text: "Base URL" }));
+    baseField.appendChild(base);
+    baseField.style.display = provider === "openai" ? "block" : "none";
+
+    body.appendChild(seg);
+    body.appendChild(el("div", { class: "field" }, [el("label", { text: "API key" }), key]));
+    body.appendChild(el("div", { class: "field" }, [el("label", { text: "Model" }), model]));
+    body.appendChild(baseField);
+
+    sec.appendChild(body);
+    return sec;
+  }
+  function sBtn(label, on, onclick) { return el("button", { class: on ? "on" : "", text: label, onclick }); }
 
   function section(title, content) {
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: title })]);

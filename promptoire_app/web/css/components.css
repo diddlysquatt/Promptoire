@@ -314,6 +314,17 @@
 .step-head .d { font-size: 11.5px; color: var(--faint); }
 .step .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* direct "improve with AI now" */
+.ai-direct { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.ai-direct-or { font-size: 11px; color: var(--faint); letter-spacing: 0.3px; }
+.ai-direct .ai-go { height: 40px; padding: 0 20px; font-size: 13.5px; }
+.ai-direct-hint { font-size: 11.5px; color: var(--muted); min-height: 14px; text-align: center; }
+.spinner { display: inline-block; width: 13px; height: 13px; vertical-align: -2px; margin-right: 4px;
+  border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .diff-summary { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
 .diff-pill { font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 99px;
   border: none; background: var(--surface); }

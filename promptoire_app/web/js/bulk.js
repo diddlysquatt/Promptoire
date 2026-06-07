@@ -27,6 +27,13 @@
         el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
         el("button", { class: "btn btn-ghost", text: "Edit AI instructions", onclick: editMeta }),
       ]),
+      el("div", { class: "ai-direct" }, [
+        el("div", { class: "ai-direct-or", text: "— or skip the copy/paste —" }),
+        el("button", { class: "btn btn-primary ai-go",
+          html: '<svg viewBox="0 0 24 24" class="ic" style="fill:currentColor;stroke-width:.6"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> Improve with AI now',
+          onclick: improveNow }),
+        el("span", { class: "ai-direct-hint", id: "aiHint" }),
+      ]),
     ]);
 
     // STEP 2 — import
@@ -75,6 +82,38 @@
   }
   function wrapSwitch(input) {
     return el("span", { class: "switch" }, [input, el("span", { class: "track" }), el("span", { class: "knob" })]);
+  }
+
+  async function improveNow(e) {
+    const btn = e.currentTarget;
+    const ai = PR.state.settings.ai || {};
+    if (!ai.api_key) {
+      toast("Add an API key in Settings → AI first", { bad: true });
+      PR.app.showView("settings");
+      setTimeout(() => { const s = document.getElementById("aiKeyField"); if (s) s.focus(); }, 120);
+      return;
+    }
+    const hint = document.getElementById("aiHint");
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Improving…';
+    if (hint) hint.textContent = "Calling " + (ai.provider || "anthropic") + "…";
+    try {
+      const r = await PR.bridge.call("ai_improve", false);
+      if (r && r.ok) {
+        pasteArea.value = r.text;
+        if (hint) hint.textContent = "Got a reply" + (r.model ? " from " + r.model : "") + " — previewing…";
+        await preview();
+        toast("AI improved your library — review the changes below");
+        pasteArea.scrollIntoView({ block: "center", behavior: "smooth" });
+      } else {
+        if (hint) hint.textContent = "";
+        toast((r && r.error) || "AI request failed", { bad: true, duration: 6000 });
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+    }
   }
 
   async function copyForAI() {

@@ -84,6 +84,7 @@
     copy_export: () => ({ ok:true, chars: 1234 }),
     merge_preview: () => ({ ok:true, preview:{added:[{id:"new_1",title:"Example new prompt",type:"text",category_name:"Coding"}], updated:[{id:"prm_x",title:"Refactor for clarity",type:"text",category_name:"Coding",changes:{prompt:{}}, before_title:"Refactor for clarity"}], unchanged_count:4, new_categories:[], incoming_total:6} }),
     apply_merge: () => ({ ok:true, result:{updated:1,added:1,new_categories:0}, stats:stats(), categories:mockCats }),
+    ai_improve: () => ({ ok:false, error:"(preview mode — connect the real app and set an API key to use this)" }),
     update_settings: (p) => ({ ok:true, settings:{} }),
     set_hotkey: () => ({ ok:true, applied:true, available:true }),
     add_prompt: () => ({ ok:true, prompt:{} }), update_prompt: () => ({ ok:true }),

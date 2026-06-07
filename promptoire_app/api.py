@@ -236,6 +236,21 @@ class Api:
         except Exception as e:
             return err(str(e))
 
+    def ai_improve(self, full: bool = False) -> dict:
+        """One-click: send the library + meta-prompt to the configured LLM API
+        and return its (improved JSON) reply for previewing/merging."""
+        try:
+            from .core import ai_improve as _ai
+            meta = self._app.settings.get("bulk_improve", "meta_prompt", default="")
+            body = self._app.library.export_json(full=full)
+            payload = f"{meta}\n\n```json\n{body}\n```"
+            res = _ai.improve(self._app.settings.get("ai", default={}), payload)
+            if res.get("ok"):
+                return ok(text=res["text"], model=res.get("model", ""))
+            return err(res.get("error", "AI request failed"))
+        except Exception as e:
+            return err(str(e))
+
     def merge_preview(self, text: str) -> dict:
         try:
             data = _parse_loose_json(text)

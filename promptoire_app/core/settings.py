@@ -54,6 +54,14 @@ DEFAULTS: dict[str, Any] = {
     "bulk_improve": {
         "meta_prompt": DEFAULT_META_PROMPT,
     },
+    "ai": {
+        # Optional: lets the "Improve with AI now" button call an API directly.
+        # Empty api_key = feature hidden; the manual copy/paste loop always works.
+        "provider": "anthropic",          # "anthropic" | "openai"
+        "api_key": "",
+        "model": "",                       # blank = provider default
+        "base_url": "",                    # OpenAI-compatible endpoints only
+    },
     "links": {
         # Set this to your own Buy Me a Coffee / Ko-fi / GitHub Sponsors URL.
         "coffee": "https://www.buymeacoffee.com/",
