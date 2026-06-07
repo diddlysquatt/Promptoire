@@ -1,0 +1,109 @@
+{
+  "test_sizes": [
+    100,
+    500,
+    1000
+  ],
+  "results_by_size": {
+    "size_100": {
+      "virtual_scrolling": {
+        "num_items": 100,
+        "creation_time": 0.0005848407745361328,
+        "set_items_time": 0.0,
+        "filter_time": 0.0008249282836914062,
+        "avg_render_time": 0.0,
+        "max_render_time": 0.0,
+        "min_render_time": 0.0,
+        "memory_efficiency": 0.0,
+        "visible_widgets": 0,
+        "performance_score": 100
+      },
+      "ui_optimizer": {
+        "debounce_time": 0.20809650421142578,
+        "debounced_calls": 0,
+        "cache_miss_time": 0.05019688606262207,
+        "cache_hit_time": 0.0,
+        "cache_speedup": 50.19688606262207,
+        "performance_score": 100,
+        "avg_render_time": 0.00195,
+        "slow_operations": 0
+      },
+      "populate_prompts": {
+        "total_prompts": 110,
+        "optimized_time": 0.0,
+        "filter_time": 0.0,
+        "items_generated": 150,
+        "filtered_items": 150,
+        "prompts_per_second": 0
+      }
+    },
+    "size_500": {
+      "virtual_scrolling": {
+        "num_items": 500,
+        "creation_time": 0.0012395381927490234,
+        "set_items_time": 0.0,
+        "filter_time": 0.0,
+        "avg_render_time": 0.0,
+        "max_render_time": 0.0,
+        "min_render_time": 0.0,
+        "memory_efficiency": 0.0,
+        "visible_widgets": 0,
+        "performance_score": 100
+      },
+      "ui_optimizer": {
+        "debounce_time": 0.20795392990112305,
+        "debounced_calls": 0,
+        "cache_miss_time": 0.0505521297454834,
+        "cache_hit_time": 0.0,
+        "cache_speedup": 50.5521297454834,
+        "performance_score": 100,
+        "avg_render_time": 0.00195,
+        "slow_operations": 0
+      },
+      "populate_prompts": {
+        "total_prompts": 610,
+        "optimized_time": 0.0,
+        "filter_time": 0.0,
+        "items_generated": 650,
+        "filtered_items": 650,
+        "prompts_per_second": 0
+      }
+    },
+    "size_1000": {
+      "virtual_scrolling": {
+        "num_items": 1000,
+        "creation_time": 0.0010001659393310547,
+        "set_items_time": 0.0,
+        "filter_time": 0.0,
+        "avg_render_time": 0.0,
+        "max_render_time": 0.0,
+        "min_render_time": 0.0,
+        "memory_efficiency": 0.0,
+        "visible_widgets": 0,
+        "performance_score": 100
+      },
+      "ui_optimizer": {
+        "debounce_time": 0.20876550674438477,
+        "debounced_calls": 0,
+        "cache_miss_time": 0.050221920013427734,
+        "cache_hit_time": 0.0,
+        "cache_speedup": 50.221920013427734,
+        "performance_score": 100,
+        "avg_render_time": 0.00195,
+        "slow_operations": 0
+      },
+      "populate_prompts": {
+        "total_prompts": 1250,
+        "optimized_time": 0.0010008811950683594,
+        "filter_time": 0.0009999275207519531,
+        "items_generated": 1290,
+        "filtered_items": 1290,
+        "prompts_per_second": 1248899.4759409241
+      }
+    }
+  },
+  "overall_score": 100.0,
+  "avg_speed_improvement": 5333.333333333333,
+  "goal_achieved": true,
+  "performance_modules_available": true
+}

@@ -1,0 +1,31 @@
+{
+  "bundle_dir": "/path/to/report/output",
+  "report_id": "report-2024-01-15-abc123",
+  "expires_in": 604800,
+  "externalize_data": true,
+  "create_offline_zip": true,
+  "write_manifest": true,
+  "s3": {
+    "bucket": "your-report-bucket",
+    "prefix": "reports",
+    "region": "us-east-1"
+  },
+  "email": {
+    "from": "reports@example.com",
+    "to": ["recipient@example.com"],
+    "subject": "Your report is ready",
+    "contact": "support@example.com",
+    "attach_max_bytes": 15000000,
+    "smtp": {
+      "host": "smtp.example.com",
+      "port": 587,
+      "username": "smtp-user",
+      "password_env": "SMTP_PASSWORD",
+      "use_tls": true
+    }
+  },
+  "access_log": {
+    "log_url": "https://reports.example.com/log",
+    "wrap_pdf_links": false
+  }
+}

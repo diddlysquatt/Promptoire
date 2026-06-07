@@ -1,0 +1,8 @@
+pyperclip>=1.8.2
+Pillow>=8.0.0  # Optional: for custom icon images 
+pystray>=0.19.5  # Optional: for system tray icon
+pywin32>=306; platform_system=="Windows"  # Optional: for desktop shortcut
+winshell>=0.6; platform_system=="Windows"  # Optional: for desktop shortcut
+keyboard>=0.13.5; platform_system=="Windows"  # Optional: for global hotkey
+requests>=2.31.0  # Optional: for Gist sync
+pyinstaller>=6.7  # Optional: to build a single .exe

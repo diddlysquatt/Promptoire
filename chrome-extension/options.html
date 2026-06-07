@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promptoire - Manage Prompts & Settings</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="title">
+                    <span class="brain-icon">🧠</span>
+                    <h1>Promptoire</h1>
+                    <span class="subtitle">Manage Your Prompt Library</span>
+                </div>
+                <div class="header-actions">
+                    <button id="importBtn" class="btn btn-secondary">📥 Import</button>
+                    <button id="exportBtn" class="btn btn-secondary">📤 Export</button>
+                    <button id="saveBtn" class="btn btn-primary">💾 Save All</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="prompts">📝 Prompts</button>
+            <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+            <button class="tab-btn" data-tab="sync">☁️ Sync</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Prompts Tab -->
+            <div id="prompts-tab" class="tab-content active">
+                <div class="prompts-layout">
+                    <!-- Left Panel: Categories -->
+                    <div class="left-panel">
+                        <div class="panel-header">
+                            <h3>📁 Categories</h3>
+                            <button id="addCategoryBtn" class="btn btn-small">➕ Add</button>
+                        </div>
+                        <div class="categories-list" id="categoriesList">
+                            <!-- Categories will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Middle Panel: Prompts in Category -->
+                    <div class="middle-panel">
+                        <div class="panel-header">
+                            <h3 id="promptsPanelTitle">💡 Select a Category</h3>
+                            <button id="addPromptBtn" class="btn btn-small" disabled>➕ Add Prompt</button>
+                        </div>
+                        <div class="prompts-list" id="promptsList">
+                            <div class="empty-state">
+                                <div class="empty-icon">📝</div>
+                                <div class="empty-text">Select a category to view prompts</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Edit Prompt -->
+                    <div class="right-panel">
+                        <div class="panel-header">
+                            <h3>✏️ Edit Prompt</h3>
+                            <div class="edit-actions">
+                                <button id="savePromptBtn" class="btn btn-small btn-primary" disabled>💾 Save</button>
+                                <button id="deletePromptBtn" class="btn btn-small btn-danger" disabled>🗑️ Delete</button>
+                            </div>
+                        </div>
+                        <div class="edit-form" id="editForm">
+                            <div class="form-group">
+                                <label for="promptTitle">Title:</label>
+                                <input type="text" id="promptTitle" placeholder="Enter prompt title..." disabled>
+                            </div>
+                            <div class="form-group">
+                                <label for="promptContent">Prompt:</label>
+                                <textarea id="promptContent" placeholder="Enter your prompt here..." rows="15" disabled></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Variables Found:</label>
+                                <div id="variablesDisplay" class="variables-display">
+                                    <span class="no-variables">No variables detected</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="empty-state" id="editEmpty">
+                            <div class="empty-icon">✏️</div>
+                            <div class="empty-text">Select a prompt to edit</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content">
+                <div class="settings-layout">
+                    <div class="settings-section">
+                        <h3>🎨 Appearance</h3>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="showPreviews" checked>
+                                Show prompt previews in popup
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoClose" checked>
+                                Auto-close popup after copying
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>⌨️ Keyboard Shortcuts</h3>
+                        <div class="shortcut-info">
+                            <div class="shortcut-item">
+                                <span class="shortcut-key">Ctrl/Cmd + K</span>
+                                <span class="shortcut-desc">Focus search bar</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="shortcut-key">Escape</span>
+                                <span class="shortcut-desc">Close popup</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>📊 Statistics</h3>
+                        <div class="stats-grid" id="statsGrid">
+                            <!-- Stats will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sync Tab -->
+            <div id="sync-tab" class="tab-content">
+                <div class="sync-layout">
+                    <div class="sync-section">
+                        <h3>☁️ Chrome Sync</h3>
+                        <p>Your prompts are automatically synced across all your Chrome browsers where you're signed in.</p>
+                        
+                        <div class="sync-status" id="syncStatus">
+                            <span class="sync-indicator">🔄</span>
+                            <span>Checking sync status...</span>
+                        </div>
+
+                        <div class="sync-actions">
+                            <button id="forceSyncBtn" class="btn btn-secondary">🔄 Force Sync</button>
+                            <button id="clearSyncBtn" class="btn btn-danger">🗑️ Clear Sync Data</button>
+                        </div>
+                    </div>
+
+                    <div class="sync-section">
+                        <h3>📱 Export/Import</h3>
+                        <p>Backup your prompts or share them across devices.</p>
+                        
+                        <div class="backup-actions">
+                            <button id="backupBtn" class="btn btn-primary">💾 Create Backup</button>
+                            <label for="restoreFile" class="btn btn-secondary">📥 Restore Backup</label>
+                            <input type="file" id="restoreFile" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="addCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Add Category</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newCategoryName">Category Name:</label>
+                    <input type="text" id="newCategoryName" placeholder="Enter category name...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelCategoryBtn" class="btn btn-secondary">Cancel</button>
+                <button id="createCategoryBtn" class="btn btn-primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notification" class="notification">
+        <span class="notification-icon">✅</span>
+        <span class="notification-text">Action completed!</span>
+        <button class="notification-close">&times;</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html> 
