@@ -12,6 +12,7 @@
     { id: "sunset", name: "Sunset", c1: "#f472b6", c2: "#fb923c" },
     { id: "emerald", name: "Emerald", c1: "#10b981", c2: "#84cc16" },
     { id: "mono", name: "Mono", c1: "#e5e7eb", c2: "#9ca3af" },
+    { id: "paper", name: "Paper", c1: "#ffffff", c2: "#cbd0dc", light: true },
   ];
 
   function render() {
@@ -35,9 +36,10 @@
     /* Appearance */
     const themeGrid = el("div", { class: "themes" });
     THEMES.forEach((t) => {
+      const nameStyle = t.light ? { color: "#1a1d26", textShadow: "none" } : {};
       const sw = el("button", { class: "swatch" + (s.theme === t.id ? " on" : ""),
         style: { background: `linear-gradient(135deg, ${t.c1}, ${t.c2})` }, dataset: { theme: t.id } },
-        [el("span", { class: "sw-name", text: t.name })]);
+        [el("span", { class: "sw-name", text: t.name, style: nameStyle })]);
       sw.addEventListener("click", () => {
         document.documentElement.setAttribute("data-theme", t.id);
         themeGrid.querySelectorAll(".swatch").forEach((x) => x.classList.remove("on"));

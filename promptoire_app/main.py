@@ -188,19 +188,33 @@ class App:
             pass
 
     def _raise_to_front(self):
+        """Reliably steal focus even from a background (hotkey) thread by
+        briefly attaching to the current foreground thread's input queue —
+        the standard workaround for Windows' SetForegroundWindow lock."""
         if not sys.platform.startswith("win") or not self._hwnd:
             return
         try:
             import ctypes
+            u = ctypes.windll.user32
+            k = ctypes.windll.kernel32
             HWND_TOPMOST = -1
-            SWP_NOSIZE = 0x0001
-            SWP_NOMOVE = 0x0002
-            SWP_SHOWWINDOW = 0x0040
-            ctypes.windll.user32.SetForegroundWindow(self._hwnd)
-            ctypes.windll.user32.SetWindowPos(
-                self._hwnd, HWND_TOPMOST, 0, 0, 0, 0,
-                SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW,
-            )
+            SWP = 0x0001 | 0x0002 | 0x0040  # NOSIZE | NOMOVE | SHOWWINDOW
+            hwnd = self._hwnd
+
+            fg = u.GetForegroundWindow()
+            cur_tid = k.GetCurrentThreadId()
+            fg_tid = u.GetWindowThreadProcessId(fg, None) if fg else 0
+
+            u.AllowSetForegroundWindow(-1)  # ASFW_ANY
+            attached = False
+            if fg_tid and fg_tid != cur_tid:
+                attached = bool(u.AttachThreadInput(fg_tid, cur_tid, True))
+            u.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP)
+            u.BringWindowToTop(hwnd)
+            u.SetForegroundWindow(hwnd)
+            u.SetActiveWindow(hwnd)
+            if attached:
+                u.AttachThreadInput(fg_tid, cur_tid, False)
         except Exception:
             pass
 

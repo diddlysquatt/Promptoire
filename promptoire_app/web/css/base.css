@@ -83,6 +83,15 @@
   --accent:#10b981; --accent-2:#84cc16; --accent-3:#22d3ee;
   --accent-soft:rgba(16,185,129,0.16); --accent-glow:rgba(16,185,129,0.45);
 }
+/* Light theme (accessibility / bright rooms) */
+[data-theme="paper"] {
+  --bg:#eef0f6; --bg-2:#ffffff;
+  --surface:rgba(15,18,30,0.028); --surface-2:rgba(15,18,30,0.052); --surface-3:rgba(15,18,30,0.08);
+  --border:rgba(15,18,30,0.10); --border-2:rgba(15,18,30,0.18);
+  --fg:#171a22; --muted:#4f5566; --faint:#828a9c;
+  --accent:#6d4bff; --accent-2:#0ea5e9; --accent-3:#ec4899; --accent-ink:#ffffff;
+  --accent-soft:rgba(109,75,255,0.14); --accent-glow:rgba(109,75,255,0.40);
+}
 
 /* ---- reset -------------------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -167,9 +176,9 @@ button { cursor: pointer; border: none; background: none; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 10px 10px 14px;
   flex: 0 0 auto;
-  -webkit-app-region: drag;
 }
-.no-drag { -webkit-app-region: no-drag; }
+/* Only this region drags the window — keeps the action buttons clickable. */
+.titlebar-drag { flex: 1 1 auto; min-width: 0; height: 26px; display: flex; align-items: center; }
 .brand { display: flex; align-items: center; gap: 9px; pointer-events: none; }
 .brand-mark {
   display: grid; place-items: center;
