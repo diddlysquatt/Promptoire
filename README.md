@@ -73,6 +73,8 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 
 The instruction (meta-prompt) is fully editable in that panel.
 
+**Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the library, gets the improved JSON back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
+
 ## 🗃️ Data format
 
 Everything lives in `prompts.json` next to the app — human-readable and easy to edit by hand or with an LLM:
