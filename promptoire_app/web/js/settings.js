@@ -120,7 +120,10 @@
       el("div", { class: "ver", text: "v" + (PR.state.version || "2.0.0") + " · local-first · open source" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("button", { class: "coffee", html: "☕ &nbsp;Buy me a coffee",
-        onclick: () => PR.bridge.call("open_external", "https://www.buymeacoffee.com/") }),
+        onclick: () => {
+          const url = (PR.state.settings.links && PR.state.settings.links.coffee) || "https://www.buymeacoffee.com/";
+          PR.bridge.call("open_external", url);
+        } }),
     ]));
     return s;
   }

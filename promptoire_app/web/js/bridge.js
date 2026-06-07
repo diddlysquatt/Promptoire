@@ -3,29 +3,42 @@
   "use strict";
   const PR = (window.PROMPTOIRE = window.PROMPTOIRE || {});
 
-  const hasPy = () => !!(window.pywebview && window.pywebview.api);
+  // We're in the real app whenever pywebview injected itself (even before its
+  // api object is fully populated). Only a plain browser (preview) lacks it.
+  const isReal = () => !!window.pywebview;
+  const apiReady = (m) => !!(window.pywebview && window.pywebview.api &&
+                             typeof window.pywebview.api[m] === "function");
 
-  // Resolve when the pywebview API is ready, or immediately in mock mode.
   let readyResolve;
   const readyPromise = new Promise((res) => (readyResolve = res));
   let resolved = false;
   function markReady() { if (!resolved) { resolved = true; readyResolve(); } }
 
   window.addEventListener("pywebviewready", markReady);
-  // If pywebview already injected, or we're in a plain browser, resolve soon.
-  setTimeout(() => { if (hasPy() || !window.pywebview) markReady(); }, 60);
-  // Hard fallback so the UI never hangs.
-  setTimeout(markReady, 1200);
+  // Browser preview: resolve immediately. Real app: wait for the event (with a
+  // generous safety fallback so the UI can never hang).
+  setTimeout(() => { if (!window.pywebview) markReady(); }, 50);
+  setTimeout(markReady, 4000);
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function call(method, ...args) {
-    if (hasPy() && typeof window.pywebview.api[method] === "function") {
-      try { return await window.pywebview.api[method](...args); }
-      catch (e) { return { ok: false, error: String(e) }; }
+    if (isReal()) {
+      // Real app: NEVER fall back to mock. Wait for the bridge to expose the
+      // method (handles the brief window between page load and api injection).
+      await readyPromise;
+      for (let i = 0; i < 40 && !apiReady(method); i++) await sleep(50);
+      if (apiReady(method)) {
+        try { return await window.pywebview.api[method](...args); }
+        catch (e) { return { ok: false, error: String(e) }; }
+      }
+      return { ok: false, error: "bridge-not-ready: " + method };
     }
-    return MOCK[method] ? MOCK[method](...args) : { ok: false, error: "no-bridge:" + method };
+    // Browser/preview only: mock data so the UI can be developed without Python.
+    return MOCK[method] ? MOCK[method](...args) : { ok: false, error: "no-bridge: " + method };
   }
 
-  PR.bridge = { ready: () => readyPromise, call, isMock: () => !hasPy() };
+  PR.bridge = { ready: () => readyPromise, call, isMock: () => !isReal() };
 
   /* ----------------------------- mock backend ---------------------------- */
   const mkId = (s) => "prm_" + Math.abs(hash(s)).toString(16).slice(0, 12);

@@ -133,8 +133,34 @@ def new_category(name: str = "New Category", icon: str = "", color: str = "") ->
     }
 
 
-def normalize_prompt(raw: Any) -> dict | None:
-    """Coerce any plausible prompt dict into a valid v3 prompt."""
+import re as _re
+
+# Strong signals that a prompt is for an image model.
+_IMAGE_MARKERS = _re.compile(
+    r"--ar\b|--stylize\b|--niji\b|--chaos\b|--style\b|\bnegative prompt\b|"
+    r"\bcfg\b|\bsampler\b|\bsteps:\s*\d|\bseed:\s*\d|::\s*\d",
+    _re.IGNORECASE,
+)
+
+
+def looks_like_image_prompt(title: str, body: str) -> bool:
+    return bool(_IMAGE_MARKERS.search(f"{title}\n{body}"))
+
+
+# Category names that imply image prompts.
+_ART_CATEGORY = _re.compile(
+    r"\b(ai ?art|image|images|midjourney|stable ?diffusion|diffusion|dall[- ]?e|"
+    r"flux|sdxl|sd|imagen|comfyui|art ?prompts?)\b",
+    _re.IGNORECASE,
+)
+
+
+def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
+    """Coerce any plausible prompt dict into a valid v3 prompt.
+
+    `default_type` is a hint from the owning category (e.g. an art category),
+    used only when the prompt itself doesn't declare a type.
+    """
     if not isinstance(raw, dict):
         return None
     # Accept several historical body keys.
@@ -146,10 +172,15 @@ def normalize_prompt(raw: Any) -> dict | None:
     if not title and not body:
         return None
 
-    ptype = _as_str(raw.get("type"), "text").lower()
+    ptype = _as_str(raw.get("type"), "").lower()
     if ptype not in PROMPT_TYPES:
-        # Heuristic: looks like an image prompt if it has image-only metadata.
-        ptype = "image" if any(raw.get(f) for f in IMAGE_FIELDS) else "text"
+        # Inference order: explicit image metadata > body markers > category hint.
+        if any(raw.get(f) for f in IMAGE_FIELDS) or looks_like_image_prompt(title, body):
+            ptype = "image"
+        elif default_type in PROMPT_TYPES:
+            ptype = default_type
+        else:
+            ptype = "text"
 
     pid = _as_str(raw.get("id"))
     if not pid.startswith("prm_"):
@@ -199,9 +230,12 @@ def _normalize_categories_container(container: Any) -> list[dict]:
         if not cid.startswith("cat_"):
             cid = make_category_id(name)
 
+        # Art-style categories hint that their prompts are image prompts.
+        cat_default_type = "image" if _ART_CATEGORY.search(name) else "text"
+
         prompts = []
         for rp in _as_list(raw.get("prompts")):
-            np = normalize_prompt(rp)
+            np = normalize_prompt(rp, default_type=cat_default_type)
             if np is not None:
                 prompts.append(np)
 

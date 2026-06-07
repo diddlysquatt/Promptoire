@@ -54,6 +54,11 @@ DEFAULTS: dict[str, Any] = {
     "bulk_improve": {
         "meta_prompt": DEFAULT_META_PROMPT,
     },
+    "links": {
+        # Set this to your own Buy Me a Coffee / Ko-fi / GitHub Sponsors URL.
+        "coffee": "https://www.buymeacoffee.com/",
+        "repo": "https://github.com/",
+    },
     "onboarded": False,
 }
 

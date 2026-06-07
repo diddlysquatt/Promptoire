@@ -1,231 +1,125 @@
-# Promptoire 🧠
+<div align="center">
 
-A floating, minimal prompt library for Windows 11. Always-accessible launcher for your best LLM prompts with one-click copy-to-clipboard functionality.
+# Promptoire
 
-![Promptoire Demo](https://img.shields.io/badge/Status-MVP_Ready-brightgreen)
+**A fast, beautiful, local-first home for your text *and* image prompts — with one-click AI bulk-improve.**
 
-## ✨ Features
+*Hit a hotkey → fuzzy-search your library → click to copy → it vanishes. Then hand your whole library to any LLM and let it rewrite everything at once.*
 
-- **🎯 Always on top**: Compact floating bar stays visible
-- **🔍 Smart search**: Fuzzy search with optional in‑title highlight
-- **📋 One‑click copy**: Click any prompt to copy immediately
-- **🖱️ Drag to move**: Drag the bar or its handle to reposition
-- **📌 Teleport to cursor**: Global hotkey moves the bar to your mouse
-- **⌨️ Hotkeys**: Focus search (Ctrl+F), Editor (Ctrl+E), Settings (Ctrl+,), more
-- **↩️ Undo delete**: Restore recently deleted items from the toast
-- **🧺 Bulk edit**: Shift‑click/Shift‑Arrow multi‑select; move, delete, or re‑categorize
-- **↕️ Sorting**: Move prompts/categories Up/Down to reorder
-- **🕒 Backups**: One‑click JSON backups with timestamp
-- **🔑 Stable IDs**: Content‑based IDs for reliable referencing
-- **🎨 Themes**: Modern dark presets with customizable accents
-- **🪟 Tray**: Optional system tray with quick actions
+![status](https://img.shields.io/badge/status-active-brightgreen) ![platform](https://img.shields.io/badge/Windows-supported-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![local-first](https://img.shields.io/badge/local--first-no%20account-7c5cff)
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Windows 11 (or Windows 10)
-- Python 3.7+ installed
-
-### Installation
-Option A — Packaged (no Python required)
-1. Download the ZIP from Releases
-2. Unzip anywhere (e.g., `C:\Apps\Promptoire`)
-3. Run `start_promptoire.bat`
-   - If present, the script launches `dist\Promptoire.exe` (one‑file) or `dist\Promptoire\Promptoire.exe` (one‑dir), otherwise falls back to `pythonw promptoire.py`.
-
-Option B — From source (for development)
-1. Clone or download this repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run Promptoire:
-   ```bash
-   python promptoire.py
-   ```
-
-### First Use
-1. A small brain emoji (🧠) will appear in the top-left corner
-2. **Click** the brain to expand the prompt library
-3. **Browse** categories and click any prompt to copy it
-4. **Right-click** the brain for context menu (Edit Library, Exit)
-5. **Drag** the brain icon to move it anywhere on screen
-
-## 📚 How to Use
-
-### Browsing Prompts
-- Click the 🧠 to open the drawer
-- Browse nested categories; use the search bar (Ctrl+F) for fuzzy search
-- Click any prompt to copy it to the clipboard
-
-### Adding Custom Prompts
-1. Right‑click the 🧠 icon → "Edit Library" (full editor)
-2. **Or manually edit** `prompts.json`:
-   ```json
-   {
-     "categories": {
-       "Your Category": [
-         {
-           "title": "Your Prompt Title",
-           "prompt": "Your prompt text with {placeholders}"
-         }
-       ]
-     }
-   }
-   ```
-
-### Prompt Templates
-Prompts support placeholders like `{topic}`, `{tone}`, `{code}`, etc.:
-```
-"Write a blog post about {topic} in a {tone} tone"
-```
-When you copy the prompt, you can manually replace the placeholders.
-
-## 🎛️ Configuration
-
-### Moving the Bar
-- Drag the bar or its right‑side handle to reposition
-- Use "Teleport to cursor" for instant reposition (set the hotkey in Settings)
-
-### Customizing Prompts
-Edit `prompts.json` to:
-- Add new categories
-- Create new prompts
-- Modify existing prompts
-- Use placeholder variables like `{topic}`, `{code}`, etc.
-
-## 🏗️ Project Structure
-
-```
-Promptoire/
-├── promptoire.py      # Main application
-├── prompts.json       # Prompt library data
-├── requirements.txt   # Python dependencies
-├── README.md         # This file
-└── run.bat           # Windows launcher (optional)
-```
-
-## 🔧 Advanced Usage
-
-### Desktop Shortcut and Startup
-- Create a desktop/startup shortcut to `start_promptoire.bat` or the packaged EXE:
-  - One‑file: `dist\Promptoire.exe`
-  - One‑dir: `dist\Promptoire\Promptoire.exe`
-- To auto‑start with Windows: Win+R → `shell:startup` → place the shortcut there
-- In‑app: Settings → "Desktop Shortcut" can create a `.lnk` on Windows
-
-### Creating Executable
-Preferred: use the provided spec (handles data, hooks, and optional deps)
-```bash
-pip install pyinstaller
-pyinstaller Promptoire.spec
-```
-
-## 🎨 Customization Ideas
-
-### Theme Colors
-Edit via Settings (Ctrl+,) → "🎨 Color Scheme". Presets can be selected or choose "Custom" to tweak colors:
-
-- background, foreground, accent
-- button_bg, button_hover, border
-- highlight, highlight_text, slider_trough
-- category_bar, category_text, muted_text
-
-Optional drawer background image:
-- Toggle "Background Image (Drawer) → Enable"
-- Set Image Path (file path or data URI)
-- Fit: "cover" or "contain"
-
-### Window Size
-Adjust the drawer size:
-```python
-self.drawer.geometry("300x400")  # Width x Height
-```
-
-## 🪟 Run without console window
-- Use `start_promptoire.bat` (or `run.bat`) to launch via `pythonw` when running from source
-- The app is single‑instance and writes logs to `logs/promptoire.log`
-
-## 📦 Build as EXE (no install required)
-```bash
-pip install -r requirements.txt
-pyinstaller Promptoire.spec
-```
-- Outputs:
-  - One‑file: `dist/Promptoire.exe`
-  - One‑dir: `dist/Promptoire/Promptoire.exe`
-- Tip: One‑dir often starts faster on some antivirus setups (UPX is disabled in the spec)
-
-### Windows 11 Setup On Another PC
-- Download the ZIP you ship (contains EXE, defaults, license, readme)
-- Unzip anywhere (e.g., `C:\Apps\Promptoire`)
-- Run `start_promptoire.bat` or the EXE (`dist\Promptoire.exe` or `dist\Promptoire\Promptoire.exe`)
-- Optional auto‑start: Win+R → `shell:startup` → place a shortcut
-
-## ⌨️ Shortcuts
-- **Toggle Drawer**: configurable (shown in Help); click 🧠 to open/close
-- **Focus Search**: Ctrl+F
-- **Edit Prompts**: Ctrl+E
-- **Settings**: Ctrl+,
-- **Reload Prompts**: Ctrl+R
-- **Help / Guide**: F1
-- **Close Panel**: Esc / Ctrl+W
-- **Teleport to Cursor (global)**: default Ctrl+Alt+X (Settings → Hotkeys)
-
-## ⚙️ Performance tips
-- Prefer the onedir build on systems with strict antivirus; first‑run of one‑file can be slower
-- If Settings/UI feel sluggish:
-  - Reduce font scale and bar scale
-  - Disable search highlight in Settings
-  - Avoid large background images
-  - Keep your `prompts.json` reasonably sized; use Backups/Import‑Export to curate
-
-## 🐛 Troubleshooting
-
-### "Module not found" error
-```bash
-pip install pyperclip
-```
-
-### Brain emoji not showing
-- Ensure your system supports Unicode emojis
-- Or replace with a text character in the code: `text="P"`
-
-### Drawer not appearing
-- Try clicking directly on the brain emoji
-- Ensure no other apps are blocking the window
-
-## 🎯 Roadmap
-
-- [ ] ✅ **MVP Complete**: Basic floating dock with prompts
-- [ ] 🎨 **Visual Polish**: Better icons, animations, themes
-- [ ] ⚙️ **Prompt Editor**: Built-in GUI for editing prompts
-- [ ] 🔧 **Settings Panel**: Position saving, hotkeys, auto-start
-- [ ] 📱 **Template Variables**: Auto-fill prompt placeholders
-- [ ] 🌐 **Cloud Sync**: Backup/sync prompts across devices
-- [ ] 🎪 **Favorites**: Star frequently used prompts
-- [ ] 📊 **Usage Stats**: Track most-used prompts
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - feel free to use, modify, and distribute!
-
-## 🙏 Credits
-
-- Built with Python + Tkinter for maximum compatibility
-- Uses `pyperclip` for cross-platform clipboard support
-- Inspired by modern launcher apps and prompt management tools
+</div>
 
 ---
 
-**Enjoy your floating prompt library!** 🚀
+## Why Promptoire
 
-*Made with ❤️ for the AI-powered workflow* 
+Most prompt tools are cloud apps, browser extensions that die the moment you leave the tab, or generic clipboard managers that don't understand prompts. Promptoire is a small, gorgeous desktop launcher that sits quietly in your tray and does three things nobody else combines:
+
+- **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library as clean JSON, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. Changes are matched by id and shown in a **diff preview** before anything is written. Every other tool's "improve" works one prompt at a time — this refactors your whole collection in one pass.
+- **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
+- **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
+
+Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, timestamped backups, and a handful of themes.
+
+## ✨ Highlights
+
+| | |
+|---|---|
+| ⌨️ **Global hotkey** | Summon it anywhere (default `Ctrl+Alt+Space`), at your cursor. |
+| ⚡ **Copy & vanish** | Click a prompt → it's on your clipboard → window hides. Or pin it open. |
+| 🔣 **Placeholders** | `{topic}`, `{tone}`, `{code}` → quick fill-in form before copy. |
+| 🪶 **Light & fast** | Renders through the system WebView (no bundled browser). Tiny footprint. |
+| 🎨 **Themeable** | Matrix, Cyber, Aurora, Ember, Sunset, Emerald, Mono. |
+| 🗂️ **Organized** | Nested categories, tags, favorites, fuzzy search, drag-reorder. |
+| 💾 **Safe** | Atomic saves + rolling timestamped backups. |
+
+## 🚀 Quick start (from source)
+
+Requires **Python 3.9+** and the **WebView2 runtime** (preinstalled on Windows 11 and most Windows 10).
+
+```bat
+:: 1. one-time setup (creates a venv, installs deps)
+setup.bat
+
+:: 2. run it
+Promptoire.bat
+```
+
+…or manually:
+
+```bash
+pip install -r requirements.txt
+python -m promptoire_app
+```
+
+To launch at login, drop a shortcut to `Promptoire.bat` in `shell:startup` (Win+R → `shell:startup`).
+
+## 📦 Build a standalone .exe
+
+```bat
+build.bat            :: → dist\Promptoire\Promptoire.exe
+```
+
+(Uses PyInstaller via `Promptoire.spec`; one-dir build for fast, AV-friendly startup.)
+
+## 🔁 The bulk-improve loop
+
+1. Open **Improve library** (sparkle icon).
+2. **Copy for AI** — puts an editable instruction + your whole library (as JSON) on your clipboard.
+3. Paste into any LLM. It returns improved JSON in the same schema.
+4. Paste that back, hit **Preview changes** — see exactly what's new vs. updated.
+5. **Merge** (matched by prompt id; your local prompts are never deleted).
+
+The instruction (meta-prompt) is fully editable in that panel.
+
+## 🗃️ Data format
+
+Everything lives in `prompts.json` next to the app — human-readable and easy to edit by hand or with an LLM:
+
+```jsonc
+{
+  "version": 3,
+  "categories": [
+    {
+      "id": "cat_…", "name": "AI Art", "color": "#f472b6",
+      "prompts": [
+        {
+          "id": "prm_…", "type": "image",
+          "title": "Cinematic portrait",
+          "prompt": "cinematic portrait of {subject}, dramatic rim lighting, 85mm…",
+          "tags": ["portrait"],
+          "negative": "blurry, watermark", "model": "Midjourney v6", "params": "--ar 4:5 --stylize 250"
+        }
+      ],
+      "subcategories": []
+    }
+  ]
+}
+```
+
+## ⌨️ Shortcuts
+
+| Action | Key |
+|---|---|
+| Summon launcher (global) | `Ctrl+Alt+Space` *(configurable)* |
+| Focus search | `Ctrl+F` |
+| Manage library | `Ctrl+E` |
+| Improve library | `Ctrl+I` |
+| Settings | `Ctrl+,` |
+| New prompt | `Ctrl+N` |
+| Navigate / copy | `↑ ↓` / `Enter` |
+| Back / hide | `Esc` |
+
+## 🛠️ Architecture
+
+- **Backend** (`promptoire_app/core`, `/platform`): Python. Data layer (v3 schema, migration, search, merge), settings, global hotkey, tray, clipboard.
+- **Frontend** (`promptoire_app/web`): zero-build vanilla HTML/CSS/JS, rendered by the system WebView through [pywebview](https://pywebview.flowrl.com/). No framework, no bundler.
+
+## ❤️ Support
+
+Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** (link in Settings → About). That's the whole business model.
+
+## 📄 License
+
+MIT — use it, fork it, ship it.

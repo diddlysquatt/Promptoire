@@ -4,7 +4,7 @@
   const PR = window.PROMPTOIRE;
   const { el, escapeHtml, highlight, icon, toast, modal, findPlaceholders, fillPlaceholders } = PR.ui;
 
-  let resultsEl, searchEl, debounceTimer;
+  let resultsEl, searchEl, debounceTimer, staggerNext = true;
 
   function init() {
     resultsEl = document.getElementById("results");
@@ -13,7 +13,7 @@
     searchEl.addEventListener("input", () => {
       PR.state.query = searchEl.value;
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(runSearch, 70);
+      debounceTimer = setTimeout(() => runSearch(false), 70); // typing: no re-stagger
     });
     searchEl.addEventListener("keydown", onSearchKey);
 
@@ -32,7 +32,8 @@
     });
   }
 
-  async function runSearch() {
+  async function runSearch(fresh = true) {
+    staggerNext = fresh;
     const { query, filter } = PR.state;
     const favOnly = filter === "favorites";
     const typeFilter = filter === "text" || filter === "image" ? filter : "all";
@@ -44,6 +45,7 @@
 
   function render() {
     const { results, query } = PR.state;
+    resultsEl.classList.toggle("stagger", staggerNext);
     resultsEl.innerHTML = "";
     if (!results.length) {
       resultsEl.appendChild(emptyState(query));

@@ -45,7 +45,13 @@ class PromptLibrary:
                     raw = json.load(f)
                 self.data = normalize_library(raw)
             else:
-                self.data = {"version": schema.SCHEMA_VERSION, "categories": []}
+                # Fresh install: seed a small curated library and persist it.
+                from .defaults import default_library
+                self.data = default_library()
+                try:
+                    self.save(backup=False)
+                except Exception:
+                    pass
         except Exception:
             # Never crash on a bad file — fall back to last good backup if any.
             recovered = self._load_latest_backup()
