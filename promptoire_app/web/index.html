@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="matrix">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Promptoire</title>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <!-- ambient backdrop glow -->
+  <div class="bg-aura" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <div id="app" class="app">
+    <!-- ───────────────────────── title bar ───────────────────────── -->
+    <header class="titlebar pywebview-drag-region">
+      <div class="brand">
+        <span class="brand-mark">P</span>
+        <span class="brand-name">Promptoire</span>
+        <span class="brand-count" id="brandCount"></span>
+      </div>
+      <div class="titlebar-actions no-drag">
+        <button class="tbtn" id="btnPin" title="Keep open (disable auto-hide)" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M16 3l5 5-4 1-3 3-1 5-2-2-4 4-1-1 4-4-2-2 5-1 3-3 1-4z"/></svg>
+        </button>
+        <button class="tbtn" id="btnImprove" title="Improve library with AI">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M12 2l2.2 5.2L20 9l-4.5 3.6L17 18l-5-3-5 3 1.5-5.4L4 9l5.8-1.8z"/></svg>
+        </button>
+        <button class="tbtn" id="btnEditor" title="Manage library">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        </button>
+        <button class="tbtn" id="btnSettings" title="Settings">
+          <svg viewBox="0 0 24 24" class="ic"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
+        </button>
+        <button class="tbtn tbtn-close" id="btnClose" title="Hide (your hotkey reopens it)">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ───────────────────────── launcher view ───────────────────────── -->
+    <main class="view view-launcher" id="viewLauncher">
+      <div class="searchwrap">
+        <svg viewBox="0 0 24 24" class="search-ic"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="search" class="search" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Search your prompts…" />
+        <kbd class="search-hint" id="searchHint">↑↓ ↵</kbd>
+      </div>
+
+      <div class="filters" id="filters">
+        <button class="chip is-active" data-filter="all">All</button>
+        <button class="chip" data-filter="text">✎ Text</button>
+        <button class="chip" data-filter="image">▦ Image</button>
+        <button class="chip" data-filter="favorites">★ Favorites</button>
+      </div>
+
+      <div class="results" id="results" tabindex="-1"></div>
+
+      <footer class="actionbar">
+        <button class="btn btn-ghost" id="btnAdd">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M12 5v14M5 12h14"/></svg> New prompt
+        </button>
+        <button class="btn btn-primary" id="btnImprove2">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M12 2l2.2 5.2L20 9l-4.5 3.6L17 18l-5-3-5 3 1.5-5.4L4 9l5.8-1.8z"/></svg>
+          Improve&nbsp;library
+        </button>
+      </footer>
+    </main>
+
+    <!-- ───────────────────────── editor / manage view ───────────────────────── -->
+    <section class="view view-panel hidden" id="viewEditor">
+      <div class="panel-head">
+        <button class="btn btn-ghost btn-back" data-back>‹ Back</button>
+        <h2>Library</h2>
+        <button class="btn btn-ghost" id="btnAddCategory">+ Category</button>
+      </div>
+      <div class="editor-body" id="editorBody"></div>
+    </section>
+
+    <!-- ───────────────────────── bulk-improve view ───────────────────────── -->
+    <section class="view view-panel hidden" id="viewBulk">
+      <div class="panel-head">
+        <button class="btn btn-ghost btn-back" data-back>‹ Back</button>
+        <h2>Improve&nbsp;Library</h2>
+        <span></span>
+      </div>
+      <div class="bulk-body" id="bulkBody"></div>
+    </section>
+
+    <!-- ───────────────────────── settings view ───────────────────────── -->
+    <section class="view view-panel hidden" id="viewSettings">
+      <div class="panel-head">
+        <button class="btn btn-ghost btn-back" data-back>‹ Back</button>
+        <h2>Settings</h2>
+        <span></span>
+      </div>
+      <div class="settings-body" id="settingsBody"></div>
+    </section>
+  </div>
+
+  <!-- toast + modal hosts -->
+  <div class="toast-host" id="toastHost"></div>
+  <div class="modal-host hidden" id="modalHost"></div>
+
+  <script src="js/bridge.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/launcher.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/bulk.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -39,6 +39,11 @@ data/prompt_history.json
 cache/
 backups/
 
+# Promptoire (new app) runtime files
+promptoire.config.json
+_selftest.json
+.webcache/
+
 # Environment / secrets
 *.env
 *.env.local
