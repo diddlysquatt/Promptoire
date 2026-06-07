@@ -246,8 +246,14 @@ class App:
     def apply_settings(self, patch: dict):
         prev_hotkey = self.settings.get("hotkey")
         prev_tray = self.settings.get("behavior", "show_tray", default=True)
+        prev_startup = self.settings.get("behavior", "launch_at_startup", default=False)
         self.settings.update(patch)
         self.settings.save()
+
+        new_startup = self.settings.get("behavior", "launch_at_startup", default=False)
+        if new_startup != prev_startup:
+            from .platform import startup
+            startup.set_enabled(new_startup)
 
         new_hotkey = self.settings.get("hotkey")
         if new_hotkey != prev_hotkey:

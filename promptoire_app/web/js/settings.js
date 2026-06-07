@@ -53,7 +53,7 @@
     /* System */
     host.appendChild(section("System", card([
       toggleRow("Show tray icon", "Quick access from the system tray.", b.show_tray, (v) => save({ behavior: { show_tray: v } })),
-      toggleRow("Launch at startup", "Start Promptoire when you sign in.", b.launch_at_startup, (v) => { save({ behavior: { launch_at_startup: v } }); toast(v ? "Will start with Windows (apply on next build)" : "Startup disabled"); }),
+      toggleRow("Launch at startup", "Start Promptoire when you sign in.", b.launch_at_startup, (v) => { save({ behavior: { launch_at_startup: v } }); toast(v ? "Promptoire will start with Windows" : "Startup disabled"); }),
       rowBtn("Back up now", "Save a timestamped copy of your library.", "Backup", async () => { await PR.bridge.call("backup_now"); toast("Backup saved"); }),
     ])));
 
