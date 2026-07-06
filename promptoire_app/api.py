@@ -6,6 +6,8 @@ the UI gets {ok: bool, ...} envelopes so it can show friendly errors.
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import re
 import traceback
@@ -272,9 +274,9 @@ class Api:
     def load_import_file(self) -> dict:
         try:
             path = self._app.open_file_dialog((
-                "Promptoire Imports (*.json;*.txt;*.md)",
+                "Promptoire Imports (*.json;*.txt;*.md;*.csv)",
                 "JSON Files (*.json)",
-                "Text/Markdown Files (*.txt;*.md)",
+                "Text/Markdown/CSV Files (*.txt;*.md;*.csv)",
                 "All files (*.*)",
             ))
             if not path:
@@ -418,6 +420,10 @@ def _parse_import_text(text: str) -> Any:
     data = _parse_loose_json(text)
     if data is not None:
         return data
+    for candidate in _outline_candidates(text):
+        data = _parse_csv_table(candidate)
+        if data is not None:
+            return data
     for candidate in _outline_candidates(text):
         data = _parse_outline(candidate)
         if data is not None:
@@ -936,29 +942,79 @@ def _parse_markdown_table(lines: list[str]) -> dict | None:
             if not any(c.strip() for c in cells):
                 continue
             row = {headers[i]: cells[i].strip() for i in range(min(len(headers), len(cells))) if headers[i]}
-            title = row.get("title") or row.get("name") or row.get("prompttitle") or ""
-            prompt = row.get("prompt") or row.get("body") or row.get("text") or row.get("content") or ""
-            if not title and not prompt:
-                continue
-            raw = {
-                "title": title or _derive_title(prompt),
-                "prompt": prompt or title,
-                "tags": _split_tags(row.get("tags", "")),
-                "note": row.get("note", ""),
-            }
-            ptype = (row.get("type") or "").strip().lower()
-            if ptype:
-                raw["type"] = ptype
-            for key in schema.IMAGE_FIELDS:
-                if row.get(key):
-                    raw[key] = row[key]
-            _category_for_table_row(library, row).setdefault("prompts", []).append(
-                schema.normalize_prompt(raw)
-            )
+            _append_table_prompt(library, row)
 
     if any(True for _ in schema.iter_prompts(library)):
         return library
     return None
+
+
+def _parse_csv_table(text: str | None) -> dict | None:
+    """Parse pasted CSV/TSV tables with Title and Prompt columns."""
+    if text is None:
+        return None
+    s = text.strip()
+    if not s:
+        return None
+    lines = [ln for ln in s.replace("\r\n", "\n").replace("\r", "\n").split("\n") if ln.strip()]
+    if len(lines) < 2 or ("," not in lines[0] and "\t" not in lines[0]):
+        return None
+
+    sample = "\n".join(lines[:8])
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",\t")
+    except csv.Error:
+        dialect = csv.excel_tab if "\t" in lines[0] else csv.excel
+
+    try:
+        reader = csv.DictReader(io.StringIO("\n".join(lines)), dialect=dialect)
+        raw_headers = reader.fieldnames or []
+    except csv.Error:
+        return None
+
+    headers = [_normalize_table_header(h or "") for h in raw_headers]
+    if _first_header_index(headers, ("title", "name", "prompttitle")) is None:
+        return None
+    if _first_header_index(headers, ("prompt", "body", "text", "content")) is None:
+        return None
+
+    library = {"version": schema.SCHEMA_VERSION, "categories": []}
+    for raw_row in reader:
+        row = {}
+        for raw_key, value in raw_row.items():
+            if raw_key is None:
+                continue
+            key = _normalize_table_header(raw_key)
+            if key:
+                row[key] = (value or "").strip()
+        _append_table_prompt(library, row)
+
+    if any(True for _ in schema.iter_prompts(library)):
+        return library
+    return None
+
+
+def _append_table_prompt(library: dict, row: dict) -> bool:
+    title = row.get("title") or row.get("name") or row.get("prompttitle") or ""
+    prompt = row.get("prompt") or row.get("body") or row.get("text") or row.get("content") or ""
+    if not title and not prompt:
+        return False
+    raw = {
+        "title": title or _derive_title(prompt),
+        "prompt": prompt or title,
+        "tags": _split_tags(row.get("tags", "")),
+        "note": row.get("note", ""),
+    }
+    ptype = (row.get("type") or "").strip().lower()
+    if ptype:
+        raw["type"] = ptype
+    for key in schema.IMAGE_FIELDS:
+        if row.get(key):
+            raw[key] = row[key]
+    _category_for_table_row(library, row).setdefault("prompts", []).append(
+        schema.normalize_prompt(raw)
+    )
+    return True
 
 
 def _looks_like_table_row(line: str) -> bool:
@@ -1012,6 +1068,7 @@ def _normalize_table_header(value: str) -> str:
         "folder": "section",
         "group": "section",
         "categorypath": "path",
+        "sectionpath": "path",
         "folderpath": "path",
         "subsection": "subsection",
         "subcategory": "subsection",

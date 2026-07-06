@@ -386,6 +386,21 @@ Question planner: Turn {notes} into prioritized interview questions.
     table_prompt = next(p for p, _, _ in table_prompts if p["title"] == "Tight rewrite")
     assert table_prompt["tags"] == ["editing", "clarity"], table_prompt
 
+    csv_import = '''Path,Title,Prompt,Tags
+"Writing > Editing","Tight rewrite","Rewrite {text} clearly while preserving voice.","editing, clarity"
+"Coding > Debugging","Bug sweep","Review {code} for subtle bugs.","code, review"
+'''
+    csv_data = _parse_import_text(csv_import)
+    assert csv_data is not None, csv_import
+    csv_prompts = list(schema.iter_prompts(csv_data))
+    out["outline.csv_table.total"] = len(csv_prompts)
+    assert out["outline.csv_table.total"] == 2, csv_prompts
+    csv_paths = {p["title"]: path for p, _, path in csv_prompts}
+    assert csv_paths["Tight rewrite"] == ["Writing", "Editing"], csv_paths
+    assert csv_paths["Bug sweep"] == ["Coding", "Debugging"], csv_paths
+    csv_prompt = next(p for p, _, _ in csv_prompts if p["title"] == "Tight rewrite")
+    assert csv_prompt["tags"] == ["editing", "clarity"], csv_prompt
+
     image_table = """| Path | Title | Type | Prompt | Negative prompt | Image model | Parameters | CFG scale |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | AI Art > Characters > Portraits | Neon character | image | Neon portrait of {subject}. | blurry, watermark | Midjourney v6 | --ar 4:5 | 7 |
@@ -492,6 +507,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "outline_first_empty_import": "Paste an outline or JSON first",
         "import_error_recovery": "Import not readable",
         "import_error_formats": "YAML-style list",
+        "import_error_csv": "CSV table",
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
         "numbered_prompt_blocks": "Prompt 1:",
@@ -499,6 +515,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "nested_bullet_imports": "Nested bullet outlines",
         "markdown_prompt_heading_imports": "Markdown prompt headings",
         "table_imports": "Markdown tables",
+        "csv_table_imports": "CSV tables",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
@@ -615,7 +632,7 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "check-release.bat" in publish_check_script
         ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
-        "outline_file_dialogs": "*.txt;*.md" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
+        "outline_file_dialogs": "*.txt;*.md;*.csv" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
         "shortcut_check_script": (
             "Check-PromptoireShortcut.ps1" in release_bat
@@ -641,11 +658,12 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "Improve with AI now" in release_checklist
         ),
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
-        "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,
+        "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist and ".csv" in release_checklist,
         "nested_bullet_release_check": "nested bullet outlines" in release_checklist,
         "markdown_heading_release_check": "Markdown prompt headings" in release_checklist,
         "yamlish_release_check": "YAML-style" in release_checklist and "- Title:" in release_checklist,
         "markdown_table_release_check": "Markdown tables" in release_checklist,
+        "csv_table_release_check": "CSV tables" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens

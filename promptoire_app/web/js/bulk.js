@@ -15,7 +15,7 @@
     "- Use prompt rows like: Title: Prompt body\n" +
     "- Numbered blocks like Prompt 1: are fine when a prompt needs multiple lines.\n" +
     "- YAML-style lists like - Title: ... with indented Prompt:/Tags: fields are fine.\n" +
-    "- Markdown tables are fine if they include Title and Prompt columns.\n" +
+    "- Markdown tables and CSV tables are fine if they include Title and Prompt columns.\n" +
     "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +
     "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
     "- Use {placeholders} where the user should fill in a value.\n" +
@@ -299,7 +299,7 @@
     previewBox.appendChild(el("div", { class: "import-error-card" }, [
       el("div", { class: "import-error-title", text: "Import not readable" }),
       el("div", { class: "import-error-detail", text: message }),
-      el("div", { class: "import-error-formats", text: "Expected an outline, JSON, YAML-style list, or Markdown table." }),
+      el("div", { class: "import-error-formats", text: "Expected an outline, JSON, YAML-style list, Markdown table, or CSV table." }),
       el("pre", { class: "import-error-example", text:
         "Section: Coding\n" +
         "Subsection: Debugging\n" +
