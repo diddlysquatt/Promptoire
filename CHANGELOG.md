@@ -44,6 +44,7 @@
 - `Improve with AI now` uses the outline library payload instead of the older JSON payload.
 - The old JSON meta-prompt is labeled as JSON-specific so the default outline flow stays clear.
 - Generic Buy Me a Coffee and GitHub placeholder links are sanitized instead of opening generic pages, including root Buy Me a Coffee URLs with or without `www`.
+- Runtime settings updates now sanitize support links immediately, matching startup/load behavior.
 - CI and local preflight now compile the full app and tests, run every frontend JS syntax check, and verify the WebView bridge self-test.
 
 ### Notes

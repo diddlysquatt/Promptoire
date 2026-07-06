@@ -185,3 +185,4 @@ class Settings:
 
     def update(self, patch: dict) -> None:
         self.data = _deep_merge(self.data, patch or {})
+        _sanitize_links(self.data)

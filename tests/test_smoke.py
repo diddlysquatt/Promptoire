@@ -715,6 +715,19 @@ Question planner: Turn {notes} into prioritized interview questions.
             and loaded_settings.get("links", "repo") == "https://github.com/diddlysquatt/Promptoire"
         )
     assert out["settings.support_links_normalized"], loaded_settings.data.get("links")
+    with tempfile.TemporaryDirectory() as settings_dir:
+        runtime_settings = Settings(Path(settings_dir) / "promptoire.config.json").load()
+        runtime_settings.update({
+            "links": {
+                "coffee": "buymeacoffee.com/promptoire",
+                "repo": "https://github.com/",
+            }
+        })
+        out["settings.update_sanitizes_links"] = (
+            runtime_settings.get("links", "coffee") == "https://buymeacoffee.com/promptoire"
+            and runtime_settings.get("links", "repo") == ""
+        )
+    assert out["settings.update_sanitizes_links"], runtime_settings.data.get("links")
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")
