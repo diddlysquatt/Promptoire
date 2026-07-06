@@ -75,6 +75,40 @@ def _run_checks():
         assert tmp_lib.categories()[0]["subcategories"][0]["name"] == "Nested"
         out["merge.outline.preserved_nested"] = True
 
+    rich_outline = """# AI Art > Characters
+Title: Portrait Builder
+Type: image
+Prompt: Create a cinematic portrait of {subject} with dramatic rim lighting.
+Tags: portrait, cinematic
+Negative: blurry, watermark
+Model: Midjourney v6
+Params: --ar 4:5 --stylize 250
+
+# Workflows
+## Research
+1. Source map: Map the key sources for {topic}, group them by reliability, and list open questions.
+"""
+    rich = _parse_import_text(rich_outline)
+    assert rich is not None, rich_outline
+    rich_prompts = list(schema.iter_prompts(rich))
+    out["outline.rich.total"] = len(rich_prompts)
+    assert out["outline.rich.total"] == 2, out
+    portrait = next(p for p, _, path in rich_prompts if p["title"] == "Portrait Builder")
+    assert portrait["type"] == "image", portrait
+    assert portrait["negative"] == "blurry, watermark", portrait
+    assert portrait["model"] == "Midjourney v6", portrait
+    assert portrait["params"] == "--ar 4:5 --stylize 250", portrait
+    research_path = next(path for p, _, path in rich_prompts if p["title"] == "Source map")
+    assert research_path == ["Workflows", "Research"], research_path
+
+    with tempfile.TemporaryDirectory() as d:
+        tmp_lib = PromptLibrary(Path(d) / "prompts.json")
+        tmp_lib.data = {"version": 3, "categories": []}
+        result = tmp_lib.apply_merge(rich)
+        assert result["added"] == 2, result
+        assert tmp_lib.categories()[0]["subcategories"][0]["name"] == "Characters"
+        out["merge.outline.rich_added"] = result["added"]
+
     example = json.loads((Path(__file__).resolve().parents[1] / "prompts.example.json").read_text(encoding="utf-8"))
     example = schema.normalize_library(example)
     out["example.total"] = schema.count_prompts(example)
