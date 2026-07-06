@@ -25,6 +25,14 @@ Run the one-command local gate first:
 check-release.bat
 ```
 
+Before the first push, run the publish-readiness check:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Check-GitHubPublish.ps1
+```
+
+Use `-SkipReleaseGate` for a quick auth/remote/private-file check after `check-release.bat` has already passed.
+
 If that fails, run the individual checks below to isolate the problem:
 
 ```bash
@@ -40,6 +48,7 @@ node --check promptoire_app/web/js/bridge.js
 ## Repository Setup
 
 - Add the real GitHub remote.
+- Run `Check-GitHubPublish.ps1` and fix any failures before pushing.
 - Before pushing workflow changes for the first time, confirm `gh auth status` includes `workflow`.
   If GitHub rejects the push for workflow scope, run:
 

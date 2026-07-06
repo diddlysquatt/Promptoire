@@ -1,0 +1,141 @@
+param(
+  [switch]$SkipReleaseGate
+)
+
+$ErrorActionPreference = "Stop"
+
+$root = (Get-Item -LiteralPath (Split-Path -Parent $MyInvocation.MyCommand.Path)).FullName
+Set-Location -LiteralPath $root
+
+# Checks git remote, clean state, private files, GitHub auth scope, and the local release gate.
+$failed = $false
+
+function Pass($message) {
+  Write-Host "[OK] $message"
+}
+
+function Fail($message) {
+  $script:failed = $true
+  Write-Host "[FAIL] $message"
+}
+
+function Run-Git($arguments) {
+  $previousPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $output = & git @arguments 2>&1
+    return @{
+      ExitCode = $LASTEXITCODE
+      Text = ($output | Out-String).Trim()
+    }
+  } finally {
+    $ErrorActionPreference = $previousPreference
+  }
+}
+
+Write-Host "Promptoire GitHub publish readiness"
+Write-Host "Root: $root"
+Write-Host ""
+
+if (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) {
+  Fail "This folder is not a git repository."
+} else {
+  Pass "Git repository found."
+}
+
+$branch = Run-Git @("branch", "--show-current")
+if ($branch.ExitCode -eq 0 -and $branch.Text) {
+  Pass "Current branch: $($branch.Text)"
+} else {
+  Fail "Could not determine the current branch."
+}
+
+$status = Run-Git @("status", "--short")
+if ($status.ExitCode -eq 0 -and -not $status.Text) {
+  Pass "Working tree is clean."
+} elseif ($status.ExitCode -eq 0) {
+  Fail "Working tree has uncommitted changes. Commit or stash before publishing."
+  Write-Host $status.Text
+} else {
+  Fail "Could not read git status."
+}
+
+$remote = Run-Git @("remote", "get-url", "origin")
+if ($remote.ExitCode -eq 0 -and $remote.Text) {
+  if ($remote.Text -match "github\.com[:/]") {
+    Pass "GitHub origin remote: $($remote.Text)"
+  } else {
+    Fail "Origin remote is not a GitHub URL: $($remote.Text)"
+  }
+} else {
+  Fail "Missing origin remote."
+}
+
+foreach ($file in @("prompts.json", "promptoire.config.json", "_selftest.json")) {
+  $tracked = Run-Git @("ls-files", "--error-unmatch", "--", $file)
+  if ($tracked.ExitCode -eq 0) {
+    Fail "Private runtime file is tracked: $file"
+  } else {
+    Pass "Private runtime file is not tracked: $file"
+  }
+}
+
+if (Test-Path -LiteralPath (Join-Path $root ".github\workflows\ci.yml")) {
+  Pass "GitHub Actions workflow exists."
+} else {
+  Fail "Missing .github\workflows\ci.yml."
+}
+
+$gh = Get-Command gh -ErrorAction SilentlyContinue
+if ($gh) {
+  $previousPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $authOutput = & gh auth status -h github.com 2>&1
+    $authExitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousPreference
+  }
+  $authText = ($authOutput | Out-String).Trim()
+  if ($authExitCode -eq 0) {
+    Pass "GitHub CLI is authenticated."
+    if ($authText -match "Token scopes:\s*.*workflow") {
+      Pass "GitHub token includes workflow scope."
+    } else {
+      Fail "GitHub token is missing workflow scope. Run: gh auth refresh -h github.com -s workflow"
+      if ($authText) {
+        Write-Host $authText
+      }
+    }
+  } else {
+    Fail "GitHub CLI is not authenticated for github.com. Run: gh auth login -h github.com"
+    if ($authText) {
+      Write-Host $authText
+    }
+  }
+} else {
+  Fail "GitHub CLI (gh) is not installed or not on PATH."
+}
+
+if (-not $SkipReleaseGate) {
+  Write-Host ""
+  Write-Host "Running local release gate..."
+  & (Join-Path $root "check-release.bat")
+  if ($LASTEXITCODE -eq 0) {
+    Pass "Local release gate passed."
+  } else {
+    Fail "Local release gate failed."
+  }
+} else {
+  Write-Host ""
+  Write-Host "Skipped local release gate."
+}
+
+Write-Host ""
+if ($failed) {
+  Write-Host "GitHub publish readiness failed. Fix the items above before pushing."
+  exit 1
+}
+
+Write-Host "GitHub publish readiness passed."
+exit 0

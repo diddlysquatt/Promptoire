@@ -14,6 +14,7 @@
 - Markdown-fenced outline replies are accepted without importing the fence text.
 - Desktop shortcut creation through `setup.bat` and `Create-PromptoireShortcut.ps1`.
 - Desktop shortcut verification through `Check-PromptoireShortcut.ps1` and the local release gate.
+- GitHub publish-readiness verification through `Check-GitHubPublish.ps1`.
 - GitHub release materials: CI, issue templates, PR template, privacy/security docs, contributing guide, and `check-release.bat`.
 
 ### Changed

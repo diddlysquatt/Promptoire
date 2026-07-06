@@ -449,6 +449,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     launcher_bat = (root / "Promptoire.bat").read_text(encoding="utf-8")
     setup_bat = (root / "setup.bat").read_text(encoding="utf-8")
     release_bat = (root / "check-release.bat").read_text(encoding="utf-8")
+    publish_check_script = (root / "Check-GitHubPublish.ps1").read_text(encoding="utf-8")
     shortcut_script = (root / "Create-PromptoireShortcut.ps1").read_text(encoding="utf-8")
     shortcut_check_script = (root / "Check-PromptoireShortcut.ps1").read_text(encoding="utf-8")
     rename_script = (root / "Rename-PromptoireFolder.ps1").read_text(encoding="utf-8")
@@ -462,6 +463,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "contributing_local_first": "local-first" in contributing_text.lower(),
         "contributing_private_data": "prompts.json" in contributing_text and "promptoire.config.json" in contributing_text,
         "contributing_release_check": "check-release.bat" in contributing_text,
+        "contributing_publish_check": "Check-GitHubPublish.ps1" in contributing_text,
         "privacy_local_first": "local-first" in privacy_text.lower(),
         "privacy_optional_ai": "Improve with AI now" in privacy_text,
         "privacy_saved_outline_instructions": "saved outline improvement instructions" in privacy_text,
@@ -485,6 +487,13 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
+        "publish_check_documented": (
+            "Check-GitHubPublish.ps1" in readme_text
+            and "Check-GitHubPublish.ps1" in release_checklist
+            and "workflow" in publish_check_script
+            and "git remote" in publish_check_script
+            and "check-release.bat" in publish_check_script
+        ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "outline_file_dialogs": "*.txt;*.md" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,

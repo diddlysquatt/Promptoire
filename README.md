@@ -168,6 +168,7 @@ git rm --cached prompts.json
 Then commit the app changes normally. `prompts.json` stays on your machine, but public commits should use `prompts.example.json` as the reference library.
 
 Run `check-release.bat` before pushing. It runs the smoke tests, compile checks, frontend syntax checks, real WebView self-test, and a guard that fails if private runtime files are tracked.
+Before the first GitHub push, run `Check-GitHubPublish.ps1`. It verifies the origin remote, clean working tree, private-file guard, GitHub Actions workflow, local release gate, and GitHub CLI `workflow` token scope.
 
 For sharing or review, see [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), [Privacy](docs/PRIVACY.md), and [Security](SECURITY.md). Short version: Promptoire has no telemetry, stores data locally by default, and only sends prompt data out when you copy it to another tool or use the optional direct AI improve button.
 

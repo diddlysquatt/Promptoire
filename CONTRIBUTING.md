@@ -38,6 +38,14 @@ check-release.bat
 
 That runs the smoke suite, Python compile checks, frontend syntax checks, a real WebView self-test, and a guard that fails if private runtime files are tracked.
 
+Before the first push to GitHub, also run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Check-GitHubPublish.ps1
+```
+
+That checks the GitHub remote, clean working tree, private-file guard, local release gate, and `gh` token scope needed for workflow files.
+
 ## UI And Workflow Guidelines
 
 - Keep the main experience usable without an AI API key.
