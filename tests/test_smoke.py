@@ -189,6 +189,23 @@ Tags: editing, clarity
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
     assert not missing_bulk_tokens, missing_bulk_tokens
 
+    root = Path(__file__).resolve().parents[1]
+    readme_text = (root / "README.md").read_text(encoding="utf-8")
+    privacy_text = (root / "docs" / "PRIVACY.md").read_text(encoding="utf-8")
+    security_text = (root / "SECURITY.md").read_text(encoding="utf-8")
+    gitignore_text = (root / ".gitignore").read_text(encoding="utf-8")
+    release_tokens = {
+        "readme_privacy_link": "[Privacy](docs/PRIVACY.md)" in readme_text,
+        "readme_security_link": "[Security](SECURITY.md)" in readme_text,
+        "privacy_local_first": "local-first" in privacy_text.lower(),
+        "privacy_optional_ai": "Improve with AI now" in privacy_text,
+        "security_sensitive_files": "prompts.json" in security_text and "promptoire.config.json" in security_text,
+        "gitignore_private_prompt": "prompts.json" in gitignore_text,
+        "gitignore_private_config": "promptoire.config.json" in gitignore_text,
+    }
+    out["release.docs_ready"] = release_tokens
+    assert all(release_tokens.values()), release_tokens
+
     # copy_export (clipboard may be unavailable in headless; just check shape)
     ce = api.copy_export(True, False)
     out["copy_export.ok"] = ce.get("ok")

@@ -150,6 +150,8 @@ git rm --cached prompts.json
 
 Then commit the app changes normally. `prompts.json` stays on your machine, but public commits should use `prompts.example.json` as the reference library.
 
+For sharing or review, see [Privacy](docs/PRIVACY.md) and [Security](SECURITY.md). Short version: Promptoire has no telemetry, stores data locally by default, and only sends prompt data out when you copy it to another tool or use the optional direct AI improve button.
+
 ## ❤️ Support
 
 Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** from the titlebar or Settings → About. Set your real link in Settings or in `promptoire.config.json` under `links.coffee`.
