@@ -3,6 +3,7 @@
   "use strict";
   const PR = window.PROMPTOIRE;
   const { el, toast } = PR.ui;
+  const GENERIC_COFFEE_URL = "https://www.buymeacoffee.com/";
 
   const THEMES = [
     { id: "matrix", name: "Matrix", c1: "#7c5cff", c2: "#22d3ee" },
@@ -192,11 +193,14 @@
 
   function aboutBlock() {
     const links = (PR.state.settings && PR.state.settings.links) || {};
-    const coffeeUrl = el("input", { class: "input coffee-link", value: links.coffee || "",
+    const currentCoffee = configuredCoffeeUrl(links.coffee);
+    const coffeeUrl = el("input", { class: "input coffee-link", value: currentCoffee,
+      id: "coffeeLinkField",
       placeholder: "https://www.buymeacoffee.com/yourname" });
     coffeeUrl.addEventListener("change", () => {
-      save({ links: { coffee: coffeeUrl.value.trim() || "https://www.buymeacoffee.com/" } });
-      toast("Coffee link saved");
+      const value = coffeeUrl.value.trim();
+      save({ links: { coffee: value } });
+      toast(value ? "Coffee link saved" : "Coffee link cleared");
     });
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: "About" })]);
     s.appendChild(el("div", { class: "about" }, [
@@ -204,14 +208,20 @@
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
       el("div", { class: "ver", text: "v" + (PR.state.version || "2.2.0") + " · local-first · open source" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
-      el("button", { class: "coffee", html: "☕ &nbsp;Buy me a coffee",
+      el("button", { class: "coffee", html: "☕ &nbsp;" + (currentCoffee ? "Buy me a coffee" : "Set coffee link"),
         onclick: () => {
-          const url = (PR.state.settings.links && PR.state.settings.links.coffee) || "https://www.buymeacoffee.com/";
-          PR.bridge.call("open_external", url);
+          const url = configuredCoffeeUrl((PR.state.settings.links || {}).coffee);
+          if (url) PR.bridge.call("open_external", url);
+          else { coffeeUrl.focus(); coffeeUrl.select && coffeeUrl.select(); toast("Paste your Buy Me a Coffee link here"); }
         } }),
       el("div", { class: "coffee-url" }, [coffeeUrl]),
     ]));
     return s;
+  }
+
+  function configuredCoffeeUrl(raw) {
+    const url = String(raw || "").trim();
+    return url && url !== GENERIC_COFFEE_URL ? url : "";
   }
 
   function save(patch) {

@@ -4,6 +4,7 @@
   const PR = window.PROMPTOIRE;
 
   const views = { launcher: "viewLauncher", editor: "viewEditor", bulk: "viewBulk", settings: "viewSettings" };
+  const GENERIC_COFFEE_URL = "https://www.buymeacoffee.com/";
 
   async function boot() {
     let bootError = "";
@@ -165,8 +166,23 @@
   }
 
   function openCoffee() {
+    const url = configuredCoffeeUrl();
+    if (url) {
+      PR.bridge.call("open_external", url);
+      return;
+    }
+    showView("settings");
+    setTimeout(() => {
+      const field = document.getElementById("coffeeLinkField");
+      if (field) { field.focus(); field.select && field.select(); }
+      PR.ui.toast("Add your Buy Me a Coffee link in Settings");
+    }, 80);
+  }
+
+  function configuredCoffeeUrl() {
     const links = (PR.state.settings && PR.state.settings.links) || {};
-    PR.bridge.call("open_external", links.coffee || "https://www.buymeacoffee.com/");
+    const url = String(links.coffee || "").trim();
+    return url && url !== GENERIC_COFFEE_URL ? url : "";
   }
 
   /* ---- hooks Python calls ------------------------------------------------ */

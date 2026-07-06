@@ -64,7 +64,7 @@ DEFAULTS: dict[str, Any] = {
     },
     "links": {
         # Set this to your own Buy Me a Coffee / Ko-fi / GitHub Sponsors URL.
-        "coffee": "https://www.buymeacoffee.com/",
+        "coffee": "",
         "repo": "https://github.com/",
     },
     "onboarded": False,

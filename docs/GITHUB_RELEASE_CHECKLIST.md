@@ -34,7 +34,7 @@ node --check promptoire_app/web/js/bridge.js
 - Commit on a clean branch.
 - Confirm GitHub Actions CI is green after the first push.
 - Confirm `.gitignore` excludes local runtime data.
-- Confirm `README.md` has the final Buy Me a Coffee link or explains where to set it.
+- Set the final Buy Me a Coffee link in Settings or keep the blank default; blank links prompt the user to configure support instead of opening a generic page.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 
 ## Optional Build
