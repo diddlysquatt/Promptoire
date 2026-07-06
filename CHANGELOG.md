@@ -12,6 +12,7 @@
 - YAML-style `- Title:` prompt blocks with indented fields.
 - Markdown table imports with `Title` and `Prompt` columns.
 - CSV table imports with `Title` and `Prompt` columns.
+- JSON compatibility imports accept common LLM aliases such as `sections`, `subsections`, `items`, and `entries`.
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
 - Import preview chips for new nested sections and title-matched updates.

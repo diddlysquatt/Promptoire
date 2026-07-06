@@ -74,6 +74,7 @@ gh auth refresh --scopes workflow
 - Confirm YAML-style `- Title:` blocks with indented `Prompt:` / `Tags:` fields import as separate prompts.
 - Confirm Markdown tables with `Title` and `Prompt` columns import as prompts.
 - Confirm CSV tables with `Title` and `Prompt` columns import as prompts.
+- Confirm JSON compatibility imports accept `sections/subsections/items` aliases as well as the native `categories/subcategories/prompts` shape.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 - Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.

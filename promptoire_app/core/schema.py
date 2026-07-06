@@ -95,6 +95,13 @@ def _as_list(v: Any) -> list:
     return [v]
 
 
+def _first_value(raw: dict, *keys: str) -> Any:
+    for key in keys:
+        if key in raw:
+            return raw.get(key)
+    return None
+
+
 def new_prompt(
     title: str = "",
     body: str = "",
@@ -164,9 +171,7 @@ def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
     if not isinstance(raw, dict):
         return None
     # Accept several historical body keys.
-    body = raw.get("prompt")
-    if body is None:
-        body = raw.get("body", raw.get("text", ""))
+    body = _first_value(raw, "prompt", "body", "text", "content")
     title = _as_str(raw.get("title")) or _as_str(raw.get("name"))
     body = _as_str(body)
     if not title and not body:
@@ -186,7 +191,11 @@ def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
     if not pid.startswith("prm_"):
         pid = make_prompt_id(title, body)
 
-    tags = [_as_str(t) for t in _as_list(raw.get("tags")) if _as_str(t).strip()]
+    if isinstance(raw.get("tags"), str):
+        tag_items = [t.strip() for t in _re.split(r"[,#;]", raw.get("tags", ""))]
+    else:
+        tag_items = [_as_str(t).strip() for t in _as_list(raw.get("tags"))]
+    tags = [t for t in tag_items if t]
 
     created = _as_str(raw.get("created_at")) or now_iso()
     updated = _as_str(raw.get("updated_at")) or created
@@ -225,7 +234,11 @@ def _normalize_categories_container(container: Any) -> list[dict]:
     for key, raw in items:
         if not isinstance(raw, dict):
             continue
-        name = _as_str(raw.get("name")).strip() or _as_str(key).strip() or "Untitled"
+        name = (
+            _as_str(_first_value(raw, "name", "section", "category", "folder", "title")).strip()
+            or _as_str(key).strip()
+            or "Untitled"
+        )
         cid = _as_str(raw.get("id"))
         if not cid.startswith("cat_"):
             cid = make_category_id(name)
@@ -234,12 +247,15 @@ def _normalize_categories_container(container: Any) -> list[dict]:
         cat_default_type = "image" if _ART_CATEGORY.search(name) else "text"
 
         prompts = []
-        for rp in _as_list(raw.get("prompts")):
+        prompt_container = _first_value(raw, "prompts", "items", "entries")
+        for rp in _as_list(prompt_container):
             np = normalize_prompt(rp, default_type=cat_default_type)
             if np is not None:
                 prompts.append(np)
 
-        subs = _normalize_categories_container(raw.get("subcategories"))
+        subs = _normalize_categories_container(
+            _first_value(raw, "subcategories", "subsections", "sections", "categories", "children", "folders")
+        )
 
         out.append(
             {
@@ -272,10 +288,13 @@ def normalize_library(data: Any) -> dict:
             return {"version": SCHEMA_VERSION, "categories": [cat] if cat["prompts"] else []}
         return {"version": SCHEMA_VERSION, "categories": []}
 
-    categories = _normalize_categories_container(data.get("categories"))
+    categories = _normalize_categories_container(
+        _first_value(data, "categories", "sections", "folders", "groups")
+    )
 
     # Stray top-level prompts (old format had an unused `prompts: []`).
-    loose = [normalize_prompt(p) for p in _as_list(data.get("prompts"))]
+    loose_container = _first_value(data, "prompts", "items", "entries")
+    loose = [normalize_prompt(p) for p in _as_list(loose_container)]
     loose = [p for p in loose if p]
     if loose:
         bucket = next((c for c in categories if c["name"].lower() == "uncategorized"), None)

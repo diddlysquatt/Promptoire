@@ -427,6 +427,43 @@ Question planner: Turn {notes} into prioritized interview questions.
     out["loose_array.total"] = schema.count_prompts(array_lib)
     assert out["loose_array.total"] == 1, out
 
+    json_alias_import = """{
+  "sections": [
+    {
+      "name": "Writing",
+      "subsections": [
+        {
+          "name": "Editing",
+          "items": [
+            {
+              "title": "Tight rewrite",
+              "content": "Rewrite {text} clearly while preserving voice.",
+              "tags": "editing, clarity"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "title": "Inbox triage",
+      "prompt": "Turn {messages} into prioritized replies."
+    }
+  ]
+}"""
+    json_alias_data = _parse_import_text(json_alias_import)
+    assert json_alias_data is not None, json_alias_import
+    json_alias_lib = schema.normalize_library(json_alias_data)
+    out["json_alias_import.total"] = schema.count_prompts(json_alias_lib)
+    assert out["json_alias_import.total"] == 2, json_alias_lib
+    json_alias_paths = {p["title"]: path for p, _, path in schema.iter_prompts(json_alias_lib)}
+    assert json_alias_paths["Tight rewrite"] == ["Writing", "Editing"], json_alias_paths
+    assert json_alias_paths["Inbox triage"] == ["Uncategorized"], json_alias_paths
+    json_alias_prompt = next(p for p, _, _ in schema.iter_prompts(json_alias_lib) if p["title"] == "Tight rewrite")
+    assert json_alias_prompt["prompt"].startswith("Rewrite {text}"), json_alias_prompt
+    assert json_alias_prompt["tags"] == ["editing", "clarity"], json_alias_prompt
+
     with tempfile.TemporaryDirectory() as d:
         tmp_lib = PromptLibrary(Path(d) / "prompts.json")
         tmp_lib.data = {"version": 3, "categories": []}
@@ -664,6 +701,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "yamlish_release_check": "YAML-style" in release_checklist and "- Title:" in release_checklist,
         "markdown_table_release_check": "Markdown tables" in release_checklist,
         "csv_table_release_check": "CSV tables" in release_checklist,
+        "json_alias_release_check": "sections/subsections/items" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens
