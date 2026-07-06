@@ -78,7 +78,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, `.md`, or `.csv`), then hit **Preview changes** — see incoming, new, updated, and unchanged counts before anything is written.
 5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted). If the selected Add/Update mode would do nothing, Promptoire disables the merge until you choose an applicable action.
 
-The outline instruction is editable in that panel. The older JSON instruction is still editable under **JSON options** for compatibility.
+The outline instruction is editable in that panel, with **Reset default** if you want the built-in instruction back. The older JSON instruction is still editable under **JSON options** for compatibility.
 
 For brand-new prompt batches without exporting your existing library, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
 

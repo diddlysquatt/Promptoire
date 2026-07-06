@@ -15,6 +15,7 @@
 - JSON compatibility imports accept common LLM aliases such as `sections`, `subsections`, `items`, and `entries`.
 - Flat JSON prompt rows can use `path`, `section`, and `subsection` fields to land in the right nested section.
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.
+- Reset buttons for restoring the default outline and JSON AI instructions.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
 - Import preview chips for new nested sections and title-matched updates.
 - Import preview now shows total incoming prompts and clearer safe-merge mode notes.

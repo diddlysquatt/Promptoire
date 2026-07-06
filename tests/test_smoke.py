@@ -554,6 +554,10 @@ Question planner: Turn {notes} into prioritized interview questions.
         "outline_library_handler": "copyOutlineExport",
         "outline_instructions_button": "Edit instructions",
         "outline_instructions_modal": "Outline AI instructions",
+        "instructions_reset_button": "Reset default",
+        "instructions_default_bridge": "bulk_prompt_defaults",
+        "outline_default_loaded": "Default outline instructions loaded",
+        "json_default_loaded": "Default JSON instructions loaded",
         "save_outline_button": "Save outline",
         "save_outline_handler": "saveOutlineFile",
         "json_options_disclosure": "JSON options",
@@ -721,6 +725,7 @@ Question planner: Turn {notes} into prioritized interview questions.
             "changes the outline prompt" in release_checklist
             and "Improve with AI now" in release_checklist
         ),
+        "instruction_reset_release_check": "Reset default" in release_checklist,
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
         "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist and ".csv" in release_checklist,
         "nested_bullet_release_check": "nested bullet outlines" in release_checklist,
@@ -741,6 +746,9 @@ Question planner: Turn {notes} into prioritized interview questions.
     out["copy_export.ok"] = ce.get("ok")
     coe = api.copy_outline_export(True)
     out["copy_outline_export.ok"] = coe.get("ok")
+    defaults = api.bulk_prompt_defaults()
+    out["bulk_prompt_defaults.ok"] = defaults.get("ok") and "Return only the outline" in defaults.get("outline_prompt", "")
+    assert out["bulk_prompt_defaults.ok"], defaults
     sof = api.save_outline_file()
     out["save_outline_file.shape"] = "ok" in sof and (sof.get("ok") is False or sof.get("cancelled") or "path" in sof)
     assert out["save_outline_file.shape"], sof

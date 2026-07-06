@@ -66,7 +66,7 @@ gh auth refresh --scopes workflow
 - Confirm GitHub issue and pull request templates warn contributors not to paste private prompts, `prompts.json`, `promptoire.config.json`, or API keys.
 - Set the final Buy Me a Coffee link in Settings or keep the blank default; blank/generic root links prompt the user to configure support instead of opening a generic page.
 - Confirm the Improve Library panel shows `Copy outline library` as the default export action, offers `Edit instructions` and `Save outline`, keeps `Copy outline request` beside it, and tucks `Copy for AI` / JSON export under `JSON options`.
-- Confirm `Edit instructions` changes the outline prompt used by `Copy outline library` and `Improve with AI now`; JSON instructions stay under `JSON options`.
+- Confirm `Edit instructions` changes the outline prompt used by `Copy outline library` and `Improve with AI now`; `Reset default` restores the built-in instruction; JSON instructions stay under `JSON options`.
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge.
 - Confirm `Load from file` accepts outline `.txt` / `.md`, CSV `.csv`, and `.json` files.
 - Confirm nested bullet outlines and `Sub-subsection:` / `Nested subsection:` labels import as nested sections.

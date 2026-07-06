@@ -415,12 +415,18 @@
     const ta = el("textarea", { class: "textarea", style: { minHeight: "220px" } });
     ta.value = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.outline_prompt) || "";
     const save = el("button", { class: "btn btn-primary", text: "Save instructions" });
+    const reset = el("button", { class: "btn btn-ghost", text: "Reset default" });
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
     const m = PR.ui.modal({ title: "Outline AI instructions", wide: true,
       body: el("div", {}, [
         el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Used by <b>Copy outline library</b> and <b>Improve with AI now</b>. The app adds your outline library after this text." }),
         ta ]),
-      footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
+      footer: [reset, cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
+    reset.addEventListener("click", async () => {
+      const r = await PR.bridge.call("bulk_prompt_defaults");
+      if (r && r.ok) { ta.value = r.outline_prompt || ""; toast("Default outline instructions loaded"); }
+      else toast((r && r.error) || "Could not load default instructions", { bad: true });
+    });
     save.addEventListener("click", async () => {
       await PR.bridge.call("update_settings", { bulk_improve: { outline_prompt: ta.value } });
       PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), outline_prompt: ta.value };
@@ -433,12 +439,18 @@
     const ta = el("textarea", { class: "textarea", style: { minHeight: "200px" } });
     ta.value = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.meta_prompt) || "";
     const save = el("button", { class: "btn btn-primary", text: "Save instructions" });
+    const reset = el("button", { class: "btn btn-ghost", text: "Reset default" });
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
     const m = PR.ui.modal({ title: "JSON AI instructions", wide: true,
       body: el("div", {}, [
         el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. The simpler default loop uses <b>Copy outline library</b>." }),
         ta ]),
-      footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
+      footer: [reset, cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
+    reset.addEventListener("click", async () => {
+      const r = await PR.bridge.call("bulk_prompt_defaults");
+      if (r && r.ok) { ta.value = r.meta_prompt || ""; toast("Default JSON instructions loaded"); }
+      else toast((r && r.error) || "Could not load default instructions", { bad: true });
+    });
     save.addEventListener("click", async () => {
       await PR.bridge.call("update_settings", { bulk_improve: { meta_prompt: ta.value } });
       PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), meta_prompt: ta.value };

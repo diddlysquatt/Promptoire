@@ -15,7 +15,7 @@ import webbrowser
 from typing import Any
 
 from .core import schema
-from .core.settings import DEFAULT_OUTLINE_PROMPT
+from .core.settings import DEFAULT_META_PROMPT, DEFAULT_OUTLINE_PROMPT
 from .platform import clipboard
 
 
@@ -209,6 +209,9 @@ class Api:
     def _outline_prompt(self) -> str:
         prompt = self._app.settings.get("bulk_improve", "outline_prompt", default="")
         return str(prompt or DEFAULT_OUTLINE_PROMPT).strip()
+
+    def bulk_prompt_defaults(self) -> dict:
+        return ok(outline_prompt=DEFAULT_OUTLINE_PROMPT, meta_prompt=DEFAULT_META_PROMPT)
 
     def get_export(self, full: bool = False) -> dict:
         try:
