@@ -9,6 +9,7 @@
 - Plain outline imports from paste, clipboard, `.txt`, `.md`, and `.json` files.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
 - Import preview chips for new nested sections and title-matched updates.
+- Markdown-fenced outline replies are accepted without importing the fence text.
 - Desktop shortcut creation through `setup.bat` and `Create-PromptoireShortcut.ps1`.
 - GitHub release materials: CI, issue templates, PR template, privacy/security docs, contributing guide, and `check-release.bat`.
 

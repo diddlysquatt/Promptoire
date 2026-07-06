@@ -423,7 +423,11 @@ def _parse_import_text(text: str) -> Any:
     data = _parse_loose_json(text)
     if data is not None:
         return data
-    return _parse_outline(text)
+    for candidate in _outline_candidates(text):
+        data = _parse_outline(candidate)
+        if data is not None:
+            return data
+    return None
 
 
 def _parse_loose_json(text: str) -> Any:
@@ -434,12 +438,10 @@ def _parse_loose_json(text: str) -> Any:
     s = text.strip()
     if not s:
         return None
-    # Strip a leading ```json / ``` fence and trailing ```.
-    if "```" in s:
-        import re
-        m = re.search(r"```(?:json)?\s*(.*?)```", s, re.DOTALL)
-        if m:
-            s = m.group(1).strip()
+    # Strip the first fenced block before trying JSON; outline parsing reuses it too.
+    fenced = _first_code_fence(s)
+    if fenced is not None:
+        s = fenced.strip()
     try:
         return json.loads(s)
     except Exception:
@@ -456,6 +458,27 @@ def _parse_loose_json(text: str) -> Any:
             except Exception:
                 pass
     return None
+
+
+_CODE_FENCE_RE = re.compile(r"```[A-Za-z0-9_-]*\s*(.*?)```", re.DOTALL)
+
+
+def _first_code_fence(text: str | None) -> str | None:
+    if not text or "```" not in text:
+        return None
+    m = _CODE_FENCE_RE.search(text.strip())
+    return m.group(1).strip() if m else None
+
+
+def _outline_candidates(text: str | None) -> list[str]:
+    if text is None:
+        return []
+    candidates: list[str] = []
+    fenced = _first_code_fence(text)
+    if fenced:
+        candidates.append(fenced)
+    candidates.append(text)
+    return candidates
 
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")

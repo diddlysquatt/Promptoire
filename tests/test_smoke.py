@@ -115,6 +115,22 @@ def _run_checks():
         assert tmp_lib.categories()[0]["subcategories"][0]["name"] == "Nested"
         out["merge.outline.preserved_nested"] = True
 
+    fenced_outline = """Here is the outline:
+```md
+Path: Writing > Editing
+Title: Tight rewrite
+Prompt: Rewrite {text} clearly.
+```
+"""
+    fenced_outline_data = _parse_import_text(fenced_outline)
+    assert fenced_outline_data is not None, fenced_outline
+    fenced_outline_prompts = list(schema.iter_prompts(fenced_outline_data))
+    out["outline.fenced.total"] = len(fenced_outline_prompts)
+    assert out["outline.fenced.total"] == 1, fenced_outline_prompts
+    fenced_prompt, _, fenced_path = fenced_outline_prompts[0]
+    assert fenced_prompt["title"] == "Tight rewrite", fenced_prompt
+    assert fenced_path == ["Writing", "Editing"], fenced_path
+
     rich_outline = """# AI Art > Characters
 Title: Portrait Builder
 Type: image
