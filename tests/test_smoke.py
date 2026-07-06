@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from promptoire_app.api import _parse_import_text
 from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
+from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS
 from promptoire_app.main import App
 
 
@@ -261,6 +262,8 @@ Bug sweep: Review {code} for bugs.
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
+    out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
+    assert out["settings.blank_repo_link"], SETTINGS_DEFAULTS["links"]
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")
