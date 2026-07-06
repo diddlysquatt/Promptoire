@@ -486,6 +486,29 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert array_path_prompt["title"] == "First draft", array_path_prompt
     assert array_path == ["Writing", "Drafting"], array_path
 
+    image_json_alias_import = """[
+  {
+    "path": "AI Art > Characters > Portraits",
+    "title": "Neon portrait",
+    "prompt": "Neon portrait of {subject}.",
+    "negative_prompt": "blurry, watermark",
+    "image_model": "Midjourney v6",
+    "parameters": "--ar 4:5",
+    "cfg_scale": "7"
+  }
+]"""
+    image_json_alias_data = _parse_import_text(image_json_alias_import)
+    assert image_json_alias_data is not None, image_json_alias_import
+    image_json_alias_lib = schema.normalize_library(image_json_alias_data)
+    image_json_prompt, _, image_json_path = next(schema.iter_prompts(image_json_alias_lib))
+    out["json_image_alias_path"] = image_json_path
+    assert image_json_path == ["AI Art", "Characters", "Portraits"], image_json_path
+    assert image_json_prompt["type"] == "image", image_json_prompt
+    assert image_json_prompt["negative"] == "blurry, watermark", image_json_prompt
+    assert image_json_prompt["model"] == "Midjourney v6", image_json_prompt
+    assert image_json_prompt["params"] == "--ar 4:5", image_json_prompt
+    assert image_json_prompt["cfg"] == "7", image_json_prompt
+
     with tempfile.TemporaryDirectory() as d:
         tmp_lib = PromptLibrary(Path(d) / "prompts.json")
         tmp_lib.data = {"version": 3, "categories": []}
@@ -735,6 +758,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "csv_table_release_check": "CSV tables" in release_checklist,
         "json_alias_release_check": "sections/subsections/items" in release_checklist,
         "json_flat_path_release_check": "flat JSON prompt rows" in release_checklist,
+        "json_image_alias_release_check": "negative_prompt" in release_checklist and "image_model" in release_checklist,
         "incoming_preview_release_check": "incoming/new/updated/unchanged counts" in release_checklist,
         "selected_changes_release_check": "no selected changes" in release_checklist.lower(),
     }

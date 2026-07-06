@@ -102,6 +102,33 @@ def _first_value(raw: dict, *keys: str) -> Any:
     return None
 
 
+def _first_nonempty_value(raw: dict, *keys: str) -> Any:
+    fallback = None
+    for key in keys:
+        if key not in raw:
+            continue
+        value = raw.get(key)
+        if fallback is None:
+            fallback = value
+        if _as_str(value).strip():
+            return value
+    return fallback
+
+
+_IMAGE_FIELD_ALIASES = {
+    "negative": ("negative", "negative_prompt", "negativePrompt", "negative prompt"),
+    "model": ("model", "image_model", "imageModel", "image model", "model_name", "modelName"),
+    "params": ("params", "parameters", "parameter", "settings", "model_params", "modelParams"),
+    "seed": ("seed",),
+    "sampler": ("sampler",),
+    "cfg": ("cfg", "cfg_scale", "cfgScale", "guidance", "guidance_scale", "guidanceScale"),
+}
+
+
+def _image_field_value(raw: dict, field: str) -> Any:
+    return _first_nonempty_value(raw, *_IMAGE_FIELD_ALIASES.get(field, (field,)))
+
+
 def _split_path(value: Any) -> list[str]:
     raw = _as_str(value).strip()
     if not raw:
@@ -216,7 +243,7 @@ def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
     ptype = _as_str(raw.get("type"), "").lower()
     if ptype not in PROMPT_TYPES:
         # Inference order: explicit image metadata > body markers > category hint.
-        if any(raw.get(f) for f in IMAGE_FIELDS) or looks_like_image_prompt(title, body):
+        if any(_image_field_value(raw, f) for f in IMAGE_FIELDS) or looks_like_image_prompt(title, body):
             ptype = "image"
         elif default_type in PROMPT_TYPES:
             ptype = default_type
@@ -249,7 +276,7 @@ def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
         "updated_at": updated,
     }
     for f in IMAGE_FIELDS:
-        p[f] = _as_str(raw.get(f, ""))
+        p[f] = _as_str(_image_field_value(raw, f))
     return p
 
 

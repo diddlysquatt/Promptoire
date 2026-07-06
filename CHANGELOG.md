@@ -14,6 +14,7 @@
 - CSV table imports with `Title` and `Prompt` columns.
 - JSON compatibility imports accept common LLM aliases such as `sections`, `subsections`, `items`, and `entries`.
 - Flat JSON prompt rows can use `path`, `section`, and `subsection` fields to land in the right nested section.
+- JSON image prompt imports accept common field aliases such as `negative_prompt`, `image_model`, `parameters`, and `cfg_scale`.
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.
 - Reset buttons for restoring the default outline and JSON AI instructions.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
