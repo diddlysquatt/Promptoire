@@ -5,8 +5,8 @@ Two providers:
   - "openai":    OpenAI-compatible /chat/completions over stdlib HTTP — works
                  with OpenAI, OpenRouter, local servers, etc. via a base_url.
 
-The whole feature is optional: if no API key is configured the UI hides it,
-and the manual copy/paste loop always works without any of this.
+The whole feature is optional: if no API key is configured the UI points the
+user to Settings, and the manual copy/paste loop always works without any of it.
 """
 
 from __future__ import annotations

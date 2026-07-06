@@ -242,6 +242,7 @@ Bug sweep: Review {code} for bugs.
     out["frontend.script_order"] = shell.scripts
     assert shell.scripts == expected_scripts, shell.scripts
     bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
+    bridge_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bridge.js").read_text(encoding="utf-8")
     settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     bulk_tokens = {
@@ -260,6 +261,8 @@ Bug sweep: Review {code} for bugs.
     assert not missing_bulk_tokens, missing_bulk_tokens
     out["frontend.new_category_preview_css"] = "diff-cat-chip" in components_css
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
+    out["frontend.mock_nested_preview"] = "AI Art / Characters / Portraits" in bridge_js
+    assert out["frontend.mock_nested_preview"], "AI Art / Characters / Portraits"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
     out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
