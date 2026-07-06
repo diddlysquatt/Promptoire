@@ -299,6 +299,7 @@ Bug sweep: Review {code} for bugs.
         "title_match_badge": "matched by title",
         "outline_library_button": "Copy outline library",
         "outline_library_handler": "copyOutlineExport",
+        "json_options_disclosure": "JSON options",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
         "new_category_preview": "newCategoryPreview",
@@ -308,6 +309,8 @@ Bug sweep: Review {code} for bugs.
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
     assert not missing_bulk_tokens, missing_bulk_tokens
+    out["frontend.outline_first_export"] = bulk_js.index("Copy outline library") < bulk_js.index("Copy for AI")
+    assert out["frontend.outline_first_export"], "Copy outline library should stay ahead of JSON export"
     out["frontend.new_category_preview_css"] = "diff-cat-chip" in components_css
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
     out["frontend.mock_nested_preview"] = "AI Art / Characters / Portraits" in bridge_js
@@ -350,6 +353,7 @@ Bug sweep: Review {code} for bugs.
         "readme_security_link": "[Security](SECURITY.md)" in readme_text,
         "privacy_local_first": "local-first" in privacy_text.lower(),
         "privacy_optional_ai": "Improve with AI now" in privacy_text,
+        "privacy_outline_clipboard": "Copy outline library" in privacy_text,
         "security_sensitive_files": "prompts.json" in security_text and "promptoire.config.json" in security_text,
         "gitignore_private_prompt": "prompts.json" in gitignore_text,
         "gitignore_private_config": "promptoire.config.json" in gitignore_text,
@@ -363,7 +367,7 @@ Bug sweep: Review {code} for bugs.
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
         "shortcut_release_check": "PROMPTOIRE` desktop shortcut" in release_checklist,
-        "outline_library_release_check": "Copy outline library" in release_checklist,
+        "outline_library_release_check": "Copy outline library" in release_checklist and "JSON options" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens

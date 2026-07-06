@@ -70,12 +70,17 @@
           el("div", { class: "d", text: "Copies a ready-to-paste prompt plus your library." }) ]),
       ]),
       el("div", { class: "btn-row" }, [
-        el("button", { class: "btn btn-primary", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
-        el("button", { class: "btn", text: "Copy JSON only", onclick: () => copyExport(false) }),
-        el("button", { class: "btn", text: "Copy outline library", onclick: copyOutlineExport }),
+        el("button", { class: "btn btn-primary", html: icon("copy") + " Copy outline library", onclick: copyOutlineExport }),
         el("button", { class: "btn", text: "Copy outline request", onclick: copyOutlineRequest }),
-        el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
-        el("button", { class: "btn btn-ghost", text: "Edit AI instructions", onclick: editMeta }),
+      ]),
+      el("details", { class: "export-more" }, [
+        el("summary", { text: "JSON options" }),
+        el("div", { class: "btn-row" }, [
+          el("button", { class: "btn", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
+          el("button", { class: "btn", text: "Copy JSON only", onclick: () => copyExport(false) }),
+          el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
+          el("button", { class: "btn btn-ghost", text: "Edit AI instructions", onclick: editMeta }),
+        ]),
       ]),
       el("div", { class: "ai-direct" }, [
         el("div", { class: "ai-direct-or", text: "— or skip the copy/paste —" }),
