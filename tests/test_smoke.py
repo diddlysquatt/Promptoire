@@ -241,6 +241,7 @@ Bug sweep: Review {code} for bugs.
     out["frontend.script_order"] = shell.scripts
     assert shell.scripts == expected_scripts, shell.scripts
     bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
+    settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     bulk_tokens = {
         "safe_merge_card": "merge-card",
@@ -258,6 +259,8 @@ Bug sweep: Review {code} for bugs.
     assert not missing_bulk_tokens, missing_bulk_tokens
     out["frontend.new_category_preview_css"] = "diff-cat-chip" in components_css
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
+    out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
+    assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")
