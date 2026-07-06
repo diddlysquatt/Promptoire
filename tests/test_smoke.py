@@ -216,6 +216,8 @@ Tags: editing, clarity
         "merge_action_guard": "Choose Add new or Update existing",
         "merge_state_sync": "syncMergeState",
         "title_match_badge": "matched by title",
+        "outline_example_button": "Use outline example",
+        "outline_example_handler": "insertOutlineExample",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens

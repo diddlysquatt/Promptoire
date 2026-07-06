@@ -22,6 +22,14 @@
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Now create prompts for this topic or workflow:\n\n";
 
+  const EXAMPLE_OUTLINE =
+    "Coding\n" +
+    "  Debugging\n" +
+    "    Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
+    "Section: Writing\n" +
+    "Subsection: Editing\n" +
+    "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n";
+
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote;
 
   function render() {
@@ -73,6 +81,7 @@
       pasteArea,
       el("div", { class: "btn-row", style: { marginTop: "10px" } }, [
         el("button", { class: "btn", text: "Load from file…", onclick: loadFile }),
+        el("button", { class: "btn", text: "Use outline example", onclick: insertOutlineExample }),
         el("button", { class: "btn btn-primary", html: icon("check") + " Preview changes", onclick: preview }),
       ]),
     ]);
@@ -180,6 +189,14 @@
     const r = await PR.bridge.call("load_import_file");
     PR.state.suppressBlur = false;
     if (r && r.ok && r.text) { pasteArea.value = r.text; preview(); }
+  }
+  function insertOutlineExample() {
+    pasteArea.value = EXAMPLE_OUTLINE;
+    previewBox.innerHTML = "";
+    delete previewBox.dataset.ready;
+    syncMergeState();
+    pasteArea.focus();
+    toast("Outline example inserted");
   }
 
   async function preview() {
