@@ -161,7 +161,7 @@ Then commit the app changes normally. `prompts.json` stays on your machine, but 
 
 Run `check-release.bat` before pushing. It runs the smoke tests, compile checks, frontend syntax checks, real WebView self-test, and a guard that fails if private runtime files are tracked.
 
-For sharing or review, see [Contributing](CONTRIBUTING.md), [Privacy](docs/PRIVACY.md), and [Security](SECURITY.md). Short version: Promptoire has no telemetry, stores data locally by default, and only sends prompt data out when you copy it to another tool or use the optional direct AI improve button.
+For sharing or review, see [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), [Privacy](docs/PRIVACY.md), and [Security](SECURITY.md). Short version: Promptoire has no telemetry, stores data locally by default, and only sends prompt data out when you copy it to another tool or use the optional direct AI improve button.
 
 ## ❤️ Support
 

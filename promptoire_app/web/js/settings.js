@@ -214,7 +214,7 @@
     s.appendChild(el("div", { class: "about" }, [
       el("div", { class: "logo-big", text: "P" }),
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
-      el("div", { class: "ver", text: "v" + (PR.state.version || "2.2.0") + " · local-first · open source" }),
+      el("div", { class: "ver", text: "v" + (PR.state.version || "2.3.0") + " · local-first · open source" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("button", { class: "coffee", title: currentCoffee ? "Open Buy Me a Coffee" : "Set Buy Me a Coffee link",
         html: "☕ &nbsp;Buy Me a Coffee",

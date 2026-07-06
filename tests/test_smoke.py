@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from promptoire_app.api import _parse_import_text
+from promptoire_app import __version__
 from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
 from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS, Settings
@@ -44,6 +45,8 @@ def _run_checks():
     out["state.stats"] = st["stats"]
     out["state.categories"] = [c["name"] for c in st["categories"]]
     out["state.hotkey_available"] = st["hotkey_available"]
+    out["state.version"] = st["version"]
+    assert out["state.version"] == __version__, out["state.version"]
 
     s = api.search("review")
     assert s["ok"], s
@@ -319,6 +322,11 @@ Bug sweep: Review {code} for bugs.
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
     out["frontend.mock_nested_preview"] = "AI Art / Characters / Portraits" in bridge_js
     assert out["frontend.mock_nested_preview"], "AI Art / Characters / Portraits"
+    out["frontend.version_fallbacks"] = (
+        f'version:"{__version__}-preview"' in bridge_js
+        and f'PR.state.version || "{__version__}"' in settings_js
+    )
+    assert out["frontend.version_fallbacks"], __version__
     out["frontend.mock_clipboard_import"] = "get_clipboard_text" in bridge_js and "AI Art > Characters > Portraits" in bridge_js
     assert out["frontend.mock_clipboard_import"], "get_clipboard_text"
     out["frontend.mock_save_outline"] = "save_outline_file" in bridge_js and "prompts-outline.txt" in bridge_js
@@ -346,6 +354,7 @@ Bug sweep: Review {code} for bugs.
     readme_text = (root / "README.md").read_text(encoding="utf-8")
     privacy_text = (root / "docs" / "PRIVACY.md").read_text(encoding="utf-8")
     security_text = (root / "SECURITY.md").read_text(encoding="utf-8")
+    changelog_text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     contributing_text = (root / "CONTRIBUTING.md").read_text(encoding="utf-8")
     gitignore_text = (root / ".gitignore").read_text(encoding="utf-8")
     bug_template = (root / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml").read_text(encoding="utf-8")
@@ -362,6 +371,8 @@ Bug sweep: Review {code} for bugs.
         "readme_privacy_link": "[Privacy](docs/PRIVACY.md)" in readme_text,
         "readme_security_link": "[Security](SECURITY.md)" in readme_text,
         "readme_contributing_link": "[Contributing](CONTRIBUTING.md)" in readme_text,
+        "readme_changelog_link": "[Changelog](CHANGELOG.md)" in readme_text,
+        "changelog_current_version": f"## {__version__} -" in changelog_text and "Outline-first bulk workflow" in changelog_text,
         "contributing_local_first": "local-first" in contributing_text.lower(),
         "contributing_private_data": "prompts.json" in contributing_text and "promptoire.config.json" in contributing_text,
         "contributing_release_check": "check-release.bat" in contributing_text,
@@ -381,6 +392,7 @@ Bug sweep: Review {code} for bugs.
             and "promptoire.config.json" in pr_template
         ),
         "release_selftest": "--selftest" in release_checklist and '"mock": false' in release_checklist,
+        "release_changelog_check": "CHANGELOG.md" in release_checklist,
         "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
