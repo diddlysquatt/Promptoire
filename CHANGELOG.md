@@ -8,6 +8,7 @@
 - Safe outline merge support that matches existing prompts by section path and title when ids are not present.
 - Plain outline imports from paste, clipboard, `.txt`, `.md`, and `.json` files.
 - Nested bullet-tree outline imports and deeper `Sub-subsection:` / `Nested subsection:` labels.
+- Deeper Markdown prompt headings such as `### Prompt title` can import as prompt titles when followed by body text.
 - YAML-style `- Title:` prompt blocks with indented fields.
 - Markdown table imports with `Title` and `Prompt` columns.
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.

@@ -70,6 +70,7 @@ gh auth refresh --scopes workflow
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge.
 - Confirm `Load from file` accepts outline `.txt` / `.md` files as well as `.json`.
 - Confirm nested bullet outlines and `Sub-subsection:` / `Nested subsection:` labels import as nested sections.
+- Confirm deeper Markdown prompt headings like `### Prompt title` import as prompt titles when followed by body text.
 - Confirm YAML-style `- Title:` blocks with indented `Prompt:` / `Tags:` fields import as separate prompts.
 - Confirm Markdown tables with `Title` and `Prompt` columns import as prompts.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.

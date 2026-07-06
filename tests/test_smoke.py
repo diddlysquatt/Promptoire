@@ -190,6 +190,32 @@ CFG scale: 7
     )
     assert out["ai_improve.outline_payload"], captured.get("payload", "")
 
+    markdown_prompt_heading = """# Writing
+## Editing
+### Tight rewrite
+Rewrite {text} clearly while preserving the original voice.
+
+### Style adapter
+Prompt: Rewrite {text} so it fits this style guide: {style_guide}
+Tags: writing, style
+
+## Drafting
+### First draft
+Draft a useful first pass about {topic}.
+"""
+    md_heading = _parse_import_text(markdown_prompt_heading)
+    assert md_heading is not None, markdown_prompt_heading
+    md_heading_prompts = list(schema.iter_prompts(md_heading))
+    out["outline.markdown_prompt_headings.total"] = len(md_heading_prompts)
+    assert out["outline.markdown_prompt_headings.total"] == 3, md_heading_prompts
+    md_heading_paths = {p["title"]: path for p, _, path in md_heading_prompts}
+    assert md_heading_paths["Tight rewrite"] == ["Writing", "Editing"], md_heading_paths
+    assert md_heading_paths["Style adapter"] == ["Writing", "Editing"], md_heading_paths
+    assert md_heading_paths["First draft"] == ["Writing", "Drafting"], md_heading_paths
+    style_adapter = next(p for p, _, _ in md_heading_prompts if p["title"] == "Style adapter")
+    assert style_adapter["tags"] == ["writing", "style"], style_adapter
+    assert style_adapter["prompt"].startswith("Rewrite {text}"), style_adapter
+
     relaxed_outline = """Workflows
   Research
     Evidence map: Map the strongest sources for {topic}, grouped by reliability.
@@ -471,6 +497,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "numbered_prompt_blocks": "Prompt 1:",
         "yamlish_prompt_blocks": "- Title:",
         "nested_bullet_imports": "Nested bullet outlines",
+        "markdown_prompt_heading_imports": "Markdown prompt headings",
         "table_imports": "Markdown tables",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
@@ -616,6 +643,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
         "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,
         "nested_bullet_release_check": "nested bullet outlines" in release_checklist,
+        "markdown_heading_release_check": "Markdown prompt headings" in release_checklist,
         "yamlish_release_check": "YAML-style" in release_checklist and "- Title:" in release_checklist,
         "markdown_table_release_check": "Markdown tables" in release_checklist,
     }

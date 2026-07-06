@@ -514,10 +514,11 @@ def _parse_outline(text: str) -> dict | None:
       ## Subsection
       - Prompt title: prompt body
 
-    Headings become nested categories. Bullets, numbered items, `Prompt 1:`
-    markers, `Title:` / `Prompt:` fields, and separated paragraphs become
-    prompts. This is meant to make LLM-authored imports easy without forcing
-    users to hand-edit JSON.
+    Headings become nested categories. Deeper Markdown headings followed by
+    plain body text can also become prompt titles. Bullets, numbered items,
+    `Prompt 1:` markers, `Title:` / `Prompt:` fields, and separated paragraphs
+    become prompts. This is meant to make LLM-authored imports easy without
+    forcing users to hand-edit JSON.
     """
     if text is None:
         return None
@@ -662,9 +663,19 @@ def _parse_outline(text: str) -> dict | None:
 
         heading = _HEADING_RE.match(line)
         if heading:
-            add_heading(len(heading.group(1)), heading.group(2).strip())
-            previous_blank = False
-            last_was_heading = True
+            level = len(heading.group(1))
+            title = heading.group(2).strip()
+            if _looks_like_prompt_heading(level, title, lines, idx):
+                finish_prompt()
+                block = ensure_block()
+                block["title"] = _clean_heading_name(title)
+                block["started"] = True
+                previous_blank = False
+                last_was_heading = False
+            else:
+                add_heading(level, title)
+                previous_blank = False
+                last_was_heading = True
             continue
 
         if _SEPARATOR_RE.match(line):
@@ -845,6 +856,24 @@ def _looks_like_plain_heading(
     if current is None and (_BULLET_RE.match(next_raw) or _FIELD_RE.match(next_line)):
         return True
     return False
+
+
+def _looks_like_prompt_heading(level: int, raw_title: str, lines: list[str], idx: int) -> bool:
+    title = _clean_heading_name(raw_title)
+    if level < 3 or not title or len(title) > 90:
+        return False
+    nxt = _next_content_line(lines, idx)
+    if nxt is None:
+        return False
+    next_raw, next_line = nxt
+    if _HEADING_RE.match(next_line) or _BULLET_RE.match(next_raw):
+        return False
+    if _PATH_FIELD_RE.match(next_line) or _PROMPT_MARKER_RE.match(next_line):
+        return False
+    field = _FIELD_RE.match(next_line)
+    if field:
+        return _normalize_outline_field(field.group(1)) != "title"
+    return not bool(_split_title_body(next_line)[1])
 
 
 def _looks_like_bullet_heading(raw: str, text: str, lines: list[str], idx: int) -> bool:
