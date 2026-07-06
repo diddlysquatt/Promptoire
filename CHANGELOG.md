@@ -32,6 +32,7 @@
 - GitHub publish-readiness verification through `Check-GitHubPublish.ps1`.
 - Publish-readiness warnings when the project folder still displays with non-`PROMPTOIRE` casing.
 - Publish-readiness warnings for blank/generic Buy Me a Coffee support links.
+- Publish-readiness checks now normalize support links before judging whether they are generic placeholders.
 - Support links typed without `https://` are normalized before saving or opening.
 - GitHub release materials: CI, issue templates, PR template, privacy/security docs, contributing guide, and `check-release.bat`.
 

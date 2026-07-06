@@ -54,7 +54,7 @@ node --check promptoire_app/web/js/app.js
 ## Repository Setup
 
 - Add the real GitHub remote.
-- Run `Check-GitHubPublish.ps1` and fix any failures before pushing. Treat its folder-name and Buy Me a Coffee support-link warnings as reminders to finish local polish before packaging or public release.
+- Run `Check-GitHubPublish.ps1` and fix any failures before pushing. Treat its folder-name and Buy Me a Coffee support-link warnings as reminders to finish local polish before packaging or public release; scheme-less support links are normalized before that check.
 - Before pushing workflow changes for the first time, confirm `gh auth status` includes `workflow`.
   If GitHub rejects the push for workflow scope, run:
 

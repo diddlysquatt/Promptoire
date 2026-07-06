@@ -32,8 +32,22 @@ function Normalize-Link($value) {
   return ([string]$value).Trim()
 }
 
-function Test-GenericCoffeeUrl($value) {
+function Normalize-OptionalUrl($value) {
   $raw = Normalize-Link $value
+  if (-not $raw) {
+    return ""
+  }
+  if ($raw -match "^[a-zA-Z][a-zA-Z0-9+.-]*://") {
+    return $raw
+  }
+  if ($raw -notmatch "^[/#]" -and $raw -match "^[^\s/]+\.[^\s]+") {
+    return "https://$raw"
+  }
+  return $raw
+}
+
+function Test-GenericCoffeeUrl($value) {
+  $raw = Normalize-OptionalUrl $value
   if (-not $raw) {
     return $false
   }
@@ -132,7 +146,7 @@ if (Test-Path -LiteralPath $configPath) {
     $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
     $coffee = ""
     if ($null -ne $config.links -and $null -ne $config.links.coffee) {
-      $coffee = Normalize-Link $config.links.coffee
+      $coffee = Normalize-OptionalUrl $config.links.coffee
     }
     if ($coffee -and -not (Test-GenericCoffeeUrl $coffee)) {
       Pass "Buy Me a Coffee support link is configured locally."
