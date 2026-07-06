@@ -62,7 +62,7 @@ gh auth refresh --scopes workflow
 - Confirm `docs/PRIVACY.md` and `SECURITY.md` accurately describe current local data, optional AI calls, and sensitive files.
 - Confirm `CHANGELOG.md` lists the release version shown in Settings.
 - Confirm GitHub issue and pull request templates warn contributors not to paste private prompts, `prompts.json`, `promptoire.config.json`, or API keys.
-- Set the final Buy Me a Coffee link in Settings or keep the blank default; blank links prompt the user to configure support instead of opening a generic page.
+- Set the final Buy Me a Coffee link in Settings or keep the blank default; blank/generic root links prompt the user to configure support instead of opening a generic page.
 - Confirm the Improve Library panel shows `Copy outline library` as the default export action, offers `Edit instructions` and `Save outline`, keeps `Copy outline request` beside it, and tucks `Copy for AI` / JSON export under `JSON options`.
 - Confirm `Edit instructions` changes the outline prompt used by `Copy outline library` and `Improve with AI now`; JSON instructions stay under `JSON options`.
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge.

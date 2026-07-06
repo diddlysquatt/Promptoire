@@ -8,6 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 DEFAULT_META_PROMPT = (
     "You are a senior prompt engineer. Below is my entire prompt library as JSON.\n"
@@ -99,12 +100,30 @@ def _generic_url(value: Any) -> str:
     return str(value or "").strip().rstrip("/").lower()
 
 
+def _generic_coffee_url(value: Any) -> bool:
+    raw = str(value or "").strip()
+    if not raw:
+        return False
+    parsed = urlparse(raw)
+    host = (parsed.hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    path = (parsed.path or "").strip("/")
+    return (
+        parsed.scheme.lower() in ("http", "https")
+        and host == "buymeacoffee.com"
+        and not path
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
 def _sanitize_links(data: dict) -> None:
     links = data.setdefault("links", {})
     if not isinstance(links, dict):
         data["links"] = copy.deepcopy(DEFAULTS["links"])
         return
-    if _generic_url(links.get("coffee")) == "https://www.buymeacoffee.com":
+    if _generic_coffee_url(links.get("coffee")):
         links["coffee"] = ""
     if _generic_url(links.get("repo")) == "https://github.com":
         links["repo"] = ""

@@ -230,13 +230,20 @@
 
   function configuredCoffeeUrl(raw) {
     const url = String(raw || "").trim();
-    if (!url || url === GENERIC_COFFEE_URL) return "";
+    if (!url) return "";
     try {
       const parsed = new URL(url);
-      return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+      if (!["http:", "https:"].includes(parsed.protocol) || isGenericCoffeeUrl(parsed)) return "";
+      return parsed.href;
     } catch (e) {
       return "";
     }
+  }
+
+  function isGenericCoffeeUrl(parsed) {
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    const path = parsed.pathname.replace(/\/+$/, "");
+    return host === "buymeacoffee.com" && !path && !parsed.search && !parsed.hash;
   }
 
   function save(patch) {

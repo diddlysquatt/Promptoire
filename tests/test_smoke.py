@@ -404,6 +404,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert shell.scripts == expected_scripts, shell.scripts
     bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
     bridge_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bridge.js").read_text(encoding="utf-8")
+    app_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "app.js").read_text(encoding="utf-8")
     settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     bulk_tokens = {
@@ -454,24 +455,34 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.mock_outline_prompt_setting"], "outline_prompt"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
+    out["frontend.generic_coffee_guard"] = (
+        "isGenericCoffeeUrl" in app_js
+        and "isGenericCoffeeUrl" in settings_js
+        and 'host === "buymeacoffee.com"' in app_js
+        and 'host === "buymeacoffee.com"' in settings_js
+    )
+    assert out["frontend.generic_coffee_guard"], "isGenericCoffeeUrl"
     out["settings.outline_prompt_default"] = "Return only the outline" in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
     assert out["settings.outline_prompt_default"], SETTINGS_DEFAULTS["bulk_improve"]
     out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
     assert out["settings.blank_repo_link"], SETTINGS_DEFAULTS["links"]
-    with tempfile.TemporaryDirectory() as settings_dir:
-        saved_settings = Path(settings_dir) / "promptoire.config.json"
-        saved_settings.write_text(json.dumps({
-            "links": {
-                "coffee": "https://www.buymeacoffee.com/",
-                "repo": "https://github.com/",
-            }
-        }), encoding="utf-8")
-        loaded_settings = Settings(saved_settings).load()
-        out["settings.sanitized_placeholder_links"] = (
-            loaded_settings.get("links", "coffee") == ""
-            and loaded_settings.get("links", "repo") == ""
-        )
-        assert out["settings.sanitized_placeholder_links"], loaded_settings.get("links")
+    sanitized_cases = []
+    for coffee_url in ("https://www.buymeacoffee.com/", "https://buymeacoffee.com"):
+        with tempfile.TemporaryDirectory() as settings_dir:
+            saved_settings = Path(settings_dir) / "promptoire.config.json"
+            saved_settings.write_text(json.dumps({
+                "links": {
+                    "coffee": coffee_url,
+                    "repo": "https://github.com/",
+                }
+            }), encoding="utf-8")
+            loaded_settings = Settings(saved_settings).load()
+            sanitized_cases.append(
+                loaded_settings.get("links", "coffee") == ""
+                and loaded_settings.get("links", "repo") == ""
+            )
+    out["settings.sanitized_placeholder_links"] = all(sanitized_cases)
+    assert out["settings.sanitized_placeholder_links"], sanitized_cases
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")
@@ -527,6 +538,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
+        "generic_support_release_check": "blank/generic root links" in release_checklist,
         "publish_check_documented": (
             "Check-GitHubPublish.ps1" in readme_text
             and "Check-GitHubPublish.ps1" in release_checklist
