@@ -1,14 +1,33 @@
-/* launcher.js — the search-and-copy core */
+/* launcher.js — the search-and-copy core.
+
+   Two modes:
+     browse (empty query)  — the full prompt tree, grouped by category with
+                             collapsible color-coded headers and a category rail
+     search (typed query)  — flat ranked hits with a breadcrumb on each card
+*/
 (function () {
   "use strict";
   const PR = window.PROMPTOIRE;
   const { el, escapeHtml, highlight, icon, toast, modal, findPlaceholders, fillPlaceholders } = PR.ui;
 
-  let resultsEl, searchEl, debounceTimer, staggerNext = true;
+  const COLLAPSE_KEY = "promptoire.launcher.collapsed";
+
+  let resultsEl, searchEl, railEl, debounceTimer, staggerNext = true;
+  let collapsed = loadCollapsed();
+
+  function loadCollapsed() {
+    try { return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]")); }
+    catch (e) { return new Set(); }
+  }
+  function saveCollapsed() {
+    try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...collapsed])); }
+    catch (e) { /* private mode etc. — collapse state just won't persist */ }
+  }
 
   function init() {
     resultsEl = document.getElementById("results");
     searchEl = document.getElementById("search");
+    railEl = document.getElementById("catrail");
 
     searchEl.addEventListener("input", () => {
       PR.state.query = searchEl.value;
@@ -20,30 +39,204 @@
     document.getElementById("filters").addEventListener("click", (e) => {
       const chip = e.target.closest(".chip");
       if (!chip) return;
-      document.querySelectorAll("#filters .chip").forEach((c) => c.classList.remove("is-active"));
-      chip.classList.add("is-active");
-      PR.state.filter = chip.dataset.filter;
+      setFilter(chip.dataset.filter);
+    });
+
+    railEl.addEventListener("click", (e) => {
+      const chip = e.target.closest(".railchip");
+      if (!chip) return;
+      const id = chip.dataset.id;
+      PR.state.catFilter = PR.state.catFilter === id ? null : id;
       runSearch();
+      focusSearch();
     });
 
     resultsEl.addEventListener("mousemove", (e) => {
       const card = e.target.closest(".card");
       if (card && card.dataset.idx != null) setSelected(+card.dataset.idx, false);
     });
+
+    // Clicking a tag chip searches for that tag.
+    resultsEl.addEventListener("click", (e) => {
+      const tag = e.target.closest(".tag");
+      if (!tag) return;
+      e.stopPropagation();
+      searchEl.value = PR.state.query = "#" + tag.dataset.tag;
+      runSearch();
+      focusSearch();
+    });
   }
+
+  function setFilter(f) {
+    PR.state.filter = f;
+    document.querySelectorAll("#filters .chip").forEach((c) =>
+      c.classList.toggle("is-active", c.dataset.filter === f));
+    runSearch();
+  }
+
+  /* ---- category helpers --------------------------------------------------- */
+
+  function passesFilter(p) {
+    const f = PR.state.filter;
+    if (f === "text" || f === "image") return (p.type || "text") === f;
+    if (f === "favorites") return !!p.favorite;
+    return true;
+  }
+
+  // ids of a category and all its descendants (for search-mode cat filtering)
+  function subtreeIds(cat) {
+    const ids = new Set([cat.id]);
+    (function walk(c) {
+      (c.subcategories || []).forEach((s) => { ids.add(s.id); walk(s); });
+    })(cat);
+    return ids;
+  }
+
+  function findTopCat(id) {
+    return (PR.state.categories || []).find((c) => c.id === id) || null;
+  }
+
+  /* ---- search / render dispatch ------------------------------------------- */
 
   async function runSearch(fresh = true) {
     staggerNext = fresh;
     const { query, filter } = PR.state;
+    renderRail();
+    if (!query.trim()) {
+      renderBrowse();
+      return;
+    }
     const favOnly = filter === "favorites";
     const typeFilter = filter === "text" || filter === "image" ? filter : "all";
     const res = await PR.bridge.call("search", query, typeFilter, favOnly, "");
-    PR.state.results = (res && res.results) || [];
+    let hits = (res && res.results) || [];
+    if (PR.state.catFilter) {
+      const top = findTopCat(PR.state.catFilter);
+      if (top) {
+        const ids = subtreeIds(top);
+        hits = hits.filter((h) => ids.has(h.category_id));
+      }
+    }
+    PR.state.results = hits;
     PR.state.selected = 0;
-    render();
+    renderFlat();
   }
 
-  function render() {
+  /* ---- category rail -------------------------------------------------------- */
+
+  function renderRail() {
+    const cats = PR.state.categories || [];
+    railEl.innerHTML = "";
+    railEl.classList.toggle("hidden", cats.length < 2);
+    if (cats.length < 2) return;
+    cats.forEach((c) => {
+      const n = countTree(c);
+      const chip = el("button", {
+        class: "railchip" + (PR.state.catFilter === c.id ? " is-active" : ""),
+        dataset: { id: c.id },
+        style: c.color ? { "--rail-accent": c.color } : {},
+        title: c.name + " — " + n + " prompt" + (n === 1 ? "" : "s"),
+      }, [
+        c.icon ? el("span", { class: "railicon", text: c.icon }) : null,
+        el("span", { class: "railname", text: c.name }),
+        el("span", { class: "railcount", text: n }),
+      ]);
+      railEl.appendChild(chip);
+    });
+  }
+
+  function countTree(cat) {
+    let n = (cat.prompts || []).filter(passesFilter).length;
+    (cat.subcategories || []).forEach((s) => (n += countTree(s)));
+    return n;
+  }
+
+  /* ---- browse mode: the grouped prompt tree --------------------------------- */
+
+  function renderBrowse() {
+    const cats = (PR.state.categories || []).filter(
+      (c) => !PR.state.catFilter || c.id === PR.state.catFilter
+    );
+    resultsEl.classList.toggle("stagger", staggerNext);
+    resultsEl.innerHTML = "";
+
+    const flat = [];   // visible cards in render order -> PR.state.results
+    const frag = document.createDocumentFragment();
+    const forceOpen = !!PR.state.catFilter;
+
+    cats.forEach((c) => {
+      const g = groupNode(c, "", 0, flat, forceOpen);
+      if (g) frag.appendChild(g);
+    });
+
+    PR.state.results = flat;
+    PR.state.selected = 0;
+
+    if (!flat.length && !frag.childNodes.length) {
+      resultsEl.appendChild(emptyState(""));
+      return;
+    }
+    resultsEl.appendChild(frag);
+    scrollSelectedIntoView();
+  }
+
+  function groupNode(cat, inheritedColor, depth, flat, forceOpen) {
+    const color = cat.color || inheritedColor;
+    const own = (cat.prompts || []).filter(passesFilter);
+    const kids = (cat.subcategories || [])
+      .map((s) => groupNode(s, color, depth + 1, flat, forceOpen))
+      .filter(Boolean);
+    const total = countTree(cat);
+    if (!own.length && !kids.length) return null; // nothing visible under filter
+
+    const isCollapsed = !forceOpen && collapsed.has(cat.id);
+    const group = el("section", {
+      class: "group" + (isCollapsed ? " collapsed" : "") + (depth ? " nested" : ""),
+      style: color ? { "--group-accent": color } : {},
+    });
+
+    const head = el("button", { class: "group-head", "aria-expanded": String(!isCollapsed) }, [
+      el("span", { class: "group-caret", html: icon("caret") }),
+      cat.icon ? el("span", { class: "group-icon", text: cat.icon }) : el("span", { class: "group-dot" }),
+      el("span", { class: "group-name", text: cat.name }),
+      el("span", { class: "group-count", text: total }),
+    ]);
+    head.addEventListener("click", () => {
+      if (collapsed.has(cat.id)) collapsed.delete(cat.id);
+      else collapsed.add(cat.id);
+      saveCollapsed();
+      renderBrowse();
+      focusSearch();
+    });
+    group.appendChild(head);
+
+    const body = el("div", { class: "group-body" });
+    if (!isCollapsed) {
+      own.forEach((p) => {
+        const hit = browseHit(p, cat, color);
+        const idx = flat.length;
+        flat.push(hit);
+        body.appendChild(card(hit, idx, "", { hideCat: true }));
+      });
+      kids.forEach((k) => body.appendChild(k));
+      group.appendChild(body);
+    }
+    return group;
+  }
+
+  // Shape a raw library prompt like a search hit so card() can render either.
+  function browseHit(p, cat, effColor) {
+    return Object.assign({}, p, {
+      category_id: cat.id,
+      category_name: cat.name,
+      category_color: effColor || cat.color || "",
+      category_icon: cat.icon || "",
+    });
+  }
+
+  /* ---- search mode: flat ranked list ---------------------------------------- */
+
+  function renderFlat() {
     const { results, query } = PR.state;
     resultsEl.classList.toggle("stagger", staggerNext);
     resultsEl.innerHTML = "";
@@ -58,12 +251,30 @@
   }
 
   function emptyState(query) {
+    if (PR.state.filter === "favorites" && !query) {
+      return el("div", { class: "empty" }, [
+        el("div", { class: "emoji", text: "★" }),
+        el("h3", { text: "No favorites yet" }),
+        el("p", { html: "Hover any prompt and hit the <b>star</b> — favorites float to the top of search." }),
+      ]);
+    }
+    if (PR.state.catFilter && !query) {
+      const top = findTopCat(PR.state.catFilter);
+      const name = top ? top.name : "this category";
+      return el("div", { class: "empty" }, [
+        el("div", { class: "emoji", text: (top && top.icon) || "📁" }),
+        el("h3", { text: "Nothing in " + name + " yet" }),
+        el("p", { html: "Add the first prompt — it'll live right here." }),
+        el("button", { class: "btn btn-primary btn-sm", text: "New prompt",
+          onclick: () => PR.editor.newPrompt(PR.state.catFilter) }),
+      ]);
+    }
     if (query) {
       return el("div", { class: "empty" }, [
         el("div", { class: "emoji", text: "🔍" }),
         el("h3", { text: "No matches" }),
         el("p", { html: `Nothing for “${escapeHtml(query)}”. Try a different word, or <b>create it</b>.` }),
-        el("button", { class: "btn btn-primary btn-sm", text: "New prompt", onclick: () => PR.editor.newPrompt(null, { title: query }) }),
+        el("button", { class: "btn btn-primary btn-sm", text: "New prompt", onclick: () => PR.editor.newPrompt(null, { title: query.replace(/#\S+\s*/g, "").trim() }) }),
       ]);
     }
     return el("div", { class: "empty" }, [
@@ -74,10 +285,18 @@
     ]);
   }
 
-  function card(p, i, query) {
+  /* ---- cards ----------------------------------------------------------------- */
+
+  function card(p, i, query, opts) {
+    opts = opts || {};
     const accent = p.category_color || "";
     const glyph = p.type === "image" ? "▦" : "✎";
-    const tags = (p.tags || []).slice(0, 3).map((t) => el("span", { class: "tag", text: t }));
+    const tags = (p.tags || []).slice(0, 3).map((t) =>
+      el("button", { class: "tag", text: t, dataset: { tag: t }, title: "Filter by #" + t }));
+
+    const crumb = !opts.hideCat && (p.path && p.path.length > 1)
+      ? p.path.join(" › ")
+      : (!opts.hideCat ? p.category_name : "");
 
     const node = el("button", {
       class: "card", dataset: { idx: i, id: p.id },
@@ -86,21 +305,37 @@
       el("div", { class: "card-top" }, [
         el("span", { class: "type-glyph " + (p.type === "image" ? "image" : ""), text: glyph }),
         el("span", { class: "card-title", html: highlight(p.title || "Untitled", query) }),
+        p.favorite ? el("span", { class: "card-fav", html: icon("star") }) : null,
       ]),
-      p.prompt ? el("div", { class: "card-preview", html: highlight(p.prompt, query) }) : null,
-      el("div", { class: "card-meta" }, [
-        p.category_name ? el("span", { class: "cat-chip", text: p.category_name }) : null,
+      p.prompt ? el("div", { class: "card-preview", html: highlight(preview(p.prompt, query), query) }) : null,
+      (crumb || tags.length) ? el("div", { class: "card-meta" }, [
+        crumb ? el("span", { class: "cat-chip", text: (p.category_icon ? p.category_icon + " " : "") + crumb }) : null,
         ...tags,
-      ]),
+      ]) : null,
       cardActions(p),
       el("div", { class: "copied-cue", text: "Copied ✓" }),
     ]);
 
     node.addEventListener("click", (e) => {
-      if (e.target.closest(".card-actions")) return;
+      if (e.target.closest(".card-actions") || e.target.closest(".tag")) return;
       copy(p, node);
     });
     return node;
+  }
+
+  // Trim very long bodies to a window around the first match (keeps the
+  // 2-line clamp showing something relevant instead of always the opening).
+  function preview(text, query) {
+    const MAX = 220;
+    if (text.length <= MAX) return text;
+    const q = (query || "").replace(/#\S+/g, "").trim();
+    let at = 0;
+    if (q) {
+      const hit = text.toLowerCase().indexOf(q.split(/\s+/)[0].toLowerCase());
+      if (hit > 60) at = Math.max(0, hit - 40);
+    }
+    const slice = text.slice(at, at + MAX);
+    return (at ? "…" : "") + slice + (at + MAX < text.length ? "…" : "");
   }
 
   function cardActions(p) {
@@ -132,9 +367,6 @@
     if (r && r.ok) {
       if (node) { node.classList.add("flash"); setTimeout(() => node && node.classList.remove("flash"), 520); }
       toast("Copied “" + (title || "prompt") + "”");
-      if (r.spring && !PR.state.pinned && PR.app) {
-        // window hides itself Python-side; nothing else to do
-      }
     } else {
       toast((r && r.error) || "Copy failed", { bad: true });
     }
@@ -182,6 +414,8 @@
     const n = PR.state.results.length;
     if (e.key === "ArrowDown") { e.preventDefault(); setSelected(Math.min(PR.state.selected + 1, n - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setSelected(Math.max(PR.state.selected - 1, 0)); }
+    else if (e.key === "PageDown") { e.preventDefault(); setSelected(Math.min(PR.state.selected + 5, n - 1)); }
+    else if (e.key === "PageUp") { e.preventDefault(); setSelected(Math.max(PR.state.selected - 5, 0)); }
     else if (e.key === "Enter") {
       e.preventDefault();
       const p = PR.state.results[PR.state.selected];
@@ -211,5 +445,5 @@
 
   function focusSearch() { if (searchEl) { searchEl.focus(); searchEl.select(); } }
 
-  PR.launcher = { init, runSearch, render, focusSearch };
+  PR.launcher = { init, runSearch, render: renderFlat, focusSearch, setFilter };
 })();

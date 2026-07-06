@@ -14,6 +14,7 @@
     view: "launcher",       // launcher | editor | bulk | settings
     query: "",
     filter: "all",          // all | text | image | favorites
+    catFilter: null,        // category id (with its subtree) or null = all
     results: [],
     selected: 0,
 

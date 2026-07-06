@@ -40,6 +40,7 @@ cache/
 backups/
 
 # Promptoire (new app) runtime files
+prompts.json
 promptoire.config.json
 _selftest.json
 .webcache/

@@ -48,7 +48,7 @@
       });
       themeGrid.appendChild(sw);
     });
-    host.appendChild(section("Appearance", el("div", {}, [themeGrid])));
+    host.appendChild(section("Appearance", el("div", {}, [themeGrid, accentPicker(s)])));
 
     /* System */
     host.appendChild(section("System", card([
@@ -112,6 +112,31 @@
   }
   function sBtn(label, on, onclick) { return el("button", { class: on ? "on" : "", text: label, onclick }); }
 
+  function accentPicker(s) {
+    const colors = ["#7c5cff", "#22d3ee", "#34d399", "#f472b6", "#fb923c", "#f43f5e", "#fbbf24", "#e5e7eb"];
+    const wrap = el("div", { class: "accent-picker" }, [
+      el("div", { class: "accent-label", text: "Accent" }),
+    ]);
+    const row = el("div", { class: "picker-row" });
+    const clear = el("button", { class: "pick accent-reset" + (!s.accent ? " on" : ""), text: "Theme", title: "Use theme accent",
+      onclick: () => setAccent("") });
+    row.appendChild(clear);
+    colors.forEach((c) => {
+      row.appendChild(el("button", { class: "pick colorpick" + (s.accent === c ? " on" : ""),
+        style: { background: c }, title: c, onclick: () => setAccent(c) }));
+    });
+    wrap.appendChild(row);
+    function setAccent(color) {
+      s.accent = color;
+      row.querySelectorAll(".pick").forEach((x) => x.classList.remove("on"));
+      if (!color) clear.classList.add("on");
+      else [...row.querySelectorAll(".colorpick")].find((x) => x.title === color)?.classList.add("on");
+      if (PR.app && PR.app.applyAccent) PR.app.applyAccent(color);
+      save({ accent: color });
+    }
+    return wrap;
+  }
+
   function section(title, content) {
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: title })]);
     s.appendChild(content);
@@ -166,17 +191,25 @@
   }
 
   function aboutBlock() {
+    const links = (PR.state.settings && PR.state.settings.links) || {};
+    const coffeeUrl = el("input", { class: "input coffee-link", value: links.coffee || "",
+      placeholder: "https://www.buymeacoffee.com/yourname" });
+    coffeeUrl.addEventListener("change", () => {
+      save({ links: { coffee: coffeeUrl.value.trim() || "https://www.buymeacoffee.com/" } });
+      toast("Coffee link saved");
+    });
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: "About" })]);
     s.appendChild(el("div", { class: "about" }, [
       el("div", { class: "logo-big", text: "P" }),
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
-      el("div", { class: "ver", text: "v" + (PR.state.version || "2.0.0") + " · local-first · open source" }),
+      el("div", { class: "ver", text: "v" + (PR.state.version || "2.2.0") + " · local-first · open source" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("button", { class: "coffee", html: "☕ &nbsp;Buy me a coffee",
         onclick: () => {
           const url = (PR.state.settings.links && PR.state.settings.links.coffee) || "https://www.buymeacoffee.com/";
           PR.bridge.call("open_external", url);
         } }),
+      el("div", { class: "coffee-url" }, [coffeeUrl]),
     ]));
     return s;
   }

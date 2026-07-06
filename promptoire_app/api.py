@@ -7,6 +7,7 @@ the UI gets {ok: bool, ...} envelopes so it can show friendly errors.
 from __future__ import annotations
 
 import json
+import re
 import traceback
 import webbrowser
 from typing import Any
@@ -253,9 +254,9 @@ class Api:
 
     def merge_preview(self, text: str) -> dict:
         try:
-            data = _parse_loose_json(text)
+            data = _parse_import_text(text)
             if data is None:
-                return err("Could not parse JSON. Make sure you pasted valid JSON.")
+                return err("Could not read that import. Paste JSON or a simple outline.")
             preview = self._app.library.merge_preview(data)
             return ok(preview=preview)
         except Exception as e:
@@ -263,9 +264,9 @@ class Api:
 
     def apply_merge(self, text: str, update_existing: bool = True, add_new: bool = True) -> dict:
         try:
-            data = _parse_loose_json(text)
+            data = _parse_import_text(text)
             if data is None:
-                return err("Could not parse JSON.")
+                return err("Could not read that import.")
             result = self._app.library.apply_merge(
                 data, update_existing=update_existing, add_new=add_new
             )
@@ -277,9 +278,9 @@ class Api:
 
     def replace_all(self, text: str) -> dict:
         try:
-            data = _parse_loose_json(text)
+            data = _parse_import_text(text)
             if data is None:
-                return err("Could not parse JSON.")
+                return err("Could not read that import.")
             self._app.library.replace_all(data)
             self._app.save_library()
             return ok(stats=self._app.library.stats(),
@@ -368,6 +369,13 @@ class Api:
         return ok()
 
 
+def _parse_import_text(text: str) -> Any:
+    data = _parse_loose_json(text)
+    if data is not None:
+        return data
+    return _parse_outline(text)
+
+
 def _parse_loose_json(text: str) -> Any:
     """Parse JSON that may be wrapped in markdown code fences or have prose
     around it (LLMs love to add ```json fences and commentary)."""
@@ -394,3 +402,242 @@ def _parse_loose_json(text: str) -> Any:
             except Exception:
                 return None
     return None
+
+
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+_BULLET_RE = re.compile(r"^\s*(?:[-*+]|[0-9]+[.)])\s+(.+?)\s*$")
+_FIELD_RE = re.compile(
+    r"^\s*(title|prompt|body|text|tags|type|note|negative|model|params|seed|sampler|cfg)\s*:\s*(.*?)\s*$",
+    re.IGNORECASE,
+)
+_SPLIT_RE = re.compile(r"\s+(?:[-–—]|::)\s+|:\s+")
+_SEPARATOR_RE = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
+
+
+def _parse_outline(text: str) -> dict | None:
+    """Convert a plain Markdown-ish outline into a v3 library.
+
+    Supported shape:
+      # Section
+      ## Subsection
+      - Prompt title: prompt body
+
+    Headings become nested categories. Bullets, numbered items, `Title:` /
+    `Prompt:` fields, and separated paragraphs become prompts. This is meant
+    to make LLM-authored imports easy without forcing users to hand-edit JSON.
+    """
+    if text is None:
+        return None
+    lines = [ln.rstrip() for ln in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    if not any(ln.strip() for ln in lines):
+        return None
+
+    library = {"version": schema.SCHEMA_VERSION, "categories": []}
+    stack: list[tuple[int, dict]] = []
+    current: dict | None = None
+    current_cat: dict | None = None
+    saw_structure = False
+    previous_blank = False
+
+    def active_category() -> dict:
+        nonlocal saw_structure
+        if stack:
+            return stack[-1][1]
+        saw_structure = True
+        if not library["categories"]:
+            library["categories"].append(schema.new_category("Imported"))
+        return library["categories"][0]
+
+    def find_child(cats: list[dict], name: str) -> dict | None:
+        key = name.strip().lower()
+        return next((c for c in cats if c.get("name", "").strip().lower() == key), None)
+
+    def add_heading(level: int, raw_name: str) -> None:
+        nonlocal current, current_cat, saw_structure
+        finish_prompt()
+        parts = [p.strip() for p in re.split(r"\s*>\s*", raw_name) if p.strip()]
+        if not parts:
+            return
+        while stack and stack[-1][0] >= level:
+            stack.pop()
+        cats = stack[-1][1].setdefault("subcategories", []) if stack else library["categories"]
+        parent_level = level - 1
+        for offset, name in enumerate(parts):
+            cat = find_child(cats, name)
+            if cat is None:
+                cat = schema.new_category(name)
+                cats.append(cat)
+            stack.append((parent_level + 1 + offset, cat))
+            cats = cat.setdefault("subcategories", [])
+        saw_structure = True
+        current = None
+        current_cat = None
+
+    def new_block(cat: dict) -> dict:
+        return {
+            "title": "",
+            "prompt_lines": [],
+            "tags": [],
+            "type": "",
+            "note": "",
+            "image": {},
+            "started": False,
+            "explicit_prompt": False,
+            "cat": cat,
+        }
+
+    def ensure_block() -> dict:
+        nonlocal current, current_cat, saw_structure
+        if current is None:
+            current_cat = active_category()
+            current = new_block(current_cat)
+        saw_structure = True
+        return current
+
+    def append_prompt_line(value: str) -> None:
+        block = ensure_block()
+        block["prompt_lines"].append(value)
+        block["started"] = True
+
+    def finish_prompt() -> None:
+        nonlocal current, current_cat
+        if current is None or current_cat is None:
+            current = None
+            current_cat = None
+            return
+        prompt = _outline_block_to_prompt(current)
+        if prompt is not None:
+            current_cat.setdefault("prompts", []).append(prompt)
+        current = None
+        current_cat = None
+
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            previous_blank = True
+            continue
+
+        heading = _HEADING_RE.match(line)
+        if heading:
+            add_heading(len(heading.group(1)), heading.group(2).strip())
+            previous_blank = False
+            continue
+
+        if _SEPARATOR_RE.match(line):
+            finish_prompt()
+            previous_blank = False
+            continue
+
+        bullet = _BULLET_RE.match(raw)
+        if bullet:
+            finish_prompt()
+            block = ensure_block()
+            _seed_outline_block(block, bullet.group(1).strip())
+            previous_blank = False
+            continue
+
+        field = _FIELD_RE.match(line)
+        if field:
+            key = field.group(1).lower()
+            value = field.group(2).strip()
+            block = ensure_block()
+            if key == "title":
+                if previous_blank and block["started"]:
+                    finish_prompt()
+                    block = ensure_block()
+                block["title"] = value
+            elif key in ("prompt", "body", "text"):
+                if previous_blank and block["started"] and not block["explicit_prompt"]:
+                    finish_prompt()
+                    block = ensure_block()
+                block["prompt_lines"].append(value)
+                block["explicit_prompt"] = True
+                block["started"] = True
+            elif key == "tags":
+                block["tags"] = _split_tags(value)
+            elif key == "type":
+                block["type"] = value.lower()
+            elif key == "note":
+                block["note"] = value
+            else:
+                block["image"][key] = value
+            previous_blank = False
+            continue
+
+        if previous_blank and current is not None and current.get("started") and not raw.startswith((" ", "\t")):
+            finish_prompt()
+
+        block = ensure_block()
+        if not block["title"] and not block["prompt_lines"]:
+            _seed_outline_block(block, line)
+        else:
+            append_prompt_line(line)
+        previous_blank = False
+
+    finish_prompt()
+
+    if not saw_structure:
+        return None
+    if not any(True for _ in schema.iter_prompts(library)):
+        return None
+    return library
+
+
+def _seed_outline_block(block: dict, text: str) -> None:
+    left, right = _split_title_body(text)
+    if right:
+        block["title"] = left
+        block["prompt_lines"].append(right)
+    else:
+        block["title"] = _derive_title(text)
+        block["prompt_lines"].append(text)
+    block["started"] = True
+
+
+def _split_title_body(text: str) -> tuple[str, str]:
+    m = _SPLIT_RE.search(text)
+    if not m:
+        return "", ""
+    left = text[:m.start()].strip()
+    right = text[m.end():].strip()
+    if not left or not right:
+        return "", ""
+    if len(left) > 90:
+        return "", ""
+    return left, right
+
+
+def _derive_title(text: str) -> str:
+    clean = re.sub(r"\s+", " ", text).strip()
+    if not clean:
+        return "Imported prompt"
+    if len(clean) <= 72:
+        return clean
+    return clean[:69].rstrip() + "..."
+
+
+def _split_tags(value: str) -> list[str]:
+    tags = []
+    for item in re.split(r"[,#;]", value):
+        item = item.strip().lower()
+        if item and item not in tags:
+            tags.append(item)
+    return tags
+
+
+def _outline_block_to_prompt(block: dict) -> dict | None:
+    body = "\n".join(ln for ln in block.get("prompt_lines", []) if ln is not None).strip()
+    title = (block.get("title") or "").strip() or _derive_title(body)
+    if not title and not body:
+        return None
+    ptype = (block.get("type") or "").strip().lower()
+    raw = {
+        "title": title,
+        "prompt": body or title,
+        "tags": block.get("tags") or [],
+        "note": block.get("note") or "",
+    }
+    if ptype:
+        raw["type"] = ptype
+    raw.update(block.get("image") or {})
+    return schema.normalize_prompt(raw)

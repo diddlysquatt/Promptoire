@@ -124,7 +124,23 @@ class App:
             threading.Thread(target=self._selftest_watchdog, daemon=True).start()
 
     def _selftest_watchdog(self):
-        time.sleep(14)
+        # Probe the page from the Python side too, so a silent JS failure
+        # still leaves a diagnosis in stderr before the forced quit.
+        for delay in (4, 5):
+            time.sleep(delay)
+            try:
+                probe = self.window.evaluate_js(
+                    "JSON.stringify({pywebview: !!window.pywebview,"
+                    " api: !!(window.pywebview && window.pywebview.api),"
+                    " api_n: (window.pywebview && window.pywebview.api) ? Object.keys(window.pywebview.api).length : 0,"
+                    " promptoire: !!window.PROMPTOIRE,"
+                    " cards: document.querySelectorAll('.card').length,"
+                    " groups: document.querySelectorAll('.group').length})"
+                )
+                print(f"[selftest] probe: {probe}", file=sys.stderr, flush=True)
+            except Exception as e:
+                print(f"[selftest] probe failed: {e!r}", file=sys.stderr, flush=True)
+        time.sleep(5)
         self.quit()
 
     # ---- window control -----------------------------------------------------

@@ -16,7 +16,7 @@
 
 Most prompt tools are cloud apps, browser extensions that die the moment you leave the tab, or generic clipboard managers that don't understand prompts. Promptoire is a small, gorgeous desktop launcher that sits quietly in your tray and does three things nobody else combines:
 
-- **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library as clean JSON, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. Changes are matched by id and shown in a **diff preview** before anything is written. Every other tool's "improve" works one prompt at a time — this refactors your whole collection in one pass.
+- **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. JSON changes are matched by id and shown in a **diff preview** before anything is written. You can also paste a simple section/subsection outline to append new prompts without hand-writing JSON.
 - **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
@@ -27,11 +27,13 @@ Plus the basics done well: a global hotkey that pops the launcher at your cursor
 | | |
 |---|---|
 | ⌨️ **Global hotkey** | Summon it anywhere (default `Ctrl+Alt+Space`), at your cursor. |
+| 🌳 **The tree, right in the launcher** | Browse your whole library grouped by category — collapsible, color-coded, icons and counts — before you type a single letter. |
+| 🏷️ **Category rail + tag search** | One-tap category filter chips; type `#tag` (or click any tag) to filter; multi-word queries must all match. |
 | ⚡ **Copy & vanish** | Click a prompt → it's on your clipboard → window hides. Or pin it open. |
 | 🔣 **Placeholders** | `{topic}`, `{tone}`, `{code}` → quick fill-in form before copy. |
+| 🗂️ **Real organization** | Subcategories, emoji icons, accent colors, drag prompts between categories, drag to reorder categories, filter the manage view. |
 | 🪶 **Light & fast** | Renders through the system WebView (no bundled browser). Tiny footprint. |
-| 🎨 **Themeable** | Matrix, Cyber, Aurora, Ember, Sunset, Emerald, Mono. |
-| 🗂️ **Organized** | Nested categories, tags, favorites, fuzzy search, drag-reorder. |
+| 🎨 **Themeable** | Matrix, Cyber, Aurora, Ember, Sunset, Emerald, Mono, Paper (light). |
 | 💾 **Safe** | Atomic saves + rolling timestamped backups. |
 
 ## 🚀 Quick start (from source)
@@ -67,7 +69,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 
 1. Open **Improve library** (sparkle icon).
 2. **Copy for AI** — puts an editable instruction + your whole library (as JSON) on your clipboard.
-3. Paste into any LLM. It returns improved JSON in the same schema.
+3. Paste into any LLM. It can return improved JSON in the same schema, or a plain outline of new prompts.
 4. Paste that back, hit **Preview changes** — see exactly what's new vs. updated.
 5. **Merge** (matched by prompt id; your local prompts are never deleted).
 
@@ -84,7 +86,7 @@ Everything lives in `prompts.json` next to the app — human-readable and easy t
   "version": 3,
   "categories": [
     {
-      "id": "cat_…", "name": "AI Art", "color": "#f472b6",
+      "id": "cat_…", "name": "AI Art", "icon": "🎨", "color": "#f472b6",
       "prompts": [
         {
           "id": "prm_…", "type": "image",
@@ -100,17 +102,34 @@ Everything lives in `prompts.json` next to the app — human-readable and easy t
 }
 ```
 
+For quick appends, the import box also accepts a plain outline:
+
+```md
+# Coding
+## Debugging
+- Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.
+
+# AI Art > Characters
+- Cinematic portrait: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
+```
+
+Headings become categories and subcategories. Bullets become prompts. Merging an outline adds to matching sections and does not replace the existing library.
+
+For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
+
 ## ⌨️ Shortcuts
 
 | Action | Key |
 |---|---|
 | Summon launcher (global) | `Ctrl+Alt+Space` *(configurable)* |
-| Focus search | `Ctrl+F` |
+| Focus search | `Ctrl+F` or `Ctrl+K` |
 | Manage library | `Ctrl+E` |
 | Improve library | `Ctrl+I` |
 | Settings | `Ctrl+,` |
 | New prompt | `Ctrl+N` |
-| Navigate / copy | `↑ ↓` / `Enter` |
+| Type filter (All / Text / Image / ★) | `Ctrl+1…4` or `Tab` |
+| Navigate / copy | `↑ ↓` (`PgUp/PgDn`) / `Enter` |
+| Filter by tag | type `#tag`, or click a tag chip |
 | Back / hide | `Esc` |
 
 ## 🛠️ Architecture
@@ -118,9 +137,19 @@ Everything lives in `prompts.json` next to the app — human-readable and easy t
 - **Backend** (`promptoire_app/core`, `/platform`): Python. Data layer (v3 schema, migration, search, merge), settings, global hotkey, tray, clipboard.
 - **Frontend** (`promptoire_app/web`): zero-build vanilla HTML/CSS/JS, rendered by the system WebView through [pywebview](https://pywebview.flowrl.com/). No framework, no bundler.
 
+## ✅ GitHub readiness
+
+Before the first public push, make sure your personal library is not part of the commit. This repo ignores `prompts.json`; if an older/local clone still shows it as tracked, remove it from the index without deleting your local file:
+
+```bash
+git rm --cached prompts.json
+```
+
+Then commit the app changes normally. `prompts.json` stays on your machine, but public commits should use `prompts.example.json` as the reference library.
+
 ## ❤️ Support
 
-Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** (link in Settings → About). That's the whole business model.
+Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** from the titlebar or Settings → About. Set your real link in Settings or in `promptoire.config.json` under `links.coffee`.
 
 ## 📄 License
 

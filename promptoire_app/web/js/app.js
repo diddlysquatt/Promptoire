@@ -6,28 +6,38 @@
   const views = { launcher: "viewLauncher", editor: "viewEditor", bulk: "viewBulk", settings: "viewSettings" };
 
   async function boot() {
-    await PR.bridge.ready();
-    await refreshState();
-    applyTheme();
-    PR.launcher.init();
-    wireChrome();
-    wireGlobalKeys();
-    wireBlur();
-    showView("launcher");
-    await PR.launcher.runSearch();
-    PR.launcher.focusSearch();
-    if (PR.bridge.isMock()) {
-      document.getElementById("brandCount").textContent = "· preview";
+    let bootError = "";
+    try {
+      await PR.bridge.ready();
+      await refreshState();
+      applyTheme();
+      PR.launcher.init();
+      wireChrome();
+      wireGlobalKeys();
+      wireBlur();
+      showView("launcher");
+      await PR.launcher.runSearch();
+      PR.launcher.focusSearch();
+      if (PR.bridge.isMock()) {
+        document.getElementById("brandCount").textContent = "· preview";
+      }
+    } catch (e) {
+      bootError = String((e && e.stack) || e);
     }
-    // Real-app self-test hook. Harmless no-op unless Python runs with --selftest.
-    // Called directly (not via PR.bridge) so it also reports when the bridge
-    // itself would fall back to mock.
+    selftestReport(bootError);
+  }
+
+  // Real-app self-test hook. Harmless no-op unless Python runs with --selftest.
+  // Called directly (not via PR.bridge) and even when boot failed, so a broken
+  // build reports its own error instead of timing out silently.
+  function selftestReport(bootError) {
     try {
       if (window.pywebview && window.pywebview.api && window.pywebview.api.selftest_report) {
         const s = PR.state.stats || {};
         const api = window.pywebview.api;
         window.pywebview.api.selftest_report({
           cards: document.querySelectorAll(".card").length,
+          groups: document.querySelectorAll(".group").length,
           total: s.total || 0,
           cats: (PR.state.categories || []).length,
           mock: PR.bridge.isMock(),
@@ -35,6 +45,7 @@
           first: (document.querySelector(".card-title") || {}).textContent || "",
           get_state_type: typeof api.get_state,
           api_count: Object.keys(api).length,
+          error: bootError || "",
         });
       }
     } catch (e) { /* ignore */ }
@@ -62,8 +73,24 @@
   function applyTheme() {
     const t = (PR.state.settings && PR.state.settings.theme) || "matrix";
     document.documentElement.setAttribute("data-theme", t);
-    const op = PR.state.settings && PR.state.settings.window && PR.state.settings.window.opacity;
-    if (op != null) document.querySelector(".app").style.opacity = "";
+    applyAccent((PR.state.settings && PR.state.settings.accent) || "");
+  }
+
+  function applyAccent(hex) {
+    const root = document.documentElement;
+    const value = String(hex || "").trim();
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) {
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--accent-soft");
+      root.style.removeProperty("--accent-glow");
+      return;
+    }
+    const r = parseInt(value.slice(1, 3), 16);
+    const g = parseInt(value.slice(3, 5), 16);
+    const b = parseInt(value.slice(5, 7), 16);
+    root.style.setProperty("--accent", value);
+    root.style.setProperty("--accent-soft", `rgba(${r},${g},${b},0.16)`);
+    root.style.setProperty("--accent-glow", `rgba(${r},${g},${b},0.45)`);
   }
 
   function showView(name) {
@@ -84,7 +111,9 @@
     document.getElementById("btnImprove").addEventListener("click", go("bulk"));
     document.getElementById("btnImprove2").addEventListener("click", () => showView("bulk"));
     document.getElementById("btnSettings").addEventListener("click", go("settings"));
+    document.getElementById("btnCoffee").addEventListener("click", openCoffee);
     document.getElementById("btnAdd").addEventListener("click", () => PR.editor.newPrompt(null));
+    document.getElementById("btnAddCategory").addEventListener("click", () => PR.editor.addCategory(null));
     document.getElementById("btnClose").addEventListener("click", () => PR.bridge.call("hide_window"));
 
     const pin = document.getElementById("btnPin");
@@ -108,11 +137,15 @@
         return;
       }
       const mod = e.ctrlKey || e.metaKey;
-      if (mod && e.key === "f") { e.preventDefault(); showView("launcher"); PR.launcher.focusSearch(); }
+      if (mod && (e.key === "f" || e.key === "k")) { e.preventDefault(); showView("launcher"); PR.launcher.focusSearch(); }
       else if (mod && e.key === "e") { e.preventDefault(); showView(PR.state.view === "editor" ? "launcher" : "editor"); }
       else if (mod && e.key === "i") { e.preventDefault(); showView(PR.state.view === "bulk" ? "launcher" : "bulk"); }
       else if (mod && e.key === ",") { e.preventDefault(); showView(PR.state.view === "settings" ? "launcher" : "settings"); }
       else if (mod && e.key === "n") { e.preventDefault(); PR.editor.newPrompt(null); }
+      else if (mod && "1234".includes(e.key) && PR.state.view === "launcher") {
+        e.preventDefault();
+        PR.launcher.setFilter(["all", "text", "image", "favorites"]["1234".indexOf(e.key)]);
+      }
     });
   }
 
@@ -131,13 +164,30 @@
     });
   }
 
+  function openCoffee() {
+    const links = (PR.state.settings && PR.state.settings.links) || {};
+    PR.bridge.call("open_external", links.coffee || "https://www.buymeacoffee.com/");
+  }
+
   /* ---- hooks Python calls ------------------------------------------------ */
   PR.app = {
     refreshState,
     showView,
+    applyAccent,
+    openCoffee,
     onShown() { showView("launcher"); PR.launcher.runSearch().then(() => PR.launcher.focusSearch()); },
     openSettings() { showView("settings"); },
     onSettingsChanged() { refreshState().then(applyTheme); },
+    // The real bridge appeared after we booted against the mock (slow
+    // pywebview injection): swap in the real library and re-render.
+    async onBridgeReal() {
+      document.getElementById("brandCount").textContent = "";
+      await refreshState();
+      applyTheme();
+      if (PR.state.view === "launcher") await PR.launcher.runSearch();
+      else if (PR.state.view === "editor") PR.editor.render();
+      selftestReport("");
+    },
   };
   PR.onShown = PR.app.onShown;
   PR.openSettings = PR.app.openSettings;

@@ -260,11 +260,40 @@ class PromptLibrary:
 
     # ---- search -------------------------------------------------------------
 
+    def _category_display_meta(self) -> dict:
+        """Per-category effective accents: color falls back to the nearest
+        colored ancestor, so subcategory prompts always render with an accent."""
+        meta: dict[str, dict] = {}
+
+        def walk(cats: Iterable[dict], inherited: str):
+            for c in cats:
+                color = c.get("color") or inherited
+                meta[c.get("id", "")] = {"color": color, "icon": c.get("icon", "")}
+                walk(c.get("subcategories", []), color)
+
+        walk(self.categories(), "")
+        return meta
+
     def search(self, query: str = "", *, type_filter: str = "all",
                favorites_only: bool = False, tag: str = "") -> list[dict]:
-        """Return a flat, ranked list of prompt hits with their category path."""
+        """Return a flat, ranked list of prompt hits with their category path.
+
+        Query grammar: whitespace-separated terms must ALL match (AND);
+        `#tag` terms filter by tag (prefix match), e.g. `mecha #maximalist`.
+        """
         q = (query or "").strip().lower()
-        tagq = (tag or "").strip().lower()
+        terms: list[str] = []
+        tag_terms: list[str] = []
+        for tok in q.split():
+            if tok.startswith("#") and len(tok) > 1:
+                tag_terms.append(tok[1:])
+            elif tok != "#":
+                terms.append(tok)
+        explicit_tag = (tag or "").strip().lower().lstrip("#")
+        if explicit_tag:
+            tag_terms.append(explicit_tag)
+
+        cat_meta = self._category_display_meta()
         results: list[tuple[float, dict]] = []
 
         for p, cat, path in iter_prompts(self.data):
@@ -273,21 +302,29 @@ class PromptLibrary:
             if favorites_only and not p.get("favorite"):
                 continue
             ptags = [t.lower() for t in p.get("tags", [])]
-            if tagq and tagq not in ptags:
+            if tag_terms and not all(
+                any(t.startswith(tt) for t in ptags) for tt in tag_terms
+            ):
                 continue
 
             score = 0.0
-            if q:
+            if terms:
                 title = p.get("title", "").lower()
                 body = p.get("prompt", "").lower()
-                catname = (cat.get("name", "") if cat else "").lower()
+                catpath = " ".join(n.lower() for n in path)
                 hay_tags = " ".join(ptags)
-                score = _match_score(q, title, body, hay_tags, catname)
-                if score <= 0:
+                for t in terms:
+                    s = _match_score(t, title, body, hay_tags, catpath)
+                    if s <= 0:
+                        score = -1.0
+                        break
+                    score += s
+                if score < 0:
                     continue
             # Light boost for favorites / usage so good stuff floats up.
             score += (2.0 if p.get("favorite") else 0.0) + min(int(p.get("uses", 0)), 20) * 0.05
 
+            cmeta = cat_meta.get(cat.get("id", "") if cat else "", {})
             hit = {
                 "id": p["id"],
                 "type": p.get("type", "text"),
@@ -299,7 +336,8 @@ class PromptLibrary:
                 "uses": p.get("uses", 0),
                 "category_id": cat.get("id") if cat else None,
                 "category_name": cat.get("name", "") if cat else "",
-                "category_color": cat.get("color", "") if cat else "",
+                "category_color": cmeta.get("color", ""),
+                "category_icon": cmeta.get("icon", ""),
                 "path": [n for n in path if n],
                 "score": round(score, 3),
             }
@@ -376,7 +414,10 @@ class PromptLibrary:
         """
         lib = normalize_library(incoming)
         by_id = {p["id"]: (p, cat) for p, cat, _ in iter_prompts(self.data)}
-        existing_cat_names = {c["name"].lower() for c, _, _ in iter_categories(self.data)}
+        existing_cat_paths = {
+            " / ".join(part for part in path if part).lower()
+            for _, _, path in iter_categories(self.data)
+        }
 
         added, updated, unchanged = [], [], []
         seen_new_cats: set[str] = set()
@@ -384,16 +425,18 @@ class PromptLibrary:
 
         for p, cat, path in iter_prompts(lib):
             cname = cat.get("name", "") if cat else ""
-            if cname and cname.lower() not in existing_cat_names and cname.lower() not in seen_new_cats:
-                seen_new_cats.add(cname.lower())
-                new_categories.append(cname)
+            cat_path = " / ".join(part for part in path if part) or cname
+            cat_key = cat_path.lower()
+            if cat_path and cat_key not in existing_cat_paths and cat_key not in seen_new_cats:
+                seen_new_cats.add(cat_key)
+                new_categories.append(cat_path)
 
             target = by_id.get(p["id"])
             entry = {
                 "id": p["id"],
                 "type": p.get("type", "text"),
                 "title": p.get("title", ""),
-                "category_name": cname,
+                "category_name": cat_path,
             }
             if target is None:
                 added.append(entry)
@@ -426,14 +469,24 @@ class PromptLibrary:
         by_id = {p["id"]: p for p, _, _ in iter_prompts(self.data)}
         n_updated = n_added = n_cats = 0
 
-        # Index existing top-level + nested categories by lowercase name.
-        def cat_by_name(name: str) -> dict | None:
-            for c, _, _ in iter_categories(self.data):
-                if c["name"].lower() == name.lower():
-                    return c
-            return None
+        def category_for_path(path: list[str]) -> dict:
+            """Find/create the nested destination matching an incoming path."""
+            nonlocal n_cats
+            parts = [p for p in path if p]
+            if not parts:
+                parts = ["Imported"]
+            siblings = self.categories()
+            current = None
+            for name in parts:
+                current = next((c for c in siblings if c.get("name", "").lower() == name.lower()), None)
+                if current is None:
+                    current = new_category(name)
+                    siblings.append(current)
+                    n_cats += 1
+                siblings = current.setdefault("subcategories", [])
+            return current
 
-        for p, cat, _ in iter_prompts(lib):
+        for p, _, path in iter_prompts(lib):
             content_fields = ("type", "title", "prompt", "tags", "note") + schema.IMAGE_FIELDS
             if p["id"] in by_id:
                 if update_existing:
@@ -444,12 +497,7 @@ class PromptLibrary:
                     cur["updated_at"] = now_iso()
                     n_updated += 1
             elif add_new:
-                cname = cat.get("name", "") if cat else ""
-                dest = cat_by_name(cname) if cname else None
-                if dest is None:
-                    dest = new_category(cname or "Imported")
-                    self.categories().append(dest)
-                    n_cats += 1
+                dest = category_for_path(path)
                 dest.setdefault("prompts", []).append(p)
                 n_added += 1
 

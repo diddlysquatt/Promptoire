@@ -40,12 +40,16 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  // highlight occurrences of query (case-insensitive) within text
+  // highlight each query term (case-insensitive); #tag terms are skipped
   function highlight(text, q) {
     text = escapeHtml(text);
     if (!q) return text;
+    const terms = q.split(/\s+/)
+      .filter((t) => t && !t.startsWith("#"))
+      .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    if (!terms.length) return text;
     try {
-      const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+      const re = new RegExp("(" + terms.join("|") + ")", "ig");
       return text.replace(re, "<mark>$1</mark>");
     } catch (e) { return text; }
   }
@@ -60,6 +64,9 @@
     grip: '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',
     caret: '<path d="M9 6l6 6-6 6"/>',
     check: '<path d="M5 13l4 4L19 7"/>',
+    "folder-plus": '<path d="M3 7V5h6l2 2h10v12H3V7zM12 11v6M9 14h6"/>',
+    expand: '<path d="M8 4l4 4 4-4M8 20l4-4 4 4"/>',
+    collapse: '<path d="M8 8l4-4 4 4M8 16l4 4 4-4"/>',
   };
   function icon(name, cls) {
     return `<svg viewBox="0 0 24 24" class="ic ${cls || ""}">${ICONS[name] || ""}</svg>`;

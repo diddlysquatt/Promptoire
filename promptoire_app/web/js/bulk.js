@@ -1,4 +1,4 @@
-/* bulk.js — the JSON ⇄ LLM "improve my whole library" loop */
+/* bulk.js — the JSON/outline ⇄ LLM "improve my whole library" loop */
 (function () {
   "use strict";
   const PR = window.PROMPTOIRE;
@@ -12,14 +12,14 @@
 
     host.appendChild(el("p", { class: "bulk-intro", html:
       "Hand your <b>entire</b> prompt library to any LLM in one shot, let it rewrite and expand everything, " +
-      "then merge the result back — matched by id, with a preview before anything changes." }));
+      "then merge the result back. JSON is matched by id; simple outlines are appended into matching sections." }));
 
     // STEP 1 — export
     const step1 = el("div", { class: "step" }, [
       el("div", { class: "step-head" }, [
         el("span", { class: "step-num", text: "1" }),
         el("div", {}, [ el("div", { class: "t", text: "Send your library to an AI" }),
-          el("div", { class: "d", text: "Copies a ready-to-paste prompt + your whole library as JSON." }) ]),
+          el("div", { class: "d", text: "Copies a ready-to-paste prompt plus your library." }) ]),
       ]),
       el("div", { class: "btn-row" }, [
         el("button", { class: "btn btn-primary", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
@@ -37,15 +37,15 @@
     ]);
 
     // STEP 2 — import
-    pasteArea = el("textarea", { class: "textarea", style: { minHeight: "120px" },
-      placeholder: "Paste the improved JSON the AI gives you here…  (code fences and extra prose are fine)" });
+    pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
+      placeholder: "Paste improved JSON, or a simple outline:\n\n# Coding\n## Debugging\n- Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\n# AI Art > Characters\n- Cinematic portrait: A dramatic 85mm portrait of {subject}..." });
     pasteArea.addEventListener("input", () => { applyBtn.disabled = true; previewBox.innerHTML = ""; });
 
     const step2 = el("div", { class: "step" }, [
       el("div", { class: "step-head" }, [
         el("span", { class: "step-num", text: "2" }),
-        el("div", {}, [ el("div", { class: "t", text: "Bring the improved version back" }),
-          el("div", { class: "d", text: "Paste it below (or load a file), preview the changes, then merge." }) ]),
+        el("div", {}, [ el("div", { class: "t", text: "Bring changes or new prompts back" }),
+          el("div", { class: "d", text: "Paste JSON or an outline, preview it, then merge into what you already have." }) ]),
       ]),
       pasteArea,
       el("div", { class: "btn-row", style: { marginTop: "10px" } }, [
@@ -57,8 +57,8 @@
     // preview + apply
     previewBox = el("div", {});
     const opts = el("div", { class: "row-between", style: { margin: "8px 2px" } }, [
-      toggleInline("Update existing", true, (v) => (window._optUpdate = v), (r) => (optUpdate = r)),
-      toggleInline("Add new", true, (v) => (window._optAdd = v), (r) => (optAdd = r)),
+      toggleInline("Update existing", true, (r) => (optUpdate = r)),
+      toggleInline("Add new", true, (r) => (optAdd = r)),
     ]);
     applyBtn = el("button", { class: "btn btn-primary", html: icon("check") + " Merge into library", disabled: "disabled",
       onclick: apply });
@@ -72,10 +72,9 @@
     host.appendChild(applyRow);
   }
 
-  function toggleInline(label, checked, onChange, ref) {
+  function toggleInline(label, checked, ref) {
     const input = el("input", { type: "checkbox" });
     input.checked = checked;
-    input.addEventListener("change", () => onChange(input.checked));
     if (ref) ref(input);
     return el("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--muted)" } },
       [ wrapSwitch(input), label ]);
@@ -141,9 +140,9 @@
 
   async function preview() {
     const text = pasteArea.value.trim();
-    if (!text) { toast("Paste some JSON first", { bad: true }); return; }
+    if (!text) { toast("Paste JSON or an outline first", { bad: true }); return; }
     const r = await PR.bridge.call("merge_preview", text);
-    if (!r || !r.ok) { toast((r && r.error) || "Could not read JSON", { bad: true }); previewBox.innerHTML = ""; applyBtn.disabled = true; return; }
+    if (!r || !r.ok) { toast((r && r.error) || "Could not read import", { bad: true }); previewBox.innerHTML = ""; applyBtn.disabled = true; return; }
     renderPreview(r.preview);
     applyBtn.disabled = false;
   }
@@ -188,17 +187,17 @@
     if (r && r.ok) {
       await PR.app.refreshState();
       const res = r.result || {};
-      toast(`Merged: ${res.updated || 0} updated, ${res.added || 0} added`);
+      toast(`Merged into library: ${res.updated || 0} updated, ${res.added || 0} added`);
       pasteArea.value = ""; previewBox.innerHTML = ""; applyBtn.disabled = true;
     } else toast((r && r.error) || "Merge failed", { bad: true });
   }
 
   function replaceAll() {
     const text = pasteArea.value.trim();
-    if (!text) { toast("Paste the JSON to replace with first", { bad: true }); return; }
+    if (!text) { toast("Paste the replacement library first", { bad: true }); return; }
     PR.ui.confirmDialog({
       title: "Replace the entire library?",
-      message: "This discards your current library and replaces it with the pasted JSON. A backup is saved first, but this can't be undone in-app.",
+      message: "This discards your current library and replaces it with the pasted import. Use Merge for normal appends. A backup is saved first, but this can't be undone in-app.",
       confirmText: "Replace everything", danger: true,
       onConfirm: async () => {
         const r = await PR.bridge.call("replace_all", text);

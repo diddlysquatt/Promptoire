@@ -3,9 +3,13 @@
   "use strict";
   const PR = (window.PROMPTOIRE = window.PROMPTOIRE || {});
 
-  // We're in the real app whenever pywebview injected itself (even before its
-  // api object is fully populated). Only a plain browser (preview) lacks it.
-  const isReal = () => !!window.pywebview;
+  // Mode resolution. pywebview injects `window.pywebview` *after* our classic
+  // scripts evaluate (file:// + WebView2), so "no pywebview yet" must NOT be
+  // read as "browser preview" — that race used to render mock data inside the
+  // real app. We start "unknown", give the injection a grace window, and even
+  // if we guessed mock, flip to real and re-sync the moment it appears.
+  let mode = window.pywebview ? "real" : "unknown"; // real | mock | unknown
+  const isReal = () => mode === "real" || !!window.pywebview;
   const apiReady = (m) => !!(window.pywebview && window.pywebview.api &&
                              typeof window.pywebview.api[m] === "function");
 
@@ -14,19 +18,32 @@
   let resolved = false;
   function markReady() { if (!resolved) { resolved = true; readyResolve(); } }
 
-  window.addEventListener("pywebviewready", markReady);
-  // Browser preview: resolve immediately. Real app: wait for the event (with a
-  // generous safety fallback so the UI can never hang).
-  setTimeout(() => { if (!window.pywebview) markReady(); }, 50);
-  setTimeout(markReady, 4000);
+  function goReal() {
+    const wasMock = mode === "mock";
+    mode = "real";
+    markReady();
+    if (wasMock && PR.app && PR.app.onBridgeReal) PR.app.onBridgeReal();
+  }
+  window.addEventListener("pywebviewready", goReal);
+  if (mode === "real") markReady();
+  // Grace window: only commit to mock if pywebview still hasn't appeared.
+  setTimeout(() => {
+    if (window.pywebview) goReal();
+    else if (mode === "unknown") { mode = "mock"; markReady(); }
+  }, 400);
+  // Belt & braces: some WebView backends are late with the ready event.
+  const probe = setInterval(() => {
+    if (window.pywebview) { clearInterval(probe); goReal(); }
+  }, 250);
+  setTimeout(() => clearInterval(probe), 10000);
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function call(method, ...args) {
+    await readyPromise;
     if (isReal()) {
       // Real app: NEVER fall back to mock. Wait for the bridge to expose the
       // method (handles the brief window between page load and api injection).
-      await readyPromise;
       for (let i = 0; i < 40 && !apiReady(method); i++) await sleep(50);
       if (apiReady(method)) {
         try { return await window.pywebview.api[method](...args); }
@@ -45,34 +62,47 @@
   function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i)|0;}return h;}
 
   const mockCats = [
-    { id: "cat_code", name: "Coding", color: "#3b82f6", collapsed:false, subcategories:[], prompts: [
+    { id: "cat_code", name: "Coding", icon: "💻", color: "#3b82f6", collapsed:false, subcategories:[], prompts: [
       { id: mkId("handoff"), type:"text", title:"New-chat handoff brief", prompt:"Create a NEW CHAT HANDOFF that summarizes everything needed to continue immediately: objective, current state, constraints, decisions, key files/paths, commands to run, known bugs, and next steps in priority order.", tags:["workflow","context"], note:"", favorite:true, uses:12 },
       { id: mkId("secrev"), type:"text", title:"Pragmatic security review", prompt:"Perform a pragmatic security review. Identify attack surfaces and misconfigs: injection, authz/authn flaws, secrets leakage, insecure defaults, dependency risks, PII handling. Provide prioritized, minimal-scope fixes.", tags:["security"], note:"", favorite:false, uses:5 },
       { id: mkId("refactor"), type:"text", title:"Refactor for clarity", prompt:"Refactor {code} for readability without changing behavior. Keep the public API. Explain each change in one line.", tags:["refactor"], note:"", favorite:false, uses:2 },
     ]},
-    { id: "cat_art", name: "AI Art", color: "#f472b6", collapsed:false, subcategories:[], prompts: [
+    { id: "cat_art", name: "AI Art", icon: "🎨", color: "#f472b6", collapsed:false, prompts: [
       { id: mkId("cinematic"), type:"image", title:"Cinematic portrait", prompt:"cinematic portrait of {subject}, dramatic rim lighting, 85mm, shallow depth of field, film grain, moody color grade", negative:"blurry, lowres, extra fingers, watermark", model:"Midjourney v6", params:"--ar 4:5 --stylize 250", tags:["portrait","cinematic"], note:"", favorite:true, uses:9 },
-      { id: mkId("iso"), type:"image", title:"Isometric game asset", prompt:"isometric {object}, clean vector style, soft studio lighting, pastel palette, game asset, centered", negative:"text, busy background", model:"SDXL", params:"Steps: 30, CFG: 6", tags:["isometric","asset"], note:"", favorite:false, uses:3 },
+    ], subcategories: [
+      { id: "cat_iso", name: "Game Assets", icon: "🕹️", color: "", collapsed:false, subcategories:[], prompts: [
+        { id: mkId("iso"), type:"image", title:"Isometric game asset", prompt:"isometric {object}, clean vector style, soft studio lighting, pastel palette, game asset, centered", negative:"text, busy background", model:"SDXL", params:"Steps: 30, CFG: 6", tags:["isometric","asset"], note:"", favorite:false, uses:3 },
+        { id: mkId("sprite"), type:"image", title:"Pixel sprite sheet", prompt:"16-bit pixel art sprite sheet of {character}, 8 walk frames, side view, transparent background", negative:"blur, antialiasing", model:"SDXL", params:"Steps: 28, CFG: 7", tags:["pixel","sprite"], note:"", favorite:false, uses:1 },
+      ]},
+      { id: "cat_mecha", name: "Mecha", icon: "🤖", color: "#fb923c", collapsed:false, subcategories:[], prompts: [
+        { id: mkId("mecha"), type:"image", title:"Chromatic rift mecha", prompt:"insanely detailed alien mecha emerging from a kaleidoscopic dimensional rift, chromatic liquid metal armor", negative:"lowres", model:"Midjourney v7", params:"--ar 16:9", tags:["mecha","maximalist"], note:"", favorite:false, uses:0 },
+      ]},
     ]},
-    { id: "cat_law", name: "Law", color: "#34d399", collapsed:false, subcategories:[], prompts: [
+    { id: "cat_law", name: "Law", icon: "⚖️", color: "#34d399", collapsed:false, subcategories:[], prompts: [
       { id: mkId("clause"), type:"text", title:"Contract clause explainer", prompt:"Explain the following clause in plain English, flag risks for the {party}, and suggest safer alternative language.", tags:["contracts"], note:"", favorite:false, uses:1 },
     ]},
   ];
-  function walk(cats){ let out=[]; for(const c of cats){ for(const p of c.prompts){ out.push({p,c}); } if(c.subcategories) out=out.concat(walk(c.subcategories)); } return out; }
+  function walk(cats, path, color){ let out=[]; path=path||[]; for(const c of cats){ const eff=c.color||color||""; const here=path.concat([c.name]); for(const p of c.prompts){ out.push({p,c,path:here,color:eff}); } if(c.subcategories) out=out.concat(walk(c.subcategories, here, eff)); } return out; }
 
   const MOCK = {
-    get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.0.0-preview",
+    get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.2.0-preview",
       hotkey_available:true, platform:"windows",
       settings: { theme:"matrix", accent:"", hotkey:"ctrl+alt+space",
         behavior:{copy_then_hide:true,hide_on_blur:true,open_at_cursor:true,paste_after_copy:false,launch_at_startup:false,show_tray:true},
         window:{width:460,height:560,opacity:1.0}, bulk_improve:{meta_prompt:"You are a senior prompt engineer..."} } }),
     search: (q="", type="all", fav=false) => {
       q=(q||"").toLowerCase(); let res=[];
-      for(const {p,c} of walk(mockCats)){
+      const toks=q.split(/\s+/).filter(Boolean);
+      const terms=toks.filter(t=>!t.startsWith("#"));
+      const tagTerms=toks.filter(t=>t.startsWith("#")&&t.length>1).map(t=>t.slice(1));
+      for(const {p,c,path,color} of walk(mockCats)){
         if(type==="text"&&p.type!=="text")continue; if(type==="image"&&p.type!=="image")continue;
         if(fav&&!p.favorite)continue;
-        if(q&&!(p.title.toLowerCase().includes(q)||p.prompt.toLowerCase().includes(q)||(p.tags||[]).join(" ").toLowerCase().includes(q)))continue;
-        res.push(Object.assign({}, p, {category_id:c.id, category_name:c.name, category_color:c.color, path:[c.name]}));
+        const tags=(p.tags||[]).map(t=>t.toLowerCase());
+        if(tagTerms.length&&!tagTerms.every(tt=>tags.some(t=>t.startsWith(tt))))continue;
+        const hay=(p.title+" "+p.prompt+" "+tags.join(" ")+" "+path.join(" ")).toLowerCase();
+        if(terms.length&&!terms.every(t=>hay.includes(t)))continue;
+        res.push(Object.assign({}, p, {category_id:c.id, category_name:c.name, category_color:color, category_icon:c.icon||"", path:path}));
       }
       res.sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0));
       return { ok:true, results:res, count:res.length };
@@ -88,9 +118,18 @@
     update_settings: (p) => ({ ok:true, settings:{} }),
     set_hotkey: () => ({ ok:true, applied:true, available:true }),
     add_prompt: () => ({ ok:true, prompt:{} }), update_prompt: () => ({ ok:true }),
-    delete_prompt: () => ({ ok:true, removed:{} }), add_category: () => ({ ok:true, category:{} }),
+    delete_prompt: (id) => { for(const c of allCats()){ const i=(c.prompts||[]).findIndex(p=>p.id===id); if(i>=0) return {ok:true, removed:c.prompts.splice(i,1)[0]}; } return {ok:false}; },
+    restore_prompt: (catId, p, idx) => { const c=findCat(catId); if(c) c.prompts.splice(idx<0?c.prompts.length:idx,0,p); return {ok:true}; },
+    add_category: (name, parentId) => { const cat={id:"cat_"+Math.random().toString(36).slice(2,8), name, icon:"", color:"", collapsed:false, prompts:[], subcategories:[]}; const par=parentId&&findCat(parentId); if(par) par.subcategories.push(cat); else mockCats.push(cat); return {ok:true, category:cat}; },
+    update_category: (id, fields) => { const c=findCat(id); if(!c) return {ok:false}; Object.assign(c, fields||{}); return {ok:true, category:c}; },
+    delete_category: (id) => { const rm=(list)=>{ const i=list.findIndex(c=>c.id===id); if(i>=0){list.splice(i,1);return true;} return list.some(c=>rm(c.subcategories||[])); }; return {ok:rm(mockCats)}; },
+    reorder_category: (id, to) => { const find=(list)=>{ const i=list.findIndex(c=>c.id===id); if(i>=0){ const[c]=list.splice(i,1); list.splice(Math.max(0,Math.min(to,list.length)),0,c); return true;} return list.some(x=>find(x.subcategories||[])); }; return {ok:find(mockCats)}; },
+    move_prompt: (pid, catId) => { let moved=null; for(const c of allCats()){ const i=(c.prompts||[]).findIndex(p=>p.id===pid); if(i>=0){ moved=c.prompts.splice(i,1)[0]; break; } } const dest=findCat(catId); if(moved&&dest) dest.prompts.push(moved); return {ok:!!(moved&&dest)}; },
+    reorder_prompt: (catId, from, to) => { const c=findCat(catId); if(!c||!c.prompts[from]) return {ok:false}; const[p]=c.prompts.splice(from,1); c.prompts.splice(Math.max(0,Math.min(to,c.prompts.length)),0,p); return {ok:true}; },
     hide_window: () => ({ ok:true }), open_external: () => ({ ok:true }), quit_app: () => ({ ok:true }),
     backup_now: () => ({ ok:true }), notify_blur: () => ({ ok:true }),
   };
+  function allCats(){ const out=[]; (function w(l){ for(const c of l){ out.push(c); w(c.subcategories||[]); } })(mockCats); return out; }
+  function findCat(id){ return allCats().find(c=>c.id===id) || null; }
   function stats(){ const all=walk(mockCats); return { total:all.length, text:all.filter(x=>x.p.type==="text").length, image:all.filter(x=>x.p.type==="image").length, favorites:all.filter(x=>x.p.favorite).length, categories:mockCats.length }; }
 })();

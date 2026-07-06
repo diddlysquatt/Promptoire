@@ -1,15 +1,24 @@
-"""GUI-free smoke test of the full backend + API bridge against real data.
+"""GUI-free smoke test of the full backend + API bridge.
 
-Constructs the App (which loads settings + the real prompts.json) but never
-starts the webview loop, then exercises every data-path API method.
+Constructs the App against a temporary copy of the public sample library, but
+never starts the webview loop, then exercises every data-path API method.
 """
 import json
+import os
+import shutil
 import sys
+import tempfile
+from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from promptoire_app.api import _parse_import_text
+from promptoire_app.core import schema
+from promptoire_app.core.library import PromptLibrary
 from promptoire_app.main import App
 
 
-def main():
+def _run_checks():
     app = App(debug=False)
     api = app.api
     out = {}
@@ -20,13 +29,15 @@ def main():
     out["state.categories"] = [c["name"] for c in st["categories"]]
     out["state.hotkey_available"] = st["hotkey_available"]
 
-    s = api.search("security")
+    s = api.search("review")
     assert s["ok"], s
-    out["search.security.count"] = s["count"]
-    out["search.security.top"] = s["results"][0]["title"][:40] if s["results"] else None
+    out["search.review.count"] = s["count"]
+    out["search.review.top"] = s["results"][0]["title"][:40] if s["results"] else None
+    assert s["count"] >= 1, s
 
     s2 = api.search("", "image")
     out["search.image.count"] = s2["count"]
+    assert s2["count"] >= 1, s2
 
     exp = api.get_export(False)
     assert exp["ok"], exp
@@ -46,6 +57,29 @@ def main():
     assert pv2["ok"], pv2
     out["merge.fenced.unchanged"] = pv2["preview"]["unchanged_count"]
 
+    outline = """# Smoke Imports
+## Nested
+- ZZ outline import: Use this temporary outline prompt to verify non-JSON import.
+"""
+    pv3 = api.merge_preview(outline)
+    assert pv3["ok"], pv3
+    out["merge.outline.added"] = len(pv3["preview"]["added"])
+    out["merge.outline.new_categories"] = pv3["preview"]["new_categories"]
+    assert "Smoke Imports / Nested" in pv3["preview"]["new_categories"], pv3
+
+    with tempfile.TemporaryDirectory() as d:
+        tmp_lib = PromptLibrary(Path(d) / "prompts.json")
+        tmp_lib.data = {"version": 3, "categories": []}
+        tmp_lib.apply_merge(_parse_import_text(outline))
+        assert tmp_lib.categories()[0]["name"] == "Smoke Imports"
+        assert tmp_lib.categories()[0]["subcategories"][0]["name"] == "Nested"
+        out["merge.outline.preserved_nested"] = True
+
+    example = json.loads((Path(__file__).resolve().parents[1] / "prompts.example.json").read_text(encoding="utf-8"))
+    example = schema.normalize_library(example)
+    out["example.total"] = schema.count_prompts(example)
+    assert out["example.total"] >= 5, out
+
     # copy_export (clipboard may be unavailable in headless; just check shape)
     ce = api.copy_export(True, False)
     out["copy_export.ok"] = ce.get("ok")
@@ -61,6 +95,18 @@ def main():
 
     print(json.dumps(out, indent=2, ensure_ascii=False))
     print("\nALL SMOKE CHECKS PASSED")
+
+
+def main():
+    root = Path(__file__).resolve().parents[1]
+    with tempfile.TemporaryDirectory() as data_dir:
+        data_path = Path(data_dir)
+        shutil.copy2(root / "prompts.example.json", data_path / "prompts.json")
+        config = root / "promptoire.config.json"
+        if config.exists():
+            shutil.copy2(config, data_path / "promptoire.config.json")
+        os.environ["PROMPTOIRE_DATA_DIR"] = str(data_path)
+        return _run_checks()
 
 
 if __name__ == "__main__":
