@@ -246,7 +246,10 @@ class Api:
 
     def save_export_file(self, full: bool = False) -> dict:
         try:
-            path = self._app.save_file_dialog("prompts-export.json")
+            path = self._app.save_file_dialog(
+                "prompts-export.json",
+                ("JSON Files (*.json)", "All files (*.*)"),
+            )
             if not path:
                 return ok(cancelled=True)
             with open(path, "w", encoding="utf-8") as f:
@@ -255,9 +258,28 @@ class Api:
         except Exception as e:
             return err(str(e))
 
+    def save_outline_file(self) -> dict:
+        try:
+            path = self._app.save_file_dialog(
+                "prompts-outline.txt",
+                ("Outline/Text Files (*.txt;*.md)", "All files (*.*)"),
+            )
+            if not path:
+                return ok(cancelled=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(self._app.library.export_outline())
+            return ok(path=str(path))
+        except Exception as e:
+            return err(str(e))
+
     def load_import_file(self) -> dict:
         try:
-            path = self._app.open_file_dialog()
+            path = self._app.open_file_dialog((
+                "Promptoire Imports (*.json;*.txt;*.md)",
+                "JSON Files (*.json)",
+                "Text/Markdown Files (*.txt;*.md)",
+                "All files (*.*)",
+            ))
             if not path:
                 return ok(cancelled=True)
             with open(path, "r", encoding="utf-8") as f:

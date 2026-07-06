@@ -72,6 +72,7 @@
       el("div", { class: "btn-row" }, [
         el("button", { class: "btn btn-primary", html: icon("copy") + " Copy outline library", onclick: copyOutlineExport }),
         el("button", { class: "btn", text: "Copy outline request", onclick: copyOutlineRequest }),
+        el("button", { class: "btn btn-ghost", text: "Save outline", onclick: saveOutlineFile }),
       ]),
       el("details", { class: "export-more" }, [
         el("summary", { text: "JSON options" }),
@@ -217,6 +218,12 @@
     const r = await PR.bridge.call("save_export_file", false);
     PR.state.suppressBlur = false;
     if (r && r.ok && !r.cancelled) toast("Saved");
+  }
+  async function saveOutlineFile() {
+    PR.state.suppressBlur = true;
+    const r = await PR.bridge.call("save_outline_file");
+    PR.state.suppressBlur = false;
+    if (r && r.ok && !r.cancelled) toast("Outline saved");
   }
   async function loadFile() {
     PR.state.suppressBlur = true;

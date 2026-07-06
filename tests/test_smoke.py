@@ -299,6 +299,8 @@ Bug sweep: Review {code} for bugs.
         "title_match_badge": "matched by title",
         "outline_library_button": "Copy outline library",
         "outline_library_handler": "copyOutlineExport",
+        "save_outline_button": "Save outline",
+        "save_outline_handler": "saveOutlineFile",
         "json_options_disclosure": "JSON options",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
@@ -319,6 +321,8 @@ Bug sweep: Review {code} for bugs.
     assert out["frontend.mock_nested_preview"], "AI Art / Characters / Portraits"
     out["frontend.mock_clipboard_import"] = "get_clipboard_text" in bridge_js and "AI Art > Characters > Portraits" in bridge_js
     assert out["frontend.mock_clipboard_import"], "get_clipboard_text"
+    out["frontend.mock_save_outline"] = "save_outline_file" in bridge_js and "prompts-outline.txt" in bridge_js
+    assert out["frontend.mock_save_outline"], "save_outline_file"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
     out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
@@ -370,10 +374,16 @@ Bug sweep: Review {code} for bugs.
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
+        "outline_file_dialogs": "*.txt;*.md" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
         "shortcut_release_check": "PROMPTOIRE` desktop shortcut" in release_checklist,
-        "outline_library_release_check": "Copy outline library" in release_checklist and "JSON options" in release_checklist,
+        "outline_library_release_check": (
+            "Copy outline library" in release_checklist
+            and "Save outline" in release_checklist
+            and "JSON options" in release_checklist
+        ),
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
+        "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens
@@ -383,6 +393,9 @@ Bug sweep: Review {code} for bugs.
     out["copy_export.ok"] = ce.get("ok")
     coe = api.copy_outline_export(True)
     out["copy_outline_export.ok"] = coe.get("ok")
+    sof = api.save_outline_file()
+    out["save_outline_file.shape"] = "ok" in sof and (sof.get("ok") is False or sof.get("cancelled") or "path" in sof)
+    assert out["save_outline_file.shape"], sof
     clip = api.get_clipboard_text()
     out["get_clipboard_text.shape"] = "ok" in clip and (clip.get("ok") is False or "text" in clip)
     assert out["get_clipboard_text.shape"], clip

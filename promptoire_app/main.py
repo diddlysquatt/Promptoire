@@ -327,11 +327,11 @@ class App:
 
     # ---- file dialogs -------------------------------------------------------
 
-    def save_file_dialog(self, default_name: str) -> str | None:
+    def save_file_dialog(self, default_name: str, file_types=None) -> str | None:
         try:
             res = self.window.create_file_dialog(
                 webview.SAVE_DIALOG, save_filename=default_name,
-                file_types=("JSON Files (*.json)", "All files (*.*)"),
+                file_types=file_types or ("All files (*.*)",),
             )
             if isinstance(res, (list, tuple)):
                 return res[0] if res else None
@@ -339,11 +339,11 @@ class App:
         except Exception:
             return None
 
-    def open_file_dialog(self) -> str | None:
+    def open_file_dialog(self, file_types=None) -> str | None:
         try:
             res = self.window.create_file_dialog(
                 webview.OPEN_DIALOG, allow_multiple=False,
-                file_types=("JSON Files (*.json)", "All files (*.*)"),
+                file_types=file_types or ("All files (*.*)",),
             )
             if isinstance(res, (list, tuple)):
                 return res[0] if res else None
