@@ -71,7 +71,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 2. **Copy for AI** — puts an editable instruction + your whole library (as JSON) on your clipboard.
 3. Paste into any LLM. It can return improved JSON in the same schema, or a plain outline of new prompts.
 4. Paste that back, hit **Preview changes** — see exactly what's new vs. updated.
-5. **Merge** (matched by prompt id; your local prompts are never deleted).
+5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted).
 
 The instruction (meta-prompt) is fully editable in that panel.
 
@@ -116,7 +116,7 @@ Subsection: Characters
 Cinematic portrait: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
 ```
 
-Headings, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Prompt rows become prompts. Merging an outline adds to matching sections and does not replace the existing library.
+Headings, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Prompt rows become prompts. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 

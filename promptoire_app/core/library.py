@@ -29,6 +29,7 @@ from .schema import (
 # and drop volatile bookkeeping (uses/timestamps/favorite) to keep the JSON
 # clean and easy for an LLM to edit.
 _EXPORT_PROMPT_FIELDS = ("id", "type", "title", "prompt", "tags", "note")
+_CONTENT_PROMPT_FIELDS = ("type", "title", "prompt", "tags", "note") + schema.IMAGE_FIELDS
 
 
 class PromptLibrary:
@@ -413,7 +414,13 @@ class PromptLibrary:
         Nothing is mutated here.
         """
         lib = normalize_library(incoming)
-        by_id = {p["id"]: (p, cat) for p, cat, _ in iter_prompts(self.data)}
+        by_id: dict[str, tuple[dict, dict]] = {}
+        by_path_title: dict[tuple[str, str], tuple[dict, dict]] = {}
+        for p, cat, path in iter_prompts(self.data):
+            by_id[p["id"]] = (p, cat)
+            key = _path_title_key(path, p.get("title", ""))
+            if key and key not in by_path_title:
+                by_path_title[key] = (p, cat)
         existing_cat_paths = {
             " / ".join(part for part in path if part).lower()
             for _, _, path in iter_categories(self.data)
@@ -431,7 +438,12 @@ class PromptLibrary:
                 seen_new_cats.add(cat_key)
                 new_categories.append(cat_path)
 
+            matched_by = "id"
             target = by_id.get(p["id"])
+            if target is None:
+                title_key = _path_title_key(path, p.get("title", ""))
+                target = by_path_title.get(title_key) if title_key else None
+                matched_by = "title" if target is not None else ""
             entry = {
                 "id": p["id"],
                 "type": p.get("type", "text"),
@@ -445,9 +457,12 @@ class PromptLibrary:
                 changes = _diff_prompt(cur, p)
                 if changes:
                     updated.append({**entry, "changes": changes,
-                                    "before_title": cur.get("title", "")})
+                                    "before_title": cur.get("title", ""),
+                                    "existing_id": cur.get("id", ""),
+                                    "matched_by": matched_by})
                 else:
-                    unchanged.append(entry)
+                    unchanged.append({**entry, "existing_id": cur.get("id", ""),
+                                      "matched_by": matched_by})
 
         return {
             "added": added,
@@ -466,7 +481,13 @@ class PromptLibrary:
           (created if missing), if add_new.
         """
         lib = normalize_library(incoming)
-        by_id = {p["id"]: p for p, _, _ in iter_prompts(self.data)}
+        by_id: dict[str, dict] = {}
+        by_path_title: dict[tuple[str, str], dict] = {}
+        for p, _, path in iter_prompts(self.data):
+            by_id[p["id"]] = p
+            key = _path_title_key(path, p.get("title", ""))
+            if key and key not in by_path_title:
+                by_path_title[key] = p
         n_updated = n_added = n_cats = 0
 
         def category_for_path(path: list[str]) -> dict:
@@ -487,18 +508,28 @@ class PromptLibrary:
             return current
 
         for p, _, path in iter_prompts(lib):
-            content_fields = ("type", "title", "prompt", "tags", "note") + schema.IMAGE_FIELDS
-            if p["id"] in by_id:
+            cur = by_id.get(p["id"])
+            title_key = _path_title_key(path, p.get("title", ""))
+            if cur is None and title_key:
+                cur = by_path_title.get(title_key)
+            if cur is not None:
                 if update_existing:
-                    cur = by_id[p["id"]]
-                    for k in content_fields:
+                    changes = _diff_prompt(cur, p)
+                    for k in _CONTENT_PROMPT_FIELDS:
                         if k in p:
                             cur[k] = p[k]
-                    cur["updated_at"] = now_iso()
-                    n_updated += 1
+                    if changes:
+                        cur["updated_at"] = now_iso()
+                        n_updated += 1
+                    by_id[p["id"]] = cur
+                    if title_key:
+                        by_path_title[title_key] = cur
             elif add_new:
                 dest = category_for_path(path)
                 dest.setdefault("prompts", []).append(p)
+                by_id[p["id"]] = p
+                if title_key:
+                    by_path_title[title_key] = p
                 n_added += 1
 
         return {"updated": n_updated, "added": n_added, "new_categories": n_cats}
@@ -534,11 +565,19 @@ def _subsequence(needle: str, haystack: str) -> bool:
     return all(ch in it for ch in needle)
 
 
+def _path_title_key(path: list[str], title: str) -> tuple[str, str] | None:
+    """Stable fallback match for non-JSON imports that do not carry ids."""
+    title_key = " ".join((title or "").strip().lower().split())
+    if not title_key:
+        return None
+    path_key = " / ".join(" ".join(part.strip().lower().split()) for part in path if part)
+    return (path_key, title_key)
+
+
 def _diff_prompt(cur: dict, inc: dict) -> dict:
     """Return {field: {before, after}} for content fields that differ."""
-    fields = ("type", "title", "prompt", "tags", "note") + schema.IMAGE_FIELDS
     changes: dict[str, dict] = {}
-    for k in fields:
+    for k in _CONTENT_PROMPT_FIELDS:
         if k not in inc:
             continue
         a, b = cur.get(k), inc.get(k)

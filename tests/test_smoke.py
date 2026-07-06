@@ -156,6 +156,37 @@ Tags: editing, clarity
     out["loose_array.total"] = schema.count_prompts(array_lib)
     assert out["loose_array.total"] == 1, out
 
+    with tempfile.TemporaryDirectory() as d:
+        tmp_lib = PromptLibrary(Path(d) / "prompts.json")
+        tmp_lib.data = {"version": 3, "categories": []}
+        first_outline = """Workflows
+  Research
+    Evidence map: Map the strongest sources for {topic}.
+"""
+        revised_outline = """Workflows
+  Research
+    Evidence map: Map the strongest sources for {topic}, grouped by reliability and open questions.
+"""
+        tmp_lib.apply_merge(_parse_import_text(first_outline))
+        revised = _parse_import_text(revised_outline)
+        pv_title = tmp_lib.merge_preview(revised)
+        out["merge.title_match.updated"] = len(pv_title["updated"])
+        assert out["merge.title_match.updated"] == 1, pv_title
+        assert pv_title["updated"][0]["matched_by"] == "title", pv_title
+        result = tmp_lib.apply_merge(revised)
+        out["merge.title_match.result"] = result
+        assert result["updated"] == 1 and result["added"] == 0, result
+        assert schema.count_prompts(tmp_lib.data) == 1, tmp_lib.data
+        result_again = tmp_lib.apply_merge(revised)
+        out["merge.title_match.repeat"] = result_again
+        assert result_again["updated"] == 0 and result_again["added"] == 0, result_again
+        no_update = tmp_lib.apply_merge(_parse_import_text("""Workflows
+  Research
+    Evidence map: A third body that should not duplicate when updates are off.
+"""), update_existing=False, add_new=True)
+        assert no_update["updated"] == 0 and no_update["added"] == 0, no_update
+        assert schema.count_prompts(tmp_lib.data) == 1, tmp_lib.data
+
     example = json.loads((Path(__file__).resolve().parents[1] / "prompts.example.json").read_text(encoding="utf-8"))
     example = schema.normalize_library(example)
     out["example.total"] = schema.count_prompts(example)

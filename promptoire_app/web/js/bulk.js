@@ -30,7 +30,7 @@
 
     host.appendChild(el("p", { class: "bulk-intro", html:
       "Hand your <b>entire</b> prompt library to any LLM in one shot, let it rewrite and expand everything, " +
-      "then merge the result back. JSON is matched by id; simple outlines are appended into matching sections." }));
+      "then merge the result back. Imports match by id first, then by title inside the same section." }));
 
     // STEP 1 — export
     const step1 = el("div", { class: "step" }, [
