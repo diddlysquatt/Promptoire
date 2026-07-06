@@ -489,7 +489,9 @@ _PROMPT_MARKER_RE = re.compile(
 _PATH_FIELD_RE = re.compile(
     r"^\s*("
     r"section|category|folder|group|path|folder[\s_-]+path|"
-    r"category[\s_-]+path|subcategory|sub-category|subsection|sub-section"
+    r"category[\s_-]+path|subcategory|sub-category|subsection|sub-section|"
+    r"sub[\s_-]*sub(?:category|section)|nested[\s_-]+sub(?:category|section)|"
+    r"child[\s_-]+(?:category|section)"
     r")\s*:\s*(.*?)\s*$",
     re.IGNORECASE,
 )
@@ -566,6 +568,22 @@ def _parse_outline(text: str) -> dict | None:
         current = None
         current_cat = None
 
+    def add_path_field(raw_key: str, value: str, raw_for_level: str) -> bool:
+        value = value.strip()
+        if not value:
+            return False
+        key = _normalize_path_key(raw_key)
+        if key in ("section", "category", "folder", "group", "path", "folderpath", "categorypath"):
+            level = 1
+        elif key in ("subsubcategory", "subsubsection"):
+            level = max(3, _indent_heading_level(raw_for_level))
+        elif key in ("nestedsubcategory", "nestedsubsection", "childcategory", "childsection"):
+            level = max((stack[-1][0] + 1) if stack else 2, _indent_heading_level(raw_for_level))
+        else:
+            level = max(2, _indent_heading_level(raw_for_level))
+        add_heading(level, value)
+        return True
+
     def new_block(cat: dict) -> dict:
         return {
             "title": "",
@@ -591,6 +609,31 @@ def _parse_outline(text: str) -> dict | None:
         block = ensure_block()
         block["prompt_lines"].append(value)
         block["started"] = True
+
+    def apply_field(raw_key: str, value: str, was_previous_blank: bool) -> None:
+        key = _normalize_outline_field(raw_key)
+        value = value.strip()
+        block = ensure_block()
+        if key == "title":
+            if was_previous_blank and block["started"]:
+                finish_prompt()
+                block = ensure_block()
+            block["title"] = value
+        elif key in ("prompt", "body", "text"):
+            if was_previous_blank and block["started"] and not block["explicit_prompt"]:
+                finish_prompt()
+                block = ensure_block()
+            block["prompt_lines"].append(value)
+            block["explicit_prompt"] = True
+            block["started"] = True
+        elif key == "tags":
+            block["tags"] = _split_tags(value)
+        elif key == "type":
+            block["type"] = value.lower()
+        elif key == "note":
+            block["note"] = value
+        else:
+            block["image"][key] = value
 
     def finish_prompt() -> None:
         nonlocal current, current_cat
@@ -630,15 +673,7 @@ def _parse_outline(text: str) -> dict | None:
 
         path_field = _PATH_FIELD_RE.match(line)
         if path_field:
-            key = re.sub(r"[\s_-]+", "", path_field.group(1).lower())
-            value = path_field.group(2).strip()
-            if value:
-                if key in (
-                    "section", "category", "folder", "group", "path", "folderpath", "categorypath",
-                ):
-                    add_heading(1, value)
-                else:
-                    add_heading(2, value)
+            if add_path_field(path_field.group(1), path_field.group(2), raw):
                 last_was_heading = True
             previous_blank = False
             continue
@@ -663,38 +698,48 @@ def _parse_outline(text: str) -> dict | None:
 
         bullet = _BULLET_RE.match(raw)
         if bullet:
+            value = bullet.group(1).strip()
+            path_field = _PATH_FIELD_RE.match(value)
+            if path_field:
+                if add_path_field(path_field.group(1), path_field.group(2), raw):
+                    last_was_heading = True
+                previous_blank = False
+                continue
+
+            marker = _PROMPT_MARKER_RE.match(value)
+            if marker:
+                finish_prompt()
+                block = ensure_block()
+                marker_value = marker.group(1).strip()
+                if marker_value:
+                    _seed_outline_block(block, marker_value, title_only=True)
+                previous_blank = False
+                last_was_heading = False
+                continue
+
+            field = _FIELD_RE.match(value)
+            if field:
+                apply_field(field.group(1), field.group(2), previous_blank)
+                previous_blank = False
+                last_was_heading = False
+                continue
+
+            if _looks_like_bullet_heading(raw, value, lines, idx):
+                add_heading(_indent_heading_level(raw), _clean_heading_name(value))
+                previous_blank = False
+                last_was_heading = True
+                continue
+
             finish_prompt()
             block = ensure_block()
-            _seed_outline_block(block, bullet.group(1).strip(), title_only=True)
+            _seed_outline_block(block, value, title_only=True)
             previous_blank = False
             last_was_heading = False
             continue
 
         field = _FIELD_RE.match(line)
         if field:
-            key = _normalize_outline_field(field.group(1))
-            value = field.group(2).strip()
-            block = ensure_block()
-            if key == "title":
-                if previous_blank and block["started"]:
-                    finish_prompt()
-                    block = ensure_block()
-                block["title"] = value
-            elif key in ("prompt", "body", "text"):
-                if previous_blank and block["started"] and not block["explicit_prompt"]:
-                    finish_prompt()
-                    block = ensure_block()
-                block["prompt_lines"].append(value)
-                block["explicit_prompt"] = True
-                block["started"] = True
-            elif key == "tags":
-                block["tags"] = _split_tags(value)
-            elif key == "type":
-                block["type"] = value.lower()
-            elif key == "note":
-                block["note"] = value
-            else:
-                block["image"][key] = value
+            apply_field(field.group(1), field.group(2), previous_blank)
             previous_blank = False
             last_was_heading = False
             continue
@@ -740,10 +785,14 @@ def _indent_width(raw: str) -> int:
     return len(expanded) - len(expanded.lstrip(" "))
 
 
+def _indent_heading_level(raw: str) -> int:
+    return min((_indent_width(raw) // 2) + 1, 6)
+
+
 def _plain_heading_level(raw: str, stack: list[tuple[int, dict]], last_was_heading: bool) -> int:
     if _indent_width(raw) == 0 and stack and last_was_heading:
         return min(stack[-1][0] + 1, 6)
-    return min((_indent_width(raw) // 2) + 1, 6)
+    return _indent_heading_level(raw)
 
 
 def _next_content_line(lines: list[str], idx: int) -> tuple[str, str] | None:
@@ -787,6 +836,21 @@ def _looks_like_plain_heading(
     return False
 
 
+def _looks_like_bullet_heading(raw: str, text: str, lines: list[str], idx: int) -> bool:
+    line = _clean_heading_name(text)
+    if not line or len(line) > 90:
+        return False
+    if _FIELD_RE.match(line) or _PATH_FIELD_RE.match(line) or _PROMPT_MARKER_RE.match(line):
+        return False
+    if _split_title_body(line)[1]:
+        return False
+    nxt = _next_content_line(lines, idx)
+    if nxt is None:
+        return False
+    next_raw, _ = nxt
+    return _indent_width(next_raw) > _indent_width(raw)
+
+
 def _split_title_body(text: str) -> tuple[str, str]:
     m = _SPLIT_RE.search(text)
     if not m:
@@ -816,6 +880,10 @@ def _split_tags(value: str) -> list[str]:
         if item and item not in tags:
             tags.append(item)
     return tags
+
+
+def _normalize_path_key(raw_key: str) -> str:
+    return re.sub(r"[\s_-]+", "", raw_key.strip().lower())
 
 
 def _normalize_outline_field(raw_key: str) -> str:

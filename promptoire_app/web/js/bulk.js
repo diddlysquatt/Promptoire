@@ -1,4 +1,4 @@
-/* bulk.js — the JSON/outline ⇄ LLM "improve my whole library" loop */
+/* bulk.js — the outline/JSON ⇄ LLM "improve my whole library" loop */
 (function () {
   "use strict";
   const PR = window.PROMPTOIRE;
@@ -9,6 +9,8 @@
     "Rules:\n" +
     "- Return only the outline. Do not wrap it in a code fence.\n" +
     "- Use # headings, Path: Section > Subsection > Nested subsection, Section/Subsection labels, or indentation for nested sections.\n" +
+    "- Nested bullet outlines are fine: - Section, - Subsection, - Prompt title: prompt body.\n" +
+    "- For deeper labels, use Sub-subsection: or Nested subsection:.\n" +
     "- Use prompt rows like: Title: Prompt body\n" +
     "- Numbered blocks like Prompt 1: are fine when a prompt needs multiple lines.\n" +
     "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +

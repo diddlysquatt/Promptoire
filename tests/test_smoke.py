@@ -262,6 +262,40 @@ Bug sweep: Review {code} for bugs.
     assert sibling_paths["First draft"] == ["Writing", "Drafting"], sibling_paths
     assert sibling_paths["Bug sweep"] == ["Coding", "Debugging"], sibling_paths
 
+    bullet_tree_outline = """- Workflows
+  - Research
+    - Literature
+      - Source map: Map the strongest sources for {topic}, grouped by reliability.
+    - Interviews
+      - Question planner: Turn {notes} into prioritized interview questions.
+- AI Art
+  - Characters
+    - Portraits
+      - Mood board: Create a visual direction board for {character}.
+"""
+    bullet_tree = _parse_import_text(bullet_tree_outline)
+    assert bullet_tree is not None, bullet_tree_outline
+    bullet_tree_paths = {p["title"]: path for p, _, path in schema.iter_prompts(bullet_tree)}
+    out["outline.bullet_tree_paths"] = bullet_tree_paths
+    assert bullet_tree_paths["Source map"] == ["Workflows", "Research", "Literature"], bullet_tree_paths
+    assert bullet_tree_paths["Question planner"] == ["Workflows", "Research", "Interviews"], bullet_tree_paths
+    assert bullet_tree_paths["Mood board"] == ["AI Art", "Characters", "Portraits"], bullet_tree_paths
+
+    nested_label_outline = """Section: Workflows
+Subsection: Research
+Sub-subsection: Literature
+Source map: Map the strongest sources for {topic}.
+
+Nested subsection: Interviews
+Question planner: Turn {notes} into prioritized interview questions.
+"""
+    nested_label = _parse_import_text(nested_label_outline)
+    assert nested_label is not None, nested_label_outline
+    nested_label_paths = {p["title"]: path for p, _, path in schema.iter_prompts(nested_label)}
+    out["outline.nested_label_paths"] = nested_label_paths
+    assert nested_label_paths["Source map"] == ["Workflows", "Research", "Literature"], nested_label_paths
+    assert nested_label_paths["Question planner"] == ["Workflows", "Research", "Literature", "Interviews"], nested_label_paths
+
     array_import = """Here are a few prompts:
 [
   {"title": "Array import", "prompt": "Use {topic} to verify array imports."}
@@ -350,6 +384,7 @@ Bug sweep: Review {code} for bugs.
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
         "numbered_prompt_blocks": "Prompt 1:",
+        "nested_bullet_imports": "Nested bullet outlines",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
@@ -455,6 +490,7 @@ Bug sweep: Review {code} for bugs.
         ),
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
         "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,
+        "nested_bullet_release_check": "nested bullet outlines" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens
