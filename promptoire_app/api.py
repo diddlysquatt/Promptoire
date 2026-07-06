@@ -551,7 +551,7 @@ def _parse_outline(text: str) -> dict | None:
                 if key in ("section", "category", "folder", "group"):
                     add_heading(1, value)
                 else:
-                    add_heading((stack[-1][0] + 1) if stack else 2, value)
+                    add_heading(2, value)
                 last_was_heading = True
             previous_blank = False
             continue

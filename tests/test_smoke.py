@@ -145,6 +145,25 @@ Tags: editing, clarity
     editing = next(p for p, _, _ in relaxed_prompts if p["title"].startswith("Rewrite"))
     assert editing["tags"] == ["editing", "clarity"], editing
 
+    sibling_outline = """Section: Writing
+Subsection: Editing
+Tight rewrite: Rewrite {text} clearly.
+
+Subsection: Drafting
+First draft: Draft a first pass about {topic}.
+
+Section: Coding
+Subsection: Debugging
+Bug sweep: Review {code} for bugs.
+"""
+    sibling = _parse_import_text(sibling_outline)
+    assert sibling is not None, sibling_outline
+    sibling_paths = {p["title"]: path for p, _, path in schema.iter_prompts(sibling)}
+    out["outline.sibling_subsections"] = sibling_paths
+    assert sibling_paths["Tight rewrite"] == ["Writing", "Editing"], sibling_paths
+    assert sibling_paths["First draft"] == ["Writing", "Drafting"], sibling_paths
+    assert sibling_paths["Bug sweep"] == ["Coding", "Debugging"], sibling_paths
+
     array_import = """Here are a few prompts:
 [
   {"title": "Array import", "prompt": "Use {topic} to verify array imports."}

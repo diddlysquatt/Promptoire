@@ -20,6 +20,8 @@
     "Section: Writing\n" +
     "Subsection: Editing\n" +
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
+    "Subsection: Drafting\n" +
+    "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
     "Now create prompts for this topic or workflow:\n\n";
 
   const EXAMPLE_OUTLINE =
@@ -28,7 +30,9 @@
     "    Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
     "Section: Writing\n" +
     "Subsection: Editing\n" +
-    "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n";
+    "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
+    "Subsection: Drafting\n" +
+    "First draft: Draft a first pass about {topic} in a clear, useful structure.\n";
 
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote;
 

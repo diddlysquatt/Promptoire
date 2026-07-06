@@ -114,9 +114,12 @@ Coding
 Section: AI Art
 Subsection: Characters
 Cinematic portrait: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
+
+Subsection: Environments
+Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic light.
 ```
 
-Headings, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Prompt rows become prompts. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
+Headings, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Repeated `Subsection:` labels stay under the latest `Section:`. Prompt rows become prompts. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 
