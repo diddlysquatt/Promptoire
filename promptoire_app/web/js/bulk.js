@@ -220,10 +220,12 @@
 
   function diffItem(kind, it) {
     const changes = it.changes ? Object.keys(it.changes).join(", ") : "";
+    const matchLabel = it.matched_by === "title" ? "matched by title" : "";
     return el("div", { class: "diff-item" }, [
       el("div", { class: "di-top" }, [
         el("span", { class: "di-badge " + kind, text: kind === "add" ? "NEW" : "UPD" }),
         el("span", { class: "di-title", text: it.title || "Untitled" }),
+        matchLabel ? el("span", { class: "di-match", text: matchLabel }) : null,
         el("span", { class: "di-cat", text: it.category_name || "" }),
       ]),
       changes ? el("div", { class: "di-changes", text: "changes: " + changes }) : null,

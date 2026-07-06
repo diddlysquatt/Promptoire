@@ -215,6 +215,7 @@ Tags: editing, clarity
         "replace_danger_zone": "danger-zone",
         "merge_action_guard": "Choose Add new or Update existing",
         "merge_state_sync": "syncMergeState",
+        "title_match_badge": "matched by title",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens

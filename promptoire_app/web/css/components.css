@@ -394,6 +394,11 @@
   text-overflow: ellipsis; white-space: nowrap; }
 .di-changes { font-size: 11px; color: var(--faint); margin-top: 4px; }
 .di-cat { font-size: 10.5px; color: var(--muted); }
+.di-match {
+  flex: 0 0 auto; font-size: 10.5px; font-weight: 650;
+  color: var(--good); padding: 2px 7px; border-radius: 99px;
+  background: rgba(52,211,153,0.12);
+}
 
 .merge-card {
   margin-top: 10px; padding: 12px 14px;
