@@ -13,10 +13,9 @@ where node >nul 2>nul || (
 
 call :run "%PY%" tests\test_smoke.py || exit /b 1
 call :run "%PY%" -m compileall -q promptoire_app tests || exit /b 1
-call :run node --check promptoire_app\web\js\app.js || exit /b 1
-call :run node --check promptoire_app\web\js\settings.js || exit /b 1
-call :run node --check promptoire_app\web\js\bulk.js || exit /b 1
-call :run node --check promptoire_app\web\js\bridge.js || exit /b 1
+for %%F in (bridge.js state.js components.js launcher.js editor.js bulk.js settings.js app.js) do (
+  call :run node --check promptoire_app\web\js\%%F || exit /b 1
+)
 call :run "%PY%" -m promptoire_app --selftest || exit /b 1
 call :run powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Check-PromptoireShortcut.ps1" || exit /b 1
 

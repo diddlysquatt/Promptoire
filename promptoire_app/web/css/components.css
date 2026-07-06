@@ -150,6 +150,7 @@
 .empty .emoji { font-size: 32px; opacity: 0.85; }
 .empty h3 { font-size: 14px; color: var(--muted); font-weight: 600; }
 .empty p { font-size: 12.5px; max-width: 260px; line-height: 1.5; }
+.empty-actions { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 /* ---- toast -------------------------------------------------------------- */
 .toast-host {
   position: fixed; left: 0; right: 0; bottom: 14px; z-index: 50;

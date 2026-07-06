@@ -280,8 +280,11 @@
     return el("div", { class: "empty" }, [
       el("div", { class: "emoji", text: "✨" }),
       el("h3", { text: "Your prompt library is empty" }),
-      el("p", { html: "Add your first prompt, or use <b>Improve&nbsp;library</b> to seed it with AI." }),
-      el("button", { class: "btn btn-primary btn-sm", text: "New prompt", onclick: () => PR.editor.newPrompt(null) }),
+      el("p", { html: "Add one prompt, or import an outline from an LLM." }),
+      el("div", { class: "empty-actions" }, [
+        el("button", { class: "btn btn-primary btn-sm", text: "New prompt", onclick: () => PR.editor.newPrompt(null) }),
+        el("button", { class: "btn btn-sm", html: icon("copy") + " Import prompts", onclick: () => PR.app.showView("bulk") }),
+      ]),
     ]);
   }
 

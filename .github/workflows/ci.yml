@@ -42,7 +42,16 @@ jobs:
       - name: Check frontend JavaScript syntax
         shell: pwsh
         run: |
-          node --check promptoire_app\web\js\app.js
-          node --check promptoire_app\web\js\settings.js
-          node --check promptoire_app\web\js\bulk.js
-          node --check promptoire_app\web\js\bridge.js
+          $files = @(
+            "bridge.js",
+            "state.js",
+            "components.js",
+            "launcher.js",
+            "editor.js",
+            "bulk.js",
+            "settings.js",
+            "app.js"
+          )
+          foreach ($file in $files) {
+            node --check "promptoire_app\web\js\$file"
+          }

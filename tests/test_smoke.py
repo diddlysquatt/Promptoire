@@ -578,6 +578,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
     bridge_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bridge.js").read_text(encoding="utf-8")
     app_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "app.js").read_text(encoding="utf-8")
+    launcher_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "launcher.js").read_text(encoding="utf-8")
     settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     bulk_tokens = {
@@ -641,6 +642,12 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.mock_save_outline"], "save_outline_file"
     out["frontend.mock_outline_prompt_setting"] = "outline_prompt" in bridge_js
     assert out["frontend.mock_outline_prompt_setting"], "outline_prompt"
+    out["frontend.empty_import_shortcut"] = (
+        "Import prompts" in launcher_js
+        and 'PR.app.showView("bulk")' in launcher_js
+        and "empty-actions" in components_css
+    )
+    assert out["frontend.empty_import_shortcut"], "empty import shortcut"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
     out["frontend.generic_coffee_guard"] = (
@@ -726,6 +733,14 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
+        "all_frontend_js_checked": (
+            all(f"node --check promptoire_app/web/js/{name}" in release_checklist for name in (
+                "bridge.js", "state.js", "components.js", "launcher.js", "editor.js", "bulk.js", "settings.js", "app.js"
+            ))
+            and all(name in release_bat and name in ci_workflow for name in (
+                "bridge.js", "state.js", "components.js", "launcher.js", "editor.js", "bulk.js", "settings.js", "app.js"
+            ))
+        ),
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
         "generic_support_release_check": "blank/generic root links" in release_checklist,
         "publish_check_documented": (

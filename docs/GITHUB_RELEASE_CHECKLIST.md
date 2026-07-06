@@ -40,10 +40,14 @@ If that fails, run the individual checks below to isolate the problem:
 ```bash
 python tests/test_smoke.py
 python -m compileall -q promptoire_app tests
-node --check promptoire_app/web/js/app.js
-node --check promptoire_app/web/js/settings.js
-node --check promptoire_app/web/js/bulk.js
 node --check promptoire_app/web/js/bridge.js
+node --check promptoire_app/web/js/state.js
+node --check promptoire_app/web/js/components.js
+node --check promptoire_app/web/js/launcher.js
+node --check promptoire_app/web/js/editor.js
+node --check promptoire_app/web/js/bulk.js
+node --check promptoire_app/web/js/settings.js
+node --check promptoire_app/web/js/app.js
 .\.venv\Scripts\python.exe -m promptoire_app --selftest
 ```
 
@@ -67,6 +71,7 @@ gh auth refresh --scopes workflow
 - Set the final Buy Me a Coffee link in Settings or keep the blank default; blank/generic root links prompt the user to configure support instead of opening a generic page.
 - Confirm the Improve Library panel shows `Copy outline library` as the default export action, offers `Edit instructions` and `Save outline`, keeps `Copy outline request` beside it, and tucks `Copy for AI` / JSON export under `JSON options`.
 - Confirm `Edit instructions` changes the outline prompt used by `Copy outline library` and `Improve with AI now`; `Reset default` restores the built-in instruction; JSON instructions stay under `JSON options`.
+- Confirm an empty library offers both `New prompt` and `Import prompts`, with `Import prompts` opening the Improve Library flow.
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge.
 - Confirm `Load from file` accepts outline `.txt` / `.md`, CSV `.csv`, and `.json` files.
 - Confirm nested bullet outlines and `Sub-subsection:` / `Nested subsection:` labels import as nested sections.
