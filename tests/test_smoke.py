@@ -589,6 +589,10 @@ Question planner: Turn {notes} into prioritized interview questions.
         "title_match_badge": "matched by title",
         "outline_library_button": "Copy outline library",
         "outline_library_handler": "copyOutlineExport",
+        "outline_request_modal": "Prompt batch request",
+        "outline_request_topic": "Topic or workflow",
+        "outline_request_builder": "buildOutlineRequest",
+        "outline_request_blank": "Copy blank",
         "outline_instructions_button": "Edit instructions",
         "outline_instructions_modal": "Outline AI instructions",
         "instructions_reset_button": "Reset default",
@@ -779,6 +783,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "outline_library_release_check": (
             "Copy outline library" in release_checklist
+            and "optional topic/workflow" in release_checklist
             and "Edit instructions" in release_checklist
             and "Save outline" in release_checklist
             and "JSON options" in release_checklist

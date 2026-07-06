@@ -19,6 +19,7 @@
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.
 - Reset buttons for restoring the default outline and JSON AI instructions.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
+- Topic-aware outline requests for asking an LLM to generate a brand-new prompt batch.
 - Import preview chips for new nested sections and title-matched updates.
 - Import preview now shows total incoming prompts and clearer safe-merge mode notes.
 - Settings can open the local data folder that contains prompts, settings, and backups.

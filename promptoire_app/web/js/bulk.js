@@ -215,10 +215,32 @@
     if (r && r.ok) toast("Outline library copied — paste into any LLM");
     else toast((r && r.error) || "Copy failed", { bad: true });
   }
-  async function copyOutlineRequest() {
-    const r = await PR.bridge.call("copy_text", OUTLINE_REQUEST);
-    if (r && r.ok) toast("Outline request copied — paste it into any LLM");
-    else toast((r && r.error) || "Copy failed", { bad: true });
+  function buildOutlineRequest(topic) {
+    const clean = String(topic || "").trim();
+    return OUTLINE_REQUEST + (clean ? clean + "\n" : "");
+  }
+  function copyOutlineRequest() {
+    PR.state.suppressBlur = true;
+    const topic = el("textarea", { class: "textarea", style: { minHeight: "92px" },
+      placeholder: "e.g. onboarding email sequence, code review workflow, fantasy map prompts" });
+    const copyBtn = el("button", { class: "btn btn-primary", text: "Copy request" });
+    const blankBtn = el("button", { class: "btn btn-ghost", text: "Copy blank" });
+    const cancelBtn = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { m.close(); } });
+    const m = PR.ui.modal({ title: "Prompt batch request",
+      body: el("div", { class: "field" }, [el("label", { text: "Topic or workflow" }), topic]),
+      footer: [blankBtn, cancelBtn, copyBtn], onClose: () => { PR.state.suppressBlur = false; } });
+    setTimeout(() => topic.focus(), 40);
+    copyBtn.addEventListener("click", () => copyOutlineRequestText(buildOutlineRequest(topic.value), m));
+    blankBtn.addEventListener("click", () => copyOutlineRequestText(buildOutlineRequest(""), m));
+  }
+  async function copyOutlineRequestText(text, modal) {
+    const r = await PR.bridge.call("copy_text", text);
+    if (r && r.ok) {
+      modal.close();
+      toast("Outline request copied — paste it into any LLM");
+    } else {
+      toast((r && r.error) || "Copy failed", { bad: true });
+    }
   }
   async function saveFile() {
     PR.state.suppressBlur = true;

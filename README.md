@@ -80,7 +80,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 
 The outline instruction is editable in that panel, with **Reset default** if you want the built-in instruction back. The older JSON instruction is still editable under **JSON options** for compatibility.
 
-For brand-new prompt batches without exporting your existing library, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
+For brand-new prompt batches without exporting your existing library, use **Copy outline request**. Add a topic or workflow, then it copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
 
 **Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the outline library, gets an importable reply back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
 
