@@ -60,12 +60,33 @@ def _run_checks():
     data = json.loads(exp["json"])
     out["export.cats"] = len(data["categories"])
 
+    outline_export = app.library.export_outline()
+    out["export.outline.has_path"] = "Path:" in outline_export
+    out["export.outline.has_prompt"] = "Prompt:" in outline_export
+    out["export.outline.has_image_field"] = "Negative prompt:" in outline_export
+    assert out["export.outline.has_path"], outline_export
+    assert out["export.outline.has_prompt"], outline_export
+    assert out["export.outline.has_image_field"], outline_export
+    outline_export_data = _parse_import_text(outline_export)
+    assert outline_export_data is not None, outline_export
+    out["export.outline.total"] = schema.count_prompts(schema.normalize_library(outline_export_data))
+    assert out["export.outline.total"] == st["stats"]["total"], out
+
     # round-trip: preview merging the export back -> all unchanged
     pv = api.merge_preview(exp["json"])
     assert pv["ok"], pv
     out["merge.added"] = len(pv["preview"]["added"])
     out["merge.updated"] = len(pv["preview"]["updated"])
     out["merge.unchanged"] = pv["preview"]["unchanged_count"]
+
+    pv_outline = api.merge_preview(outline_export)
+    assert pv_outline["ok"], pv_outline
+    out["merge.outline_export.added"] = len(pv_outline["preview"]["added"])
+    out["merge.outline_export.updated"] = len(pv_outline["preview"]["updated"])
+    out["merge.outline_export.unchanged"] = pv_outline["preview"]["unchanged_count"]
+    assert out["merge.outline_export.added"] == 0, pv_outline
+    assert out["merge.outline_export.updated"] == 0, pv_outline
+    assert out["merge.outline_export.unchanged"] == st["stats"]["total"], pv_outline
 
     # loose-json parsing: wrap in a code fence + prose like an LLM would
     fenced = "Sure! Here is the improved library:\n```json\n" + exp["json"] + "\n```\nEnjoy!"
@@ -276,6 +297,8 @@ Bug sweep: Review {code} for bugs.
         "merge_action_guard": "Choose Add new or Update existing",
         "merge_state_sync": "syncMergeState",
         "title_match_badge": "matched by title",
+        "outline_library_button": "Copy outline library",
+        "outline_library_handler": "copyOutlineExport",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
         "new_category_preview": "newCategoryPreview",
@@ -340,6 +363,7 @@ Bug sweep: Review {code} for bugs.
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
         "shortcut_release_check": "PROMPTOIRE` desktop shortcut" in release_checklist,
+        "outline_library_release_check": "Copy outline library" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens
@@ -347,6 +371,8 @@ Bug sweep: Review {code} for bugs.
     # copy_export (clipboard may be unavailable in headless; just check shape)
     ce = api.copy_export(True, False)
     out["copy_export.ok"] = ce.get("ok")
+    coe = api.copy_outline_export(True)
+    out["copy_outline_export.ok"] = coe.get("ok")
 
     # add/update/delete cycle (against a temp clone — we won't save)
     add = api.add_prompt(st["categories"][0]["id"], {"title": "ZZ smoke", "prompt": "hello {name}", "tags": ["smoke"]})

@@ -16,6 +16,14 @@ from .core import schema
 from .platform import clipboard
 
 
+_OUTLINE_EXPORT_REQUEST = (
+    "Improve this Promptoire outline. Keep existing section paths and prompt "
+    "titles stable when updating existing prompts so Promptoire can merge by "
+    "title. Add new prompts only where they fit. Return only the outline, with "
+    "no code fence or extra commentary."
+)
+
+
 def ok(**kw) -> dict:
     return {"ok": True, **kw}
 
@@ -210,6 +218,17 @@ class Api:
                 payload = f"{meta}\n\n```json\n{body}\n```"
             else:
                 payload = body
+            if not clipboard.copy(payload):
+                return err("Clipboard unavailable")
+            return ok(chars=len(payload))
+        except Exception as e:
+            return err(str(e))
+
+    def copy_outline_export(self, include_request: bool = True) -> dict:
+        """Copy the current library in the simple outline format."""
+        try:
+            body = self._app.library.export_outline()
+            payload = f"{_OUTLINE_EXPORT_REQUEST}\n\n{body}" if include_request else body
             if not clipboard.copy(payload):
                 return err("Clipboard unavailable")
             return ok(chars=len(payload))
@@ -766,6 +785,7 @@ def _normalize_outline_field(raw_key: str) -> str:
 
 def _outline_block_to_prompt(block: dict) -> dict | None:
     body = "\n".join(ln for ln in block.get("prompt_lines", []) if ln is not None).strip()
+    body = _decode_quoted_outline_body(body)
     title = (block.get("title") or "").strip() or _derive_title(body)
     if not title and not body:
         return None
@@ -780,3 +800,14 @@ def _outline_block_to_prompt(block: dict) -> dict | None:
         raw["type"] = ptype
     raw.update(block.get("image") or {})
     return schema.normalize_prompt(raw)
+
+
+def _decode_quoted_outline_body(body: str) -> str:
+    if len(body) >= 2 and body.startswith('"') and body.endswith('"'):
+        try:
+            decoded = json.loads(body)
+            if isinstance(decoded, str):
+                return decoded
+        except Exception:
+            pass
+    return body

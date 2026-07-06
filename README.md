@@ -70,14 +70,14 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 ## 🔁 The bulk-improve loop
 
 1. Open **Improve library** (sparkle icon).
-2. **Copy for AI** — puts an editable instruction + your whole library (as JSON) on your clipboard.
-3. Paste into any LLM. It can return improved JSON in the same schema, or a plain outline of new prompts.
+2. **Copy for AI** puts an editable instruction + your whole library (as JSON) on your clipboard. **Copy outline library** does the same job in a plain section/subsection outline when you do not want JSON.
+3. Paste into any LLM. It can return improved JSON in the same schema, or the plain outline format.
 4. Paste that back, hit **Preview changes** — see exactly what's new vs. updated.
 5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted).
 
-The instruction (meta-prompt) is fully editable in that panel.
+The JSON instruction (meta-prompt) is fully editable in that panel.
 
-For new prompt batches without JSON, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
+For brand-new prompt batches without exporting your existing library, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
 
 **Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the library, gets the improved JSON back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
 
@@ -106,7 +106,7 @@ Everything lives in `prompts.json` next to the app — human-readable and easy t
 }
 ```
 
-For quick appends, the import box also accepts a plain outline:
+For quick appends or no-JSON library passes, the import box also accepts a plain outline. **Copy outline library** exports your current prompts in this same format:
 
 ```md
 Coding

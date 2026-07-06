@@ -72,6 +72,7 @@
       el("div", { class: "btn-row" }, [
         el("button", { class: "btn btn-primary", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
         el("button", { class: "btn", text: "Copy JSON only", onclick: () => copyExport(false) }),
+        el("button", { class: "btn", text: "Copy outline library", onclick: copyOutlineExport }),
         el("button", { class: "btn", text: "Copy outline request", onclick: copyOutlineRequest }),
         el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
         el("button", { class: "btn btn-ghost", text: "Edit AI instructions", onclick: editMeta }),
@@ -194,6 +195,11 @@
     const r = await PR.bridge.call("copy_export", meta, false);
     if (r && r.ok) toast("JSON copied (" + (r.chars || 0) + " chars)");
     else toast("Copy failed", { bad: true });
+  }
+  async function copyOutlineExport() {
+    const r = await PR.bridge.call("copy_outline_export", true);
+    if (r && r.ok) toast("Outline library copied — paste into any LLM");
+    else toast((r && r.error) || "Copy failed", { bad: true });
   }
   async function copyOutlineRequest() {
     const r = await PR.bridge.call("copy_text", OUTLINE_REQUEST);
@@ -339,7 +345,7 @@
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
     const m = PR.ui.modal({ title: "AI instructions (meta-prompt)", wide: true,
       body: el("div", {}, [
-        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. For adding new batches without JSON, use <b>Copy outline request</b>." }),
+        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. For a no-JSON loop, use <b>Copy outline library</b>. For new batches, use <b>Copy outline request</b>." }),
         ta ]),
       footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
     save.addEventListener("click", async () => {

@@ -113,6 +113,7 @@
     toggle_favorite: (id) => { for(const {p} of walk(mockCats)){ if(p.id===id){ p.favorite=!p.favorite; return {ok:true,favorite:p.favorite}; } } return {ok:false}; },
     get_export: () => ({ ok:true, json: JSON.stringify({version:3,categories:mockCats},null,2) }),
     copy_export: () => ({ ok:true, chars: 1234 }),
+    copy_outline_export: () => ({ ok:true, chars: 987 }),
     merge_preview: () => ({ ok:true, preview:{added:[{id:"new_1",title:"Cinematic portrait",type:"image",category_name:"AI Art / Characters / Portraits"}], updated:[{id:"prm_x",title:"Refactor for clarity",type:"text",category_name:"Coding",changes:{prompt:{}}, before_title:"Refactor for clarity"}], unchanged_count:4, new_categories:["AI Art / Characters / Portraits"], incoming_total:6} }),
     apply_merge: () => ({ ok:true, result:{updated:1,added:1,new_categories:0}, stats:stats(), categories:mockCats }),
     ai_improve: () => ({ ok:false, error:"(preview mode — connect the real app and set an API key to use this)" }),

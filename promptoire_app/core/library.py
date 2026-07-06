@@ -403,6 +403,55 @@ class PromptLibrary:
     def export_json(self, *, full: bool = False) -> str:
         return json.dumps(self.export_dict(full=full), indent=2, ensure_ascii=False)
 
+    def export_outline(self) -> str:
+        """Library as the plain outline format accepted by the importer."""
+        lines: list[str] = []
+
+        def add_prompt(path: list[str], p: dict) -> None:
+            if lines:
+                lines.append("")
+            lines.append(f"Path: {_outline_one_line(' > '.join(path) or 'Imported')}")
+            lines.append(f"Title: {_outline_one_line(p.get('title', '')) or 'Untitled'}")
+            ptype = p.get("type", "text") if p.get("type") in schema.PROMPT_TYPES else "text"
+            lines.append(f"Type: {ptype}")
+
+            body = _outline_prompt_body(p.get("prompt", ""))
+            body_lines = body.split("\n") if body else [""]
+            lines.append(f"Prompt: {body_lines[0]}")
+            lines.extend(body_lines[1:])
+
+            tags = [_outline_one_line(t) for t in p.get("tags", []) if _outline_one_line(t)]
+            if tags:
+                lines.append("Tags: " + ", ".join(tags))
+            note = _outline_one_line(p.get("note", ""))
+            if note:
+                lines.append(f"Note: {note}")
+
+            if ptype == "image" or any(p.get(f) for f in schema.IMAGE_FIELDS):
+                field_labels = {
+                    "negative": "Negative prompt",
+                    "model": "Image model",
+                    "params": "Parameters",
+                    "seed": "Seed",
+                    "sampler": "Sampler",
+                    "cfg": "CFG scale",
+                }
+                for key, label in field_labels.items():
+                    value = _outline_one_line(p.get(key, ""))
+                    if value:
+                        lines.append(f"{label}: {value}")
+
+        def walk(cats: list[dict], path: list[str]) -> None:
+            for cat in cats:
+                name = _outline_one_line(cat.get("name", "")) or "Imported"
+                here = path + [name]
+                for prompt in cat.get("prompts", []):
+                    add_prompt(here, prompt)
+                walk(cat.get("subcategories", []), here)
+
+        walk(self.categories(), [])
+        return ("\n".join(lines).strip() + "\n") if lines else ""
+
     def merge_preview(self, incoming: Any) -> dict:
         """Diff an incoming library against current state, matching by prompt id.
 
@@ -572,6 +621,15 @@ def _path_title_key(path: list[str], title: str) -> tuple[str, str] | None:
         return None
     path_key = " / ".join(" ".join(part.strip().lower().split()) for part in path if part)
     return (path_key, title_key)
+
+
+def _outline_one_line(value: Any) -> str:
+    return " ".join(str(value or "").replace("\r", " ").replace("\n", " ").split())
+
+
+def _outline_prompt_body(value: Any) -> str:
+    body = str(value or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    return json.dumps(body, ensure_ascii=False) if "\n" in body else body
 
 
 def _diff_prompt(cur: dict, inc: dict) -> dict:
