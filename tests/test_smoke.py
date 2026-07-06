@@ -571,6 +571,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "release_selftest": "--selftest" in release_checklist and '"mock": false' in release_checklist,
         "release_changelog_check": "CHANGELOG.md" in release_checklist,
+        "release_ci_scope": "portable subset" in release_checklist and "local gate is" in release_checklist,
         "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,

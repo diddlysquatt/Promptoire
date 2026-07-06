@@ -17,7 +17,9 @@ That removes it from git without deleting the file locally.
 
 ## Preflight
 
-These are the same checks run by `.github/workflows/ci.yml`.
+GitHub Actions runs the portable subset of these checks. The local gate is
+stricter because it also verifies the real WebView launch, desktop shortcut,
+and private-file guard on this Windows machine.
 
 Run the one-command local gate first:
 
