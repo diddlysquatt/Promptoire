@@ -8,18 +8,18 @@
     "Create a batch of prompts for my Promptoire library using this simple import outline format.\n\n" +
     "Rules:\n" +
     "- Return only the outline. Do not wrap it in a code fence.\n" +
-    "- Use # for top-level sections and ## or ### for subsections.\n" +
-    "- Use bullets for prompts: - Title: Prompt body\n" +
+    "- Use # headings, Section/Subsection labels, or indentation for nested sections.\n" +
+    "- Use prompt rows like: Title: Prompt body\n" +
     "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
     "- Use {placeholders} where the user should fill in a value.\n" +
     "- Make sections and subsections organized enough that I can merge them into an existing library.\n\n" +
     "Example format:\n\n" +
-    "# Coding\n" +
-    "## Debugging\n" +
-    "- Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
-    "# Writing\n" +
-    "## Editing\n" +
-    "- Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
+    "Coding\n" +
+    "  Debugging\n" +
+    "    Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
+    "Section: Writing\n" +
+    "Subsection: Editing\n" +
+    "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Now create prompts for this topic or workflow:\n\n";
 
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd;
@@ -57,7 +57,7 @@
 
     // STEP 2 — import
     pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
-      placeholder: "Paste improved JSON, or a simple outline:\n\n# Coding\n## Debugging\n- Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\n# AI Art > Characters\n- Cinematic portrait: A dramatic 85mm portrait of {subject}..." });
+      placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nSection: AI Art\nSubsection: Characters\nCinematic portrait: A dramatic 85mm portrait of {subject}..." });
     pasteArea.addEventListener("input", () => { applyBtn.disabled = true; previewBox.innerHTML = ""; });
 
     const step2 = el("div", { class: "step" }, [

@@ -393,19 +393,27 @@ def _parse_loose_json(text: str) -> Any:
     try:
         return json.loads(s)
     except Exception:
-        # Last resort: grab the outermost {...} block.
-        start = s.find("{")
-        end = s.rfind("}")
-        if start != -1 and end != -1 and end > start:
+        # Last resort: grab the first outer object or array block.
+        candidates = []
+        for opener, closer in (("{", "}"), ("[", "]")):
+            start = s.find(opener)
+            end = s.rfind(closer)
+            if start != -1 and end != -1 and end > start:
+                candidates.append((start, end + 1))
+        for start, end in sorted(candidates):
             try:
-                return json.loads(s[start:end + 1])
+                return json.loads(s[start:end])
             except Exception:
-                return None
+                pass
     return None
 
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _BULLET_RE = re.compile(r"^\s*(?:[-*+]|[0-9]+[.)])\s+(.+?)\s*$")
+_PATH_FIELD_RE = re.compile(
+    r"^\s*(section|category|folder|group|subcategory|sub-category|subsection|sub-section)\s*:\s*(.*?)\s*$",
+    re.IGNORECASE,
+)
 _FIELD_RE = re.compile(
     r"^\s*(title|prompt|body|text|tags|type|note|negative|model|params|seed|sampler|cfg)\s*:\s*(.*?)\s*$",
     re.IGNORECASE,
@@ -455,7 +463,7 @@ def _parse_outline(text: str) -> dict | None:
     def add_heading(level: int, raw_name: str) -> None:
         nonlocal current, current_cat, saw_structure
         finish_prompt()
-        parts = [p.strip() for p in re.split(r"\s*>\s*", raw_name) if p.strip()]
+        parts = [_clean_heading_name(p) for p in re.split(r"\s*>\s*", raw_name) if _clean_heading_name(p)]
         if not parts:
             return
         while stack and stack[-1][0] >= level:
@@ -511,21 +519,48 @@ def _parse_outline(text: str) -> dict | None:
         current = None
         current_cat = None
 
-    for raw in lines:
+    last_was_heading = False
+
+    for idx, raw in enumerate(lines):
         line = raw.strip()
         if not line:
             previous_blank = True
             continue
 
+        if previous_blank and current is not None and current.get("started") and not raw.startswith((" ", "\t")):
+            finish_prompt()
+
         heading = _HEADING_RE.match(line)
         if heading:
             add_heading(len(heading.group(1)), heading.group(2).strip())
             previous_blank = False
+            last_was_heading = True
             continue
 
         if _SEPARATOR_RE.match(line):
             finish_prompt()
             previous_blank = False
+            last_was_heading = False
+            continue
+
+        path_field = _PATH_FIELD_RE.match(line)
+        if path_field:
+            key = path_field.group(1).lower().replace("-", "")
+            value = path_field.group(2).strip()
+            if value:
+                if key in ("section", "category", "folder", "group"):
+                    add_heading(1, value)
+                else:
+                    add_heading((stack[-1][0] + 1) if stack else 2, value)
+                last_was_heading = True
+            previous_blank = False
+            continue
+
+        if _looks_like_plain_heading(raw, lines, idx, current, previous_blank):
+            level = _plain_heading_level(raw, stack, last_was_heading)
+            add_heading(level, _clean_heading_name(line))
+            previous_blank = False
+            last_was_heading = True
             continue
 
         bullet = _BULLET_RE.match(raw)
@@ -534,6 +569,7 @@ def _parse_outline(text: str) -> dict | None:
             block = ensure_block()
             _seed_outline_block(block, bullet.group(1).strip())
             previous_blank = False
+            last_was_heading = False
             continue
 
         field = _FIELD_RE.match(line)
@@ -562,6 +598,7 @@ def _parse_outline(text: str) -> dict | None:
             else:
                 block["image"][key] = value
             previous_blank = False
+            last_was_heading = False
             continue
 
         if previous_blank and current is not None and current.get("started") and not raw.startswith((" ", "\t")):
@@ -573,6 +610,7 @@ def _parse_outline(text: str) -> dict | None:
         else:
             append_prompt_line(line)
         previous_blank = False
+        last_was_heading = False
 
     finish_prompt()
 
@@ -592,6 +630,62 @@ def _seed_outline_block(block: dict, text: str) -> None:
         block["title"] = _derive_title(text)
         block["prompt_lines"].append(text)
     block["started"] = True
+
+
+def _clean_heading_name(text: str) -> str:
+    return text.strip().rstrip(":").strip()
+
+
+def _indent_width(raw: str) -> int:
+    expanded = raw.replace("\t", "    ")
+    return len(expanded) - len(expanded.lstrip(" "))
+
+
+def _plain_heading_level(raw: str, stack: list[tuple[int, dict]], last_was_heading: bool) -> int:
+    if _indent_width(raw) == 0 and stack and last_was_heading:
+        return min(stack[-1][0] + 1, 6)
+    return min((_indent_width(raw) // 2) + 1, 6)
+
+
+def _next_content_line(lines: list[str], idx: int) -> tuple[str, str] | None:
+    for raw in lines[idx + 1:]:
+        stripped = raw.strip()
+        if stripped and not _SEPARATOR_RE.match(stripped):
+            return raw, stripped
+    return None
+
+
+def _looks_like_plain_heading(
+    raw: str,
+    lines: list[str],
+    idx: int,
+    current: dict | None,
+    previous_blank: bool,
+) -> bool:
+    line = _clean_heading_name(raw.strip())
+    if not line or (current is not None and not previous_blank):
+        return False
+    if len(line) > 90:
+        return False
+    if _HEADING_RE.match(line) or _BULLET_RE.match(raw):
+        return False
+    if _FIELD_RE.match(raw.strip()) or _PATH_FIELD_RE.match(raw.strip()):
+        return False
+    if _split_title_body(line)[1]:
+        return False
+
+    nxt = _next_content_line(lines, idx)
+    if nxt is None:
+        return False
+
+    next_raw, next_line = nxt
+    if _indent_width(next_raw) > _indent_width(raw):
+        return True
+    if ">" in line and (_BULLET_RE.match(next_raw) or _FIELD_RE.match(next_line)):
+        return True
+    if current is None and (_BULLET_RE.match(next_raw) or _FIELD_RE.match(next_line)):
+        return True
+    return False
 
 
 def _split_title_body(text: str) -> tuple[str, str]:

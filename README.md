@@ -107,15 +107,16 @@ Everything lives in `prompts.json` next to the app — human-readable and easy t
 For quick appends, the import box also accepts a plain outline:
 
 ```md
-# Coding
-## Debugging
-- Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.
+Coding
+  Debugging
+    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.
 
-# AI Art > Characters
-- Cinematic portrait: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
+Section: AI Art
+Subsection: Characters
+Cinematic portrait: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
 ```
 
-Headings become categories and subcategories. Bullets become prompts. Merging an outline adds to matching sections and does not replace the existing library.
+Headings, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Prompt rows become prompts. Merging an outline adds to matching sections and does not replace the existing library.
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 

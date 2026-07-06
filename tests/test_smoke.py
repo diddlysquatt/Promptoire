@@ -124,6 +124,38 @@ Params: --ar 4:5 --stylize 250
         assert tmp_lib.categories()[0]["subcategories"][0]["name"] == "Characters"
         out["merge.outline.rich_added"] = result["added"]
 
+    relaxed_outline = """Workflows
+  Research
+    Evidence map: Map the strongest sources for {topic}, grouped by reliability.
+    - Question list: Turn {notes} into prioritized unanswered questions.
+
+Section: Writing
+Subsection: Editing
+Prompt: Rewrite {text} for clarity while keeping the original voice.
+Tags: editing, clarity
+"""
+    relaxed = _parse_import_text(relaxed_outline)
+    assert relaxed is not None, relaxed_outline
+    relaxed_prompts = list(schema.iter_prompts(relaxed))
+    out["outline.relaxed.total"] = len(relaxed_prompts)
+    assert out["outline.relaxed.total"] == 3, out
+    relaxed_paths = {p["title"]: path for p, _, path in relaxed_prompts}
+    assert relaxed_paths["Evidence map"] == ["Workflows", "Research"], relaxed_paths
+    assert relaxed_paths["Question list"] == ["Workflows", "Research"], relaxed_paths
+    editing = next(p for p, _, _ in relaxed_prompts if p["title"].startswith("Rewrite"))
+    assert editing["tags"] == ["editing", "clarity"], editing
+
+    array_import = """Here are a few prompts:
+[
+  {"title": "Array import", "prompt": "Use {topic} to verify array imports."}
+]
+"""
+    array_data = _parse_import_text(array_import)
+    assert array_data is not None, array_import
+    array_lib = schema.normalize_library(array_data)
+    out["loose_array.total"] = schema.count_prompts(array_lib)
+    assert out["loose_array.total"] == 1, out
+
     example = json.loads((Path(__file__).resolve().parents[1] / "prompts.example.json").read_text(encoding="utf-8"))
     example = schema.normalize_library(example)
     out["example.total"] = schema.count_prompts(example)
