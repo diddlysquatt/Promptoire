@@ -50,7 +50,7 @@ node --check promptoire_app/web/js/bridge.js
 ## Repository Setup
 
 - Add the real GitHub remote.
-- Run `Check-GitHubPublish.ps1` and fix any failures before pushing.
+- Run `Check-GitHubPublish.ps1` and fix any failures before pushing. Treat its Buy Me a Coffee support-link warning as a reminder to set the final link before packaging or public release.
 - Before pushing workflow changes for the first time, confirm `gh auth status` includes `workflow`.
   If GitHub rejects the push for workflow scope, run:
 

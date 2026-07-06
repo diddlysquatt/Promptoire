@@ -9,14 +9,51 @@ Set-Location -LiteralPath $root
 
 # Checks git remote, clean state, private files, GitHub auth scope, and the local release gate.
 $failed = $false
+$warnings = 0
 
 function Pass($message) {
   Write-Host "[OK] $message"
 }
 
+function Warn($message) {
+  $script:warnings += 1
+  Write-Host "[WARN] $message"
+}
+
 function Fail($message) {
   $script:failed = $true
   Write-Host "[FAIL] $message"
+}
+
+function Normalize-Link($value) {
+  if ($null -eq $value) {
+    return ""
+  }
+  return ([string]$value).Trim()
+}
+
+function Test-GenericCoffeeUrl($value) {
+  $raw = Normalize-Link $value
+  if (-not $raw) {
+    return $false
+  }
+  try {
+    $uri = [Uri]$raw
+  } catch {
+    return $false
+  }
+  $hostName = $uri.Host.ToLowerInvariant()
+  if ($hostName.StartsWith("www.")) {
+    $hostName = $hostName.Substring(4)
+  }
+  $path = $uri.AbsolutePath.Trim("/")
+  return (
+    $uri.Scheme.ToLowerInvariant() -in @("http", "https") -and
+    $hostName -eq "buymeacoffee.com" -and
+    -not $path -and
+    -not $uri.Query -and
+    -not $uri.Fragment
+  )
 }
 
 function Run-Git($arguments) {
@@ -80,6 +117,26 @@ foreach ($file in @("prompts.json", "promptoire.config.json", "_selftest.json"))
   }
 }
 
+$configPath = Join-Path $root "promptoire.config.json"
+if (Test-Path -LiteralPath $configPath) {
+  try {
+    $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+    $coffee = ""
+    if ($null -ne $config.links -and $null -ne $config.links.coffee) {
+      $coffee = Normalize-Link $config.links.coffee
+    }
+    if ($coffee -and -not (Test-GenericCoffeeUrl $coffee)) {
+      Pass "Buy Me a Coffee support link is configured locally."
+    } else {
+      Warn "Buy Me a Coffee support link is blank or generic. Set it in Settings before packaging if you want support links active."
+    }
+  } catch {
+    Warn "Could not read promptoire.config.json to check the Buy Me a Coffee link: $($_.Exception.Message)"
+  }
+} else {
+  Warn "promptoire.config.json is not present, so the Buy Me a Coffee support link will be blank by default."
+}
+
 if (Test-Path -LiteralPath (Join-Path $root ".github\workflows\ci.yml")) {
   Pass "GitHub Actions workflow exists."
 } else {
@@ -135,6 +192,11 @@ Write-Host ""
 if ($failed) {
   Write-Host "GitHub publish readiness failed. Fix the items above before pushing."
   exit 1
+}
+
+if ($warnings -gt 0) {
+  Write-Host "GitHub publish readiness passed with $warnings warning(s)."
+  exit 0
 }
 
 Write-Host "GitHub publish readiness passed."

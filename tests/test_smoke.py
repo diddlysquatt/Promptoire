@@ -734,6 +734,8 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "workflow" in publish_check_script
             and "git remote" in publish_check_script
             and "check-release.bat" in publish_check_script
+            and "Buy Me a Coffee support link" in publish_check_script
+            and "[WARN]" in publish_check_script
         ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "outline_file_dialogs": "*.txt;*.md;*.csv" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
