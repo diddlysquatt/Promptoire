@@ -57,7 +57,7 @@
     "Image model: Midjourney v6\n" +
     "Parameters: --ar 4:5 --stylize 250\n";
 
-  let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote;
+  let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote, lastPreview;
 
   function render() {
     const host = document.getElementById("bulkBody");
@@ -104,6 +104,7 @@
     pasteArea.addEventListener("input", () => {
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;
+      lastPreview = null;
       syncMergeState();
     });
 
@@ -251,6 +252,7 @@
     pasteArea.value = EXAMPLE_OUTLINE;
     previewBox.innerHTML = "";
     delete previewBox.dataset.ready;
+    lastPreview = null;
     syncMergeState();
     pasteArea.focus();
     toast("Outline example inserted");
@@ -265,6 +267,7 @@
       toast(message, { bad: true });
       renderImportError(message);
       delete previewBox.dataset.ready;
+      lastPreview = null;
       syncMergeState();
       return;
     }
@@ -275,6 +278,7 @@
 
   function renderPreview(pv) {
     previewBox.innerHTML = "";
+    lastPreview = pv || null;
     const incomingTotal = Number.isFinite(Number(pv.incoming_total))
       ? Number(pv.incoming_total)
       : (pv.added.length + pv.updated.length + pv.unchanged_count);
@@ -300,6 +304,7 @@
 
   function renderImportError(message) {
     previewBox.innerHTML = "";
+    lastPreview = null;
     previewBox.appendChild(el("div", { class: "import-error-card" }, [
       el("div", { class: "import-error-title", text: "Import not readable" }),
       el("div", { class: "import-error-detail", text: message }),
@@ -347,6 +352,13 @@
       toast("Choose Add new or Update existing", { bad: true });
       return;
     }
+    if (previewBox && previewBox.dataset.ready === "1" && lastPreview) {
+      const selected = selectedChangeCount(upd, add);
+      if (!selected) {
+        toast("No selected changes to merge", { bad: true });
+        return;
+      }
+    }
     const r = await PR.bridge.call("apply_merge", text, upd, add);
     if (r && r.ok) {
       await PR.app.refreshState();
@@ -355,20 +367,31 @@
       pasteArea.value = "";
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;
+      lastPreview = null;
       syncMergeState();
     } else toast((r && r.error) || "Merge failed", { bad: true });
+  }
+
+  function selectedChangeCount(updateSelected, addSelected) {
+    if (!lastPreview) return 0;
+    return (updateSelected ? (lastPreview.updated || []).length : 0) +
+      (addSelected ? (lastPreview.added || []).length : 0);
   }
 
   function syncMergeState() {
     if (!applyBtn || !previewBox) return;
     const hasPreview = previewBox.dataset.ready === "1";
-    const canApply = (!optUpdate || optUpdate.checked) || (!optAdd || optAdd.checked);
-    applyBtn.disabled = !hasPreview || !canApply;
+    const updateSelected = !optUpdate || optUpdate.checked;
+    const addSelected = !optAdd || optAdd.checked;
+    const canApply = updateSelected || addSelected;
+    const selectedChanges = hasPreview ? selectedChangeCount(updateSelected, addSelected) : 0;
+    applyBtn.disabled = !hasPreview || !canApply || selectedChanges === 0;
     if (!mergeNote) return;
     if (!hasPreview) mergeNote.textContent = "Preview an import first";
     else if (!canApply) mergeNote.textContent = "Choose at least one merge action";
-    else if (optUpdate && optUpdate.checked && optAdd && !optAdd.checked) mergeNote.textContent = "Updates existing only";
-    else if (optAdd && optAdd.checked && optUpdate && !optUpdate.checked) mergeNote.textContent = "Adds new only";
+    else if (!selectedChanges) mergeNote.textContent = "No selected changes to merge";
+    else if (updateSelected && !addSelected) mergeNote.textContent = "Updates existing only";
+    else if (addSelected && !updateSelected) mergeNote.textContent = "Adds new only";
     else mergeNote.textContent = "Adds and updates only";
   }
 
@@ -381,7 +404,7 @@
       confirmText: "Replace everything", danger: true,
       onConfirm: async () => {
         const r = await PR.bridge.call("replace_all", text);
-        if (r && r.ok) { await PR.app.refreshState(); toast("Library replaced"); pasteArea.value = ""; previewBox.innerHTML = ""; }
+        if (r && r.ok) { await PR.app.refreshState(); toast("Library replaced"); pasteArea.value = ""; previewBox.innerHTML = ""; lastPreview = null; }
         else toast((r && r.error) || "Failed", { bad: true });
       },
     });

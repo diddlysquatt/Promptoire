@@ -565,6 +565,8 @@ Question planner: Turn {notes} into prioritized interview questions.
         "outline_first_import_help": "Paste an outline or JSON",
         "outline_first_empty_import": "Paste an outline or JSON first",
         "incoming_preview_count": "incomingTotal",
+        "selected_change_guard": "selectedChangeCount",
+        "selected_change_empty_note": "No selected changes to merge",
         "merge_adds_only_note": "Adds new only",
         "merge_updates_only_note": "Updates existing only",
         "import_error_recovery": "Import not readable",
@@ -729,6 +731,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "json_alias_release_check": "sections/subsections/items" in release_checklist,
         "json_flat_path_release_check": "flat JSON prompt rows" in release_checklist,
         "incoming_preview_release_check": "incoming/new/updated/unchanged counts" in release_checklist,
+        "selected_changes_release_check": "no selected changes" in release_checklist.lower(),
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens
