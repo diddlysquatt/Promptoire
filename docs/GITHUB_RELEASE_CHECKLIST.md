@@ -60,6 +60,7 @@ gh auth refresh --scopes workflow
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 - Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.
+- If the folder display name is still lowercase, close tools that are inside it and run `Rename-PromptoireFolder.ps1`.
 - Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false` and an empty `"error"`.
 
 ## Optional Build

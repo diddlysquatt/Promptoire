@@ -50,6 +50,8 @@ Promptoire.bat
 
 `setup.bat` also refreshes a `PROMPTOIRE` desktop shortcut that launches the local checkout.
 
+If the project folder itself still displays as `promptoire`, close Promptoire, Codex, terminals, and File Explorer windows inside the project, then run `Rename-PromptoireFolder.ps1`. It safely renames the folder to `PROMPTOIRE` and refreshes the desktop shortcut.
+
 …or manually:
 
 ```bash
