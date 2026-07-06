@@ -157,17 +157,21 @@ Prompt three:
 Title: Follow-up writer
 Prompt: Write a concise follow-up about {topic}.
 Tags: follow-up, email
+- Agenda builder
+Prompt: Turn {notes} into a timed meeting agenda.
 """
     numbered = _parse_import_text(numbered_outline)
     assert numbered is not None, numbered_outline
     numbered_prompts = list(schema.iter_prompts(numbered))
     out["outline.numbered_labels.total"] = len(numbered_prompts)
-    assert out["outline.numbered_labels.total"] == 3, out
+    assert out["outline.numbered_labels.total"] == 4, out
     numbered_paths = {p["title"]: path for p, _, path in numbered_prompts}
     assert numbered_paths["Review {notes} and extract the next actions."] == ["Workflows", "Cleanup"], numbered_paths
     assert numbered_paths["Summarize {topic} for a busy reader."] == ["Workflows", "Cleanup"], numbered_paths
     follow_up = next(p for p, _, _ in numbered_prompts if p["title"] == "Follow-up writer")
     assert follow_up["tags"] == ["follow-up", "email"], follow_up
+    agenda = next(p for p, _, _ in numbered_prompts if p["title"] == "Agenda builder")
+    assert agenda["prompt"] == "Turn {notes} into a timed meeting agenda.", agenda
 
     path_outline = """Path: AI Art > Scenes > Landscapes
 Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic light.

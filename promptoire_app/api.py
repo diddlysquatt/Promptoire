@@ -578,7 +578,7 @@ def _parse_outline(text: str) -> dict | None:
             block = ensure_block()
             value = marker.group(1).strip()
             if value:
-                _seed_outline_block(block, value)
+                _seed_outline_block(block, value, title_only=True)
             previous_blank = False
             last_was_heading = False
             continue
@@ -594,7 +594,7 @@ def _parse_outline(text: str) -> dict | None:
         if bullet:
             finish_prompt()
             block = ensure_block()
-            _seed_outline_block(block, bullet.group(1).strip())
+            _seed_outline_block(block, bullet.group(1).strip(), title_only=True)
             previous_blank = False
             last_was_heading = False
             continue
@@ -648,14 +648,15 @@ def _parse_outline(text: str) -> dict | None:
     return library
 
 
-def _seed_outline_block(block: dict, text: str) -> None:
+def _seed_outline_block(block: dict, text: str, *, title_only: bool = False) -> None:
     left, right = _split_title_body(text)
     if right:
         block["title"] = left
         block["prompt_lines"].append(right)
     else:
         block["title"] = _derive_title(text)
-        block["prompt_lines"].append(text)
+        if not title_only:
+            block["prompt_lines"].append(text)
     block["started"] = True
 
 
