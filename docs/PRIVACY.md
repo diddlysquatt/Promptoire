@@ -15,7 +15,7 @@ Promptoire only sends prompt data out when you choose to do it:
 
 - If you click **Copy outline library**, **Copy for AI**, or another export button, the app puts your library on your clipboard so you can paste it into the LLM or tool you choose.
 - If you click **Paste from clipboard**, the app reads your current clipboard text into the import box for previewing.
-- If you click **Improve with AI now**, Promptoire sends the library and your editable instructions to the AI provider configured in Settings.
+- If you click **Improve with AI now**, Promptoire sends your outline library and built-in improvement instructions to the AI provider configured in Settings.
 - If you open a support or external link, your browser handles that link outside Promptoire.
 
 ## API Keys

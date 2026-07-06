@@ -81,7 +81,7 @@ The JSON instruction (meta-prompt) is fully editable in that panel.
 
 For brand-new prompt batches without exporting your existing library, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
 
-**Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the library, gets the improved JSON back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
+**Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the outline library, gets an importable reply back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
 
 ## 🗃️ Data format
 

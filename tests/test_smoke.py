@@ -167,6 +167,26 @@ CFG scale: 7
         assert tmp_lib.categories()[0]["subcategories"][0]["name"] == "Characters"
         out["merge.outline.rich_added"] = result["added"]
 
+    from promptoire_app.core import ai_improve as ai_mod
+    captured = {}
+    original_improve = ai_mod.improve
+    try:
+        def fake_improve(ai, payload, **kwargs):
+            captured["payload"] = payload
+            return {"ok": True, "text": rich_outline, "model": "fake-outline-model"}
+
+        ai_mod.improve = fake_improve
+        ai_direct = api.ai_improve(False)
+    finally:
+        ai_mod.improve = original_improve
+    out["ai_improve.outline_payload"] = (
+        ai_direct.get("ok") is True
+        and "Path:" in captured.get("payload", "")
+        and "```json" not in captured.get("payload", "")
+        and "Return only the outline" in captured.get("payload", "")
+    )
+    assert out["ai_improve.outline_payload"], captured.get("payload", "")
+
     relaxed_outline = """Workflows
   Research
     Evidence map: Map the strongest sources for {topic}, grouped by reliability.

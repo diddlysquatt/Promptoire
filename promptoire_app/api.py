@@ -288,13 +288,11 @@ class Api:
             return err(str(e))
 
     def ai_improve(self, full: bool = False) -> dict:
-        """One-click: send the library + meta-prompt to the configured LLM API
-        and return its (improved JSON) reply for previewing/merging."""
+        """One-click: send the outline library to the configured LLM API
+        and return its reply for previewing/merging."""
         try:
             from .core import ai_improve as _ai
-            meta = self._app.settings.get("bulk_improve", "meta_prompt", default="")
-            body = self._app.library.export_json(full=full)
-            payload = f"{meta}\n\n```json\n{body}\n```"
+            payload = f"{_OUTLINE_EXPORT_REQUEST}\n\n{self._app.library.export_outline()}"
             res = _ai.improve(self._app.settings.get("ai", default={}), payload)
             if res.get("ok"):
                 return ok(text=res["text"], model=res.get("model", ""))

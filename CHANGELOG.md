@@ -16,6 +16,7 @@
 ### Changed
 
 - The Improve Library panel now defaults to the no-JSON outline flow and keeps JSON actions under `JSON options`.
+- `Improve with AI now` uses the outline library payload instead of the older JSON payload.
 - Generic Buy Me a Coffee and GitHub placeholder links are sanitized instead of opening generic pages.
 - CI and local preflight now compile the full app and tests, run JS syntax checks, and verify the WebView bridge self-test.
 

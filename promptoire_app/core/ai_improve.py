@@ -21,8 +21,8 @@ DEFAULT_OPENAI_MODEL = "gpt-4o"
 
 
 def improve(ai: dict, payload: str, *, timeout: int = 180) -> dict:
-    """Send `payload` (meta-prompt + library JSON) to the configured provider
-    and return {ok, text} with the model's reply (expected to be improved JSON)."""
+    """Send `payload` (instructions + library export) to the configured provider
+    and return {ok, text} with the model's reply."""
     ai = ai or {}
     provider = (ai.get("provider") or "anthropic").lower()
     api_key = (ai.get("api_key") or "").strip()
@@ -47,7 +47,7 @@ def _anthropic(ai: dict, api_key: str, payload: str, timeout: int) -> dict:
     model = (ai.get("model") or "").strip() or DEFAULT_ANTHROPIC_MODEL
     try:
         client = anthropic.Anthropic(api_key=api_key, timeout=float(timeout))
-        # Stream (the output JSON can be large) and adaptive thinking for quality.
+        # Stream because full-library replies can be large.
         with client.messages.stream(
             model=model,
             max_tokens=32000,
