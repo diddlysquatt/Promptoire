@@ -68,6 +68,7 @@ gh auth refresh --scopes workflow
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge.
 - Confirm `Load from file` accepts outline `.txt` / `.md` files as well as `.json`.
 - Confirm nested bullet outlines and `Sub-subsection:` / `Nested subsection:` labels import as nested sections.
+- Confirm Markdown tables with `Title` and `Prompt` columns import as prompts.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 - Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.

@@ -299,6 +299,45 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert nested_label_paths["Source map"] == ["Workflows", "Research", "Literature"], nested_label_paths
     assert nested_label_paths["Question planner"] == ["Workflows", "Research", "Literature", "Interviews"], nested_label_paths
 
+    table_import = """Here are the prompts:
+
+| Section | Subsection | Title | Prompt | Tags |
+| --- | --- | --- | --- | --- |
+| Writing | Editing | Tight rewrite | Rewrite {text} clearly while preserving voice. | editing, clarity |
+| AI Art | Portraits | Cinematic portrait | A dramatic 85mm portrait of {subject}. | portrait #cinematic |
+
+| Path | Title | Prompt |
+| --- | --- | --- |
+| Coding > Debugging | Bug sweep | Review {code} for subtle bugs. |
+
+"""
+    table_data = _parse_import_text(table_import)
+    assert table_data is not None, table_import
+    table_prompts = list(schema.iter_prompts(table_data))
+    out["outline.table.total"] = len(table_prompts)
+    assert out["outline.table.total"] == 3, table_prompts
+    table_paths = {p["title"]: path for p, _, path in table_prompts}
+    assert table_paths["Tight rewrite"] == ["Writing", "Editing"], table_paths
+    assert table_paths["Cinematic portrait"] == ["AI Art", "Portraits"], table_paths
+    assert table_paths["Bug sweep"] == ["Coding", "Debugging"], table_paths
+    table_prompt = next(p for p, _, _ in table_prompts if p["title"] == "Tight rewrite")
+    assert table_prompt["tags"] == ["editing", "clarity"], table_prompt
+
+    image_table = """| Path | Title | Type | Prompt | Negative prompt | Image model | Parameters | CFG scale |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| AI Art > Characters > Portraits | Neon character | image | Neon portrait of {subject}. | blurry, watermark | Midjourney v6 | --ar 4:5 | 7 |
+"""
+    image_table_data = _parse_import_text(image_table)
+    assert image_table_data is not None, image_table
+    image_prompt, _, image_path = next(schema.iter_prompts(image_table_data))
+    out["outline.image_table.path"] = image_path
+    assert image_path == ["AI Art", "Characters", "Portraits"], image_path
+    assert image_prompt["type"] == "image", image_prompt
+    assert image_prompt["negative"] == "blurry, watermark", image_prompt
+    assert image_prompt["model"] == "Midjourney v6", image_prompt
+    assert image_prompt["params"] == "--ar 4:5", image_prompt
+    assert image_prompt["cfg"] == "7", image_prompt
+
     array_import = """Here are a few prompts:
 [
   {"title": "Array import", "prompt": "Use {topic} to verify array imports."}
@@ -391,6 +430,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "new_section_label": "New sections",
         "numbered_prompt_blocks": "Prompt 1:",
         "nested_bullet_imports": "Nested bullet outlines",
+        "table_imports": "Markdown tables",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
@@ -523,6 +563,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
         "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,
         "nested_bullet_release_check": "nested bullet outlines" in release_checklist,
+        "markdown_table_release_check": "Markdown tables" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens

@@ -524,6 +524,10 @@ def _parse_outline(text: str) -> dict | None:
     if not any(ln.strip() for ln in lines):
         return None
 
+    table = _parse_markdown_table(lines)
+    if table is not None:
+        return table
+
     library = {"version": schema.SCHEMA_VERSION, "categories": []}
     stack: list[tuple[int, dict]] = []
     current: dict | None = None
@@ -859,6 +863,165 @@ def _split_title_body(text: str) -> tuple[str, str]:
     if len(left) > 90:
         return "", ""
     return left, right
+
+
+def _parse_markdown_table(lines: list[str]) -> dict | None:
+    """Parse common LLM Markdown tables into a library.
+
+    Expected minimum columns are `Title` and `Prompt`/`Body`/`Text`. Optional
+    path columns such as `Section`, `Subsection`, or `Path` place prompts into
+    nested categories; image and metadata columns map to normal prompt fields.
+    """
+    library = {"version": schema.SCHEMA_VERSION, "categories": []}
+
+    for idx in range(len(lines) - 1):
+        header_line = lines[idx].strip()
+        separator_line = lines[idx + 1].strip()
+        if not _looks_like_table_row(header_line) or not _looks_like_table_separator(separator_line):
+            continue
+
+        headers = [_normalize_table_header(c) for c in _split_markdown_table_row(header_line)]
+        if not headers:
+            continue
+        title_idx = _first_header_index(headers, ("title", "name", "prompttitle"))
+        prompt_idx = _first_header_index(headers, ("prompt", "body", "text", "content"))
+        if title_idx is None or prompt_idx is None:
+            continue
+
+        for row_line in lines[idx + 2:]:
+            if not row_line.strip():
+                break
+            if not _looks_like_table_row(row_line):
+                break
+            cells = _split_markdown_table_row(row_line)
+            if not any(c.strip() for c in cells):
+                continue
+            row = {headers[i]: cells[i].strip() for i in range(min(len(headers), len(cells))) if headers[i]}
+            title = row.get("title") or row.get("name") or row.get("prompttitle") or ""
+            prompt = row.get("prompt") or row.get("body") or row.get("text") or row.get("content") or ""
+            if not title and not prompt:
+                continue
+            raw = {
+                "title": title or _derive_title(prompt),
+                "prompt": prompt or title,
+                "tags": _split_tags(row.get("tags", "")),
+                "note": row.get("note", ""),
+            }
+            ptype = (row.get("type") or "").strip().lower()
+            if ptype:
+                raw["type"] = ptype
+            for key in schema.IMAGE_FIELDS:
+                if row.get(key):
+                    raw[key] = row[key]
+            _category_for_table_row(library, row).setdefault("prompts", []).append(
+                schema.normalize_prompt(raw)
+            )
+
+    if any(True for _ in schema.iter_prompts(library)):
+        return library
+    return None
+
+
+def _looks_like_table_row(line: str) -> bool:
+    return "|" in line and len(_split_markdown_table_row(line)) >= 2
+
+
+def _looks_like_table_separator(line: str) -> bool:
+    if not _looks_like_table_row(line):
+        return False
+    cells = _split_markdown_table_row(line)
+    return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell.strip()) for cell in cells)
+
+
+def _split_markdown_table_row(line: str) -> list[str]:
+    raw = line.strip()
+    if raw.startswith("|"):
+        raw = raw[1:]
+    if raw.endswith("|"):
+        raw = raw[:-1]
+    cells: list[str] = []
+    current: list[str] = []
+    escaped = False
+    for ch in raw:
+        if escaped:
+            current.append(ch)
+            escaped = False
+        elif ch == "\\":
+            escaped = True
+        elif ch == "|":
+            cells.append(_clean_table_cell("".join(current)))
+            current = []
+        else:
+            current.append(ch)
+    if escaped:
+        current.append("\\")
+    cells.append(_clean_table_cell("".join(current)))
+    return cells
+
+
+def _clean_table_cell(value: str) -> str:
+    text = value.strip()
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = text.replace("&vert;", "|").replace("&#124;", "|")
+    return text.strip()
+
+
+def _normalize_table_header(value: str) -> str:
+    key = re.sub(r"[^a-z0-9]+", "", value.strip().lower())
+    aliases = {
+        "category": "section",
+        "folder": "section",
+        "group": "section",
+        "categorypath": "path",
+        "folderpath": "path",
+        "subsection": "subsection",
+        "subcategory": "subsection",
+        "subsubsection": "subsubsection",
+        "subsubcategory": "subsubsection",
+        "nestedsection": "nestedsubsection",
+        "nestedsubsection": "nestedsubsection",
+        "promptbody": "prompt",
+        "prompttext": "prompt",
+        "negativeprompt": "negative",
+        "imagemodel": "model",
+        "parameters": "params",
+        "parameter": "params",
+        "settings": "params",
+        "cfgscale": "cfg",
+        "guidancescale": "cfg",
+    }
+    return aliases.get(key, key)
+
+
+def _first_header_index(headers: list[str], candidates: tuple[str, ...]) -> int | None:
+    for candidate in candidates:
+        if candidate in headers:
+            return headers.index(candidate)
+    return None
+
+
+def _category_for_table_row(library: dict, row: dict) -> dict:
+    path_value = row.get("path", "")
+    if path_value:
+        parts = [_clean_heading_name(p) for p in re.split(r"\s*>\s*", path_value) if _clean_heading_name(p)]
+    else:
+        parts = []
+        for key in ("section", "subsection", "subsubsection", "nestedsubsection"):
+            value = _clean_heading_name(row.get(key, ""))
+            if value:
+                parts.append(value)
+    if not parts:
+        parts = ["Imported"]
+
+    siblings = library["categories"]
+    current = None
+    for name in parts:
+        current = next((c for c in siblings if c.get("name", "").strip().lower() == name.lower()), None)
+        if current is None:
+            current = schema.new_category(name)
+            siblings.append(current)
+        siblings = current.setdefault("subcategories", [])
+    return current
 
 
 def _derive_title(text: str) -> str:
