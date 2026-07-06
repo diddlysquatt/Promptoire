@@ -23,6 +23,7 @@
 - Import preview chips for new nested sections and title-matched updates.
 - Import preview now shows total incoming prompts and clearer safe-merge mode notes.
 - Manual paste into the import box now auto-previews changes.
+- The import panel now has a `Clear` action for resetting the pasted text and preview.
 - Settings can open the local data folder that contains prompts, settings, and backups.
 - Safe merge disables the merge action when the selected Add/Update mode has no applicable changes.
 - Markdown-fenced outline replies are accepted without importing the fence text.

@@ -74,6 +74,7 @@ gh auth refresh --scopes workflow
 - Confirm `Edit instructions` changes the outline prompt used by `Copy outline library` and `Improve with AI now`; `Reset default` restores the built-in instruction; JSON instructions stay under `JSON options`.
 - Confirm an empty library offers both `New prompt` and `Import prompts`, with `Import prompts` opening the Improve Library flow.
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge; manual paste into the import box should auto-preview too.
+- Confirm `Clear` empties the import box, preview, and safe-merge state.
 - Confirm `Load from file` accepts outline `.txt` / `.md`, CSV `.csv`, and `.json` files.
 - Confirm nested bullet outlines and `Sub-subsection:` / `Nested subsection:` labels import as nested sections.
 - Confirm deeper Markdown prompt headings like `### Prompt title` import as prompt titles when followed by body text.

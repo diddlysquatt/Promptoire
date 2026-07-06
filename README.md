@@ -75,7 +75,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 1. Open **Improve library** (sparkle icon).
 2. **Copy outline library** puts an editable instruction + your whole library on your clipboard as a plain section/subsection outline. **Edit instructions** customizes that outline request, and **Save outline** writes the same simple library format to a `.txt` file. JSON export is still available under **JSON options**.
 3. Paste into any LLM. It can return the plain outline format, or JSON if you use the compatibility tools.
-4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, `.md`, or `.csv`). Manual paste and file/clipboard loads auto-preview so you can see incoming, new, updated, and unchanged counts before anything is written.
+4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, `.md`, or `.csv`). Manual paste and file/clipboard loads auto-preview so you can see incoming, new, updated, and unchanged counts before anything is written. **Clear** resets the import box when you want to start over.
 5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted). If the selected Add/Update mode would do nothing, Promptoire disables the merge until you choose an applicable action.
 
 The outline instruction is editable in that panel, with **Reset default** if you want the built-in instruction back. The older JSON instruction is still editable under **JSON options** for compatibility.

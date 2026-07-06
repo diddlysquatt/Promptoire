@@ -124,6 +124,7 @@
         el("button", { class: "btn", html: icon("copy") + " Paste from clipboard", onclick: pasteClipboard }),
         el("button", { class: "btn", text: "Load from file…", onclick: loadFile }),
         el("button", { class: "btn", text: "Use outline example", onclick: insertOutlineExample }),
+        el("button", { class: "btn btn-ghost", text: "Clear", onclick: clearImport }),
         el("button", { class: "btn btn-primary", html: icon("check") + " Preview changes", onclick: preview }),
       ]),
     ]);
@@ -283,6 +284,15 @@
     syncMergeState();
     pasteArea.focus();
     toast("Outline example inserted");
+  }
+  function clearImport() {
+    pasteArea.value = "";
+    previewBox.innerHTML = "";
+    delete previewBox.dataset.ready;
+    lastPreview = null;
+    syncMergeState();
+    pasteArea.focus();
+    toast("Import cleared");
   }
 
   async function preview() {
