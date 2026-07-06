@@ -8,7 +8,7 @@
     "Create a batch of prompts for my Promptoire library using this simple import outline format.\n\n" +
     "Rules:\n" +
     "- Return only the outline. Do not wrap it in a code fence.\n" +
-    "- Use # headings, Section/Subsection labels, or indentation for nested sections.\n" +
+    "- Use # headings, Path: Section > Subsection > Nested subsection, Section/Subsection labels, or indentation for nested sections.\n" +
     "- Use prompt rows like: Title: Prompt body\n" +
     "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +
     "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
@@ -23,8 +23,7 @@
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Subsection: Drafting\n" +
     "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
-    "Section: AI Art\n" +
-    "Subsection: Characters\n" +
+    "Path: AI Art > Characters > Portraits\n" +
     "Title: Cinematic portrait\n" +
     "Type: image\n" +
     "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.\n" +
@@ -42,8 +41,7 @@
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Subsection: Drafting\n" +
     "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
-    "Section: AI Art\n" +
-    "Subsection: Characters\n" +
+    "Path: AI Art > Characters > Portraits\n" +
     "Title: Cinematic portrait\n" +
     "Type: image\n" +
     "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.\n" +
@@ -86,7 +84,7 @@
 
     // STEP 2 — import
     pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
-      placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nSection: AI Art\nSubsection: Characters\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}...\nNegative prompt: blurry, watermark\nParameters: --ar 4:5" });
+      placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nPath: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}...\nNegative prompt: blurry, watermark\nParameters: --ar 4:5" });
     pasteArea.addEventListener("input", () => {
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;

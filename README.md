@@ -111,8 +111,7 @@ Coding
   Debugging
     Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.
 
-Section: AI Art
-Subsection: Characters
+Path: AI Art > Characters > Portraits
 Title: Cinematic portrait
 Type: image
 Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
@@ -124,7 +123,7 @@ Subsection: Environments
 Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic light.
 ```
 
-Headings, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Repeated `Subsection:` labels stay under the latest `Section:`. Prompt rows become prompts. Image labels like `Negative prompt:`, `Image model:`, `Parameters:`, and `CFG scale:` map to the normal image fields. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
+Headings, `Path: Section > Subsection > Nested subsection`, `Section:` / `Subsection:` labels, and indentation become categories and subcategories. Repeated `Subsection:` labels stay under the latest `Section:`. Prompt rows become prompts. Image labels like `Negative prompt:`, `Image model:`, `Parameters:`, and `CFG scale:` map to the normal image fields. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 

@@ -411,7 +411,10 @@ def _parse_loose_json(text: str) -> Any:
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _BULLET_RE = re.compile(r"^\s*(?:[-*+]|[0-9]+[.)])\s+(.+?)\s*$")
 _PATH_FIELD_RE = re.compile(
-    r"^\s*(section|category|folder|group|subcategory|sub-category|subsection|sub-section)\s*:\s*(.*?)\s*$",
+    r"^\s*("
+    r"section|category|folder|group|path|folder[\s_-]+path|"
+    r"category[\s_-]+path|subcategory|sub-category|subsection|sub-section"
+    r")\s*:\s*(.*?)\s*$",
     re.IGNORECASE,
 )
 _FIELD_RE = re.compile(
@@ -550,10 +553,12 @@ def _parse_outline(text: str) -> dict | None:
 
         path_field = _PATH_FIELD_RE.match(line)
         if path_field:
-            key = path_field.group(1).lower().replace("-", "")
+            key = re.sub(r"[\s_-]+", "", path_field.group(1).lower())
             value = path_field.group(2).strip()
             if value:
-                if key in ("section", "category", "folder", "group"):
+                if key in (
+                    "section", "category", "folder", "group", "path", "folderpath", "categorypath",
+                ):
                     add_heading(1, value)
                 else:
                     add_heading(2, value)

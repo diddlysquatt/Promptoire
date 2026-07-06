@@ -147,6 +147,16 @@ Tags: editing, clarity
     editing = next(p for p, _, _ in relaxed_prompts if p["title"].startswith("Rewrite"))
     assert editing["tags"] == ["editing", "clarity"], editing
 
+    path_outline = """Path: AI Art > Scenes > Landscapes
+Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic light.
+"""
+    path_import = _parse_import_text(path_outline)
+    assert path_import is not None, path_outline
+    path_prompts = list(schema.iter_prompts(path_import))
+    deep_path = next(path for p, _, path in path_prompts if p["title"] == "Dreamy landscape")
+    out["outline.path_field"] = deep_path
+    assert deep_path == ["AI Art", "Scenes", "Landscapes"], deep_path
+
     sibling_outline = """Section: Writing
 Subsection: Editing
 Tight rewrite: Rewrite {text} clearly.
