@@ -275,7 +275,11 @@
 
   function renderPreview(pv) {
     previewBox.innerHTML = "";
+    const incomingTotal = Number.isFinite(Number(pv.incoming_total))
+      ? Number(pv.incoming_total)
+      : (pv.added.length + pv.updated.length + pv.unchanged_count);
     const summary = el("div", { class: "diff-summary" }, [
+      el("span", { class: "diff-pill total", text: incomingTotal + " incoming" }),
       el("span", { class: "diff-pill add", text: pv.added.length + " new" }),
       el("span", { class: "diff-pill upd", text: pv.updated.length + " updated" }),
       el("span", { class: "diff-pill same", text: pv.unchanged_count + " unchanged" }),
@@ -363,6 +367,8 @@
     if (!mergeNote) return;
     if (!hasPreview) mergeNote.textContent = "Preview an import first";
     else if (!canApply) mergeNote.textContent = "Choose at least one merge action";
+    else if (optUpdate && optUpdate.checked && optAdd && !optAdd.checked) mergeNote.textContent = "Updates existing only";
+    else if (optAdd && optAdd.checked && optUpdate && !optUpdate.checked) mergeNote.textContent = "Adds new only";
     else mergeNote.textContent = "Adds and updates only";
   }
 

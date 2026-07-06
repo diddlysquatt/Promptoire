@@ -17,6 +17,7 @@
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
 - Import preview chips for new nested sections and title-matched updates.
+- Import preview now shows total incoming prompts and clearer safe-merge mode notes.
 - Markdown-fenced outline replies are accepted without importing the fence text.
 - Desktop shortcut creation through `setup.bat` and `Create-PromptoireShortcut.ps1`.
 - Desktop shortcut verification through `Check-PromptoireShortcut.ps1` and the local release gate.
