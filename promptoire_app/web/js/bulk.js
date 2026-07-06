@@ -4,6 +4,24 @@
   const PR = window.PROMPTOIRE;
   const { el, icon, toast, escapeHtml } = PR.ui;
 
+  const OUTLINE_REQUEST =
+    "Create a batch of prompts for my Promptoire library using this simple import outline format.\n\n" +
+    "Rules:\n" +
+    "- Return only the outline. Do not wrap it in a code fence.\n" +
+    "- Use # for top-level sections and ## or ### for subsections.\n" +
+    "- Use bullets for prompts: - Title: Prompt body\n" +
+    "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
+    "- Use {placeholders} where the user should fill in a value.\n" +
+    "- Make sections and subsections organized enough that I can merge them into an existing library.\n\n" +
+    "Example format:\n\n" +
+    "# Coding\n" +
+    "## Debugging\n" +
+    "- Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
+    "# Writing\n" +
+    "## Editing\n" +
+    "- Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
+    "Now create prompts for this topic or workflow:\n\n";
+
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd;
 
   function render() {
@@ -24,6 +42,7 @@
       el("div", { class: "btn-row" }, [
         el("button", { class: "btn btn-primary", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
         el("button", { class: "btn", text: "Copy JSON only", onclick: () => copyExport(false) }),
+        el("button", { class: "btn", text: "Copy outline request", onclick: copyOutlineRequest }),
         el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
         el("button", { class: "btn btn-ghost", text: "Edit AI instructions", onclick: editMeta }),
       ]),
@@ -125,6 +144,11 @@
     if (r && r.ok) toast("JSON copied (" + (r.chars || 0) + " chars)");
     else toast("Copy failed", { bad: true });
   }
+  async function copyOutlineRequest() {
+    const r = await PR.bridge.call("copy_text", OUTLINE_REQUEST);
+    if (r && r.ok) toast("Outline request copied — paste it into any LLM");
+    else toast((r && r.error) || "Copy failed", { bad: true });
+  }
   async function saveFile() {
     PR.state.suppressBlur = true;
     const r = await PR.bridge.call("save_export_file", false);
@@ -215,7 +239,7 @@
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
     const m = PR.ui.modal({ title: "AI instructions (meta-prompt)", wide: true,
       body: el("div", {}, [
-        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. Tell the model how to improve your prompts." }),
+        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. For adding new batches without JSON, use <b>Copy outline request</b>." }),
         ta ]),
       footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
     save.addEventListener("click", async () => {

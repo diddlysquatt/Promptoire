@@ -75,6 +75,8 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 
 The instruction (meta-prompt) is fully editable in that panel.
 
+For new prompt batches without JSON, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
+
 **Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the library, gets the improved JSON back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
 
 ## 🗃️ Data format
