@@ -17,6 +17,8 @@ That removes it from git without deleting the file locally.
 
 ## Preflight
 
+These are the same checks run by `.github/workflows/ci.yml`.
+
 ```bash
 python tests/test_smoke.py
 python -m py_compile promptoire_app/api.py promptoire_app/core/library.py tests/test_smoke.py
@@ -30,6 +32,7 @@ node --check promptoire_app/web/js/bridge.js
 
 - Add the real GitHub remote.
 - Commit on a clean branch.
+- Confirm GitHub Actions CI is green after the first push.
 - Confirm `.gitignore` excludes local runtime data.
 - Confirm `README.md` has the final Buy Me a Coffee link or explains where to set it.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
