@@ -26,6 +26,18 @@ DEFAULT_META_PROMPT = (
     "Here is the library:\n"
 )
 
+DEFAULT_OUTLINE_PROMPT = (
+    "Improve this Promptoire outline. Keep existing section paths and prompt "
+    "titles stable when updating existing prompts so Promptoire can merge by "
+    "title. Add new prompts only where they fit.\n\n"
+    "Rules:\n"
+    "- Return only the outline, with no code fence or extra commentary.\n"
+    "- Keep the section/subsection structure easy to scan.\n"
+    "- Use prompt rows like: Title: Prompt body.\n"
+    "- Use Path: Section > Subsection > Nested subsection when a prompt belongs deep in the library.\n"
+    "- For image prompts, keep fields like Type, Negative prompt, Image model, Parameters, and CFG scale.\n"
+)
+
 DEFAULTS: dict[str, Any] = {
     "version": 2,
     "theme": "matrix",          # key into the web theme registry
@@ -52,6 +64,7 @@ DEFAULTS: dict[str, Any] = {
         "fuzzy": True,
     },
     "bulk_improve": {
+        "outline_prompt": DEFAULT_OUTLINE_PROMPT,
         "meta_prompt": DEFAULT_META_PROMPT,
     },
     "ai": {

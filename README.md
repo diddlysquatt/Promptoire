@@ -72,12 +72,12 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 ## 🔁 The bulk-improve loop
 
 1. Open **Improve library** (sparkle icon).
-2. **Copy outline library** puts an editable instruction + your whole library on your clipboard as a plain section/subsection outline. **Save outline** writes the same simple library format to a `.txt` file. JSON export is still available under **JSON options**.
+2. **Copy outline library** puts an editable instruction + your whole library on your clipboard as a plain section/subsection outline. **Edit instructions** customizes that outline request, and **Save outline** writes the same simple library format to a `.txt` file. JSON export is still available under **JSON options**.
 3. Paste into any LLM. It can return the plain outline format, or JSON if you use the compatibility tools.
 4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, or `.md`), then hit **Preview changes** — see exactly what's new vs. updated.
 5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted).
 
-The JSON instruction (meta-prompt) is fully editable in that panel.
+The outline instruction is editable in that panel. The older JSON instruction is still editable under **JSON options** for compatibility.
 
 For brand-new prompt batches without exporting your existing library, use **Copy outline request**. It copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
 

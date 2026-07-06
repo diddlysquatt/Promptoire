@@ -89,7 +89,10 @@
       hotkey_available:true, platform:"windows",
       settings: { theme:"matrix", accent:"", hotkey:"ctrl+alt+space",
         behavior:{copy_then_hide:true,hide_on_blur:true,open_at_cursor:true,paste_after_copy:false,launch_at_startup:false,show_tray:true},
-        window:{width:460,height:560,opacity:1.0}, bulk_improve:{meta_prompt:"You are a senior prompt engineer..."},
+        window:{width:460,height:560,opacity:1.0}, bulk_improve:{
+          outline_prompt:"Improve this Promptoire outline. Return only the outline.",
+          meta_prompt:"You are a senior prompt engineer..."
+        },
         links:{coffee:"",repo:""} } }),
     search: (q="", type="all", fav=false) => {
       q=(q||"").toLowerCase(); let res=[];

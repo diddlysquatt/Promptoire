@@ -75,6 +75,7 @@
         el("button", { class: "btn btn-primary", html: icon("copy") + " Copy outline library", onclick: copyOutlineExport }),
         el("button", { class: "btn", text: "Copy outline request", onclick: copyOutlineRequest }),
         el("button", { class: "btn btn-ghost", text: "Save outline", onclick: saveOutlineFile }),
+        el("button", { class: "btn btn-ghost", text: "Edit instructions", onclick: editOutlineInstructions }),
       ]),
       el("details", { class: "export-more" }, [
         el("summary", { text: "JSON options" }),
@@ -82,7 +83,7 @@
           el("button", { class: "btn", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
           el("button", { class: "btn", text: "Copy JSON only", onclick: () => copyExport(false) }),
           el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
-          el("button", { class: "btn btn-ghost", text: "Edit AI instructions", onclick: editMeta }),
+          el("button", { class: "btn btn-ghost", text: "Edit JSON instructions", onclick: editJsonInstructions }),
         ]),
       ]),
       el("div", { class: "ai-direct" }, [
@@ -362,21 +363,39 @@
     });
   }
 
-  function editMeta() {
+  function editOutlineInstructions() {
+    PR.state.suppressBlur = true;
+    const ta = el("textarea", { class: "textarea", style: { minHeight: "220px" } });
+    ta.value = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.outline_prompt) || "";
+    const save = el("button", { class: "btn btn-primary", text: "Save instructions" });
+    const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
+    const m = PR.ui.modal({ title: "Outline AI instructions", wide: true,
+      body: el("div", {}, [
+        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Used by <b>Copy outline library</b> and <b>Improve with AI now</b>. The app adds your outline library after this text." }),
+        ta ]),
+      footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
+    save.addEventListener("click", async () => {
+      await PR.bridge.call("update_settings", { bulk_improve: { outline_prompt: ta.value } });
+      PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), outline_prompt: ta.value };
+      m.close(); toast("Outline instructions saved");
+    });
+  }
+
+  function editJsonInstructions() {
     PR.state.suppressBlur = true;
     const ta = el("textarea", { class: "textarea", style: { minHeight: "200px" } });
     ta.value = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.meta_prompt) || "";
     const save = el("button", { class: "btn btn-primary", text: "Save instructions" });
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
-    const m = PR.ui.modal({ title: "AI instructions (meta-prompt)", wide: true,
+    const m = PR.ui.modal({ title: "JSON AI instructions", wide: true,
       body: el("div", {}, [
-        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. For a no-JSON loop, use <b>Copy outline library</b>. For new batches, use <b>Copy outline request</b>." }),
+        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. The simpler default loop uses <b>Copy outline library</b>." }),
         ta ]),
       footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
     save.addEventListener("click", async () => {
       await PR.bridge.call("update_settings", { bulk_improve: { meta_prompt: ta.value } });
-      PR.state.settings.bulk_improve = { meta_prompt: ta.value };
-      m.close(); toast("Saved");
+      PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), meta_prompt: ta.value };
+      m.close(); toast("JSON instructions saved");
     });
   }
 

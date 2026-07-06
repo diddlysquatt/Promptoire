@@ -170,6 +170,8 @@ CFG scale: 7
     from promptoire_app.core import ai_improve as ai_mod
     captured = {}
     original_improve = ai_mod.improve
+    custom_outline_prompt = "Custom outline instruction for smoke tests. Return only the outline."
+    api.update_settings({"bulk_improve": {"outline_prompt": custom_outline_prompt}})
     try:
         def fake_improve(ai, payload, **kwargs):
             captured["payload"] = payload
@@ -184,6 +186,7 @@ CFG scale: 7
         and "Path:" in captured.get("payload", "")
         and "```json" not in captured.get("payload", "")
         and "Return only the outline" in captured.get("payload", "")
+        and custom_outline_prompt in captured.get("payload", "")
     )
     assert out["ai_improve.outline_payload"], captured.get("payload", "")
 
@@ -372,9 +375,12 @@ Question planner: Turn {notes} into prioritized interview questions.
         "title_match_badge": "matched by title",
         "outline_library_button": "Copy outline library",
         "outline_library_handler": "copyOutlineExport",
+        "outline_instructions_button": "Edit instructions",
+        "outline_instructions_modal": "Outline AI instructions",
         "save_outline_button": "Save outline",
         "save_outline_handler": "saveOutlineFile",
         "json_options_disclosure": "JSON options",
+        "json_instructions_button": "Edit JSON instructions",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
         "paste_clipboard_button": "Paste from clipboard",
@@ -404,8 +410,12 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.mock_clipboard_import"], "get_clipboard_text"
     out["frontend.mock_save_outline"] = "save_outline_file" in bridge_js and "prompts-outline.txt" in bridge_js
     assert out["frontend.mock_save_outline"], "save_outline_file"
+    out["frontend.mock_outline_prompt_setting"] = "outline_prompt" in bridge_js
+    assert out["frontend.mock_outline_prompt_setting"], "outline_prompt"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
+    out["settings.outline_prompt_default"] = "Return only the outline" in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
+    assert out["settings.outline_prompt_default"], SETTINGS_DEFAULTS["bulk_improve"]
     out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
     assert out["settings.blank_repo_link"], SETTINGS_DEFAULTS["links"]
     with tempfile.TemporaryDirectory() as settings_dir:
@@ -453,6 +463,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "contributing_release_check": "check-release.bat" in contributing_text,
         "privacy_local_first": "local-first" in privacy_text.lower(),
         "privacy_optional_ai": "Improve with AI now" in privacy_text,
+        "privacy_saved_outline_instructions": "saved outline improvement instructions" in privacy_text,
         "privacy_outline_clipboard": "Copy outline library" in privacy_text,
         "privacy_paste_clipboard": "Paste from clipboard" in privacy_text,
         "security_sensitive_files": "prompts.json" in security_text and "promptoire.config.json" in security_text,
@@ -485,8 +496,13 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "outline_library_release_check": (
             "Copy outline library" in release_checklist
+            and "Edit instructions" in release_checklist
             and "Save outline" in release_checklist
             and "JSON options" in release_checklist
+        ),
+        "outline_instruction_release_check": (
+            "changes the outline prompt" in release_checklist
+            and "Improve with AI now" in release_checklist
         ),
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
         "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,

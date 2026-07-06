@@ -8,6 +8,7 @@
 - Safe outline merge support that matches existing prompts by section path and title when ids are not present.
 - Plain outline imports from paste, clipboard, `.txt`, `.md`, and `.json` files.
 - Nested bullet-tree outline imports and deeper `Sub-subsection:` / `Nested subsection:` labels.
+- Editable outline AI instructions used by both copy/paste export and direct AI improve.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
 - Import preview chips for new nested sections and title-matched updates.
 - Markdown-fenced outline replies are accepted without importing the fence text.
@@ -18,6 +19,7 @@
 
 - The Improve Library panel now defaults to the no-JSON outline flow and keeps JSON actions under `JSON options`.
 - `Improve with AI now` uses the outline library payload instead of the older JSON payload.
+- The old JSON meta-prompt is labeled as JSON-specific so the default outline flow stays clear.
 - Generic Buy Me a Coffee and GitHub placeholder links are sanitized instead of opening generic pages.
 - CI and local preflight now compile the full app and tests, run JS syntax checks, and verify the WebView bridge self-test.
 

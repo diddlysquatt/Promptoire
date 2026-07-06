@@ -13,15 +13,8 @@ import webbrowser
 from typing import Any
 
 from .core import schema
+from .core.settings import DEFAULT_OUTLINE_PROMPT
 from .platform import clipboard
-
-
-_OUTLINE_EXPORT_REQUEST = (
-    "Improve this Promptoire outline. Keep existing section paths and prompt "
-    "titles stable when updating existing prompts so Promptoire can merge by "
-    "title. Add new prompts only where they fit. Return only the outline, with "
-    "no code fence or extra commentary."
-)
 
 
 def ok(**kw) -> dict:
@@ -211,6 +204,10 @@ class Api:
 
     # ---- the bulk-improve loop ---------------------------------------------
 
+    def _outline_prompt(self) -> str:
+        prompt = self._app.settings.get("bulk_improve", "outline_prompt", default="")
+        return str(prompt or DEFAULT_OUTLINE_PROMPT).strip()
+
     def get_export(self, full: bool = False) -> dict:
         try:
             return ok(json=self._app.library.export_json(full=full))
@@ -237,7 +234,7 @@ class Api:
         """Copy the current library in the simple outline format."""
         try:
             body = self._app.library.export_outline()
-            payload = f"{_OUTLINE_EXPORT_REQUEST}\n\n{body}" if include_request else body
+            payload = f"{self._outline_prompt()}\n\n{body}" if include_request else body
             if not clipboard.copy(payload):
                 return err("Clipboard unavailable")
             return ok(chars=len(payload))
@@ -292,7 +289,7 @@ class Api:
         and return its reply for previewing/merging."""
         try:
             from .core import ai_improve as _ai
-            payload = f"{_OUTLINE_EXPORT_REQUEST}\n\n{self._app.library.export_outline()}"
+            payload = f"{self._outline_prompt()}\n\n{self._app.library.export_outline()}"
             res = _ai.improve(self._app.settings.get("ai", default={}), payload)
             if res.get("ok"):
                 return ok(text=res["text"], model=res.get("model", ""))

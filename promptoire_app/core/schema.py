@@ -1,9 +1,9 @@
 """Promptoire data schema (v3) + faithful migration from older formats.
 
 The v3 library is intentionally simple and LLM-friendly — that matters because
-the headline feature is exporting the whole library as JSON, letting an LLM
-rewrite it, and re-importing. A clean, explicit shape makes that round-trip
-reliable.
+the headline workflow is exporting the whole library as an outline or JSON,
+letting an LLM rewrite it, and re-importing. A clean, explicit shape makes that
+round-trip reliable.
 
     library = {
         "version": 3,
@@ -259,7 +259,7 @@ def normalize_library(data: Any) -> dict:
     """Return a valid v3 library from any historical/foreign shape.
 
     Tolerant by design: never raises on plausible input, always returns a
-    well-formed library so the app and the JSON re-import loop stay robust.
+    well-formed library so the app and the outline/JSON import loop stay robust.
     """
     if not isinstance(data, dict):
         # A bare list is interpreted as a list of prompts.
