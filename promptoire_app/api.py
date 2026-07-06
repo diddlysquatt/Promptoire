@@ -304,7 +304,7 @@ class Api:
         try:
             data = _parse_import_text(text)
             if data is None:
-                return err("Could not read that import. Paste JSON or a simple outline.")
+                return err("Could not read that import. Paste a simple outline or JSON.")
             preview = self._app.library.merge_preview(data)
             return ok(preview=preview)
         except Exception as e:

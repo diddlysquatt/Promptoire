@@ -16,7 +16,7 @@
 
 Most prompt tools are cloud apps, browser extensions that die the moment you leave the tab, or generic clipboard managers that don't understand prompts. Promptoire is a small, gorgeous desktop launcher that sits quietly in your tray and does three things nobody else combines:
 
-- **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. JSON changes are matched by id and shown in a **diff preview** before anything is written. You can also paste a simple section/subsection outline to append new prompts without hand-writing JSON.
+- **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library as a simple outline, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. Outline and JSON changes are shown in a **diff preview** before anything is written.
 - **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
@@ -73,7 +73,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 
 1. Open **Improve library** (sparkle icon).
 2. **Copy outline library** puts an editable instruction + your whole library on your clipboard as a plain section/subsection outline. **Save outline** writes the same simple library format to a `.txt` file. JSON export is still available under **JSON options**.
-3. Paste into any LLM. It can return improved JSON in the same schema, or the plain outline format.
+3. Paste into any LLM. It can return the plain outline format, or JSON if you use the compatibility tools.
 4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, or `.md`), then hit **Preview changes** — see exactly what's new vs. updated.
 5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted).
 

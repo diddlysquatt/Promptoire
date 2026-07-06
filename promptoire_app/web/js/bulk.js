@@ -94,7 +94,7 @@
 
     // STEP 2 — import
     pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
-      placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nPath: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}...\nNegative prompt: blurry, watermark\nParameters: --ar 4:5" });
+      placeholder: "Paste an improved outline, or JSON:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nPath: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}...\nNegative prompt: blurry, watermark\nParameters: --ar 4:5" });
     pasteArea.addEventListener("input", () => {
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;
@@ -105,7 +105,7 @@
       el("div", { class: "step-head" }, [
         el("span", { class: "step-num", text: "2" }),
         el("div", {}, [ el("div", { class: "t", text: "Bring changes or new prompts back" }),
-          el("div", { class: "d", text: "Paste JSON or an outline, preview it, then merge into what you already have." }) ]),
+          el("div", { class: "d", text: "Paste an outline or JSON, preview it, then merge into what you already have." }) ]),
       ]),
       pasteArea,
       el("div", { class: "btn-row", style: { marginTop: "10px" } }, [
@@ -252,7 +252,7 @@
 
   async function preview() {
     const text = pasteArea.value.trim();
-    if (!text) { toast("Paste JSON or an outline first", { bad: true }); return; }
+    if (!text) { toast("Paste an outline or JSON first", { bad: true }); return; }
     const r = await PR.bridge.call("merge_preview", text);
     if (!r || !r.ok) {
       toast((r && r.error) || "Could not read import", { bad: true });
