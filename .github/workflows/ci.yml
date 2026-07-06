@@ -37,7 +37,7 @@ jobs:
 
       - name: Compile Python modules
         shell: pwsh
-        run: python -m py_compile promptoire_app\api.py promptoire_app\core\library.py tests\test_smoke.py
+        run: python -m compileall -q promptoire_app tests
 
       - name: Check frontend JavaScript syntax
         shell: pwsh

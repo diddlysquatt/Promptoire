@@ -21,7 +21,7 @@ These are the same checks run by `.github/workflows/ci.yml`.
 
 ```bash
 python tests/test_smoke.py
-python -m py_compile promptoire_app/api.py promptoire_app/core/library.py tests/test_smoke.py
+python -m compileall -q promptoire_app tests
 node --check promptoire_app/web/js/app.js
 node --check promptoire_app/web/js/settings.js
 node --check promptoire_app/web/js/bulk.js

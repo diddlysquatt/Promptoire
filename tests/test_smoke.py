@@ -277,6 +277,7 @@ Bug sweep: Review {code} for bugs.
     feature_template = (root / ".github" / "ISSUE_TEMPLATE" / "feature_request.yml").read_text(encoding="utf-8")
     issue_config = (root / ".github" / "ISSUE_TEMPLATE" / "config.yml").read_text(encoding="utf-8")
     pr_template = (root / ".github" / "PULL_REQUEST_TEMPLATE.md").read_text(encoding="utf-8")
+    ci_workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     release_checklist = (root / "docs" / "GITHUB_RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
     launcher_bat = (root / "Promptoire.bat").read_text(encoding="utf-8")
     release_tokens = {
@@ -292,6 +293,7 @@ Bug sweep: Review {code} for bugs.
         "issue_blank_disabled": "blank_issues_enabled: false" in issue_config,
         "pr_template_private_data": "prompts.json" in pr_template and "promptoire.config.json" in pr_template,
         "release_selftest": "--selftest" in release_checklist and '"mock": false' in release_checklist,
+        "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
     }
     out["release.docs_ready"] = release_tokens
