@@ -48,6 +48,7 @@ gh auth refresh --scopes workflow
 - Confirm the Improve Library panel has both `Copy for AI` for JSON updates and `Copy outline request` for non-JSON prompt batches.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
+- Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.
 - Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false` and an empty `"error"`.
 
 ## Optional Build

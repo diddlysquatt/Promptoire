@@ -41,12 +41,14 @@ Plus the basics done well: a global hotkey that pops the launcher at your cursor
 Requires **Python 3.9+** and the **WebView2 runtime** (preinstalled on Windows 11 and most Windows 10).
 
 ```bat
-:: 1. one-time setup (creates a venv, installs deps)
+:: 1. one-time setup (creates a venv, installs deps, adds desktop shortcut)
 setup.bat
 
 :: 2. run it
 Promptoire.bat
 ```
+
+`setup.bat` also refreshes a `PROMPTOIRE` desktop shortcut that launches the local checkout.
 
 …or manually:
 
@@ -55,7 +57,7 @@ pip install -r requirements.txt
 python -m promptoire_app
 ```
 
-To launch at login, drop a shortcut to `Promptoire.bat` in `shell:startup` (Win+R → `shell:startup`).
+To launch at login, enable **Launch at startup** in Settings.
 
 ## 📦 Build a standalone .exe
 
