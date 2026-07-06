@@ -46,6 +46,7 @@ gh auth refresh --scopes workflow
 - Confirm GitHub issue and pull request templates warn contributors not to paste private prompts, `prompts.json`, `promptoire.config.json`, or API keys.
 - Set the final Buy Me a Coffee link in Settings or keep the blank default; blank links prompt the user to configure support instead of opening a generic page.
 - Confirm the Improve Library panel shows `Copy outline library` as the default export action, keeps `Copy outline request` beside it, and tucks `Copy for AI` / JSON export under `JSON options`.
+- Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 - Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.

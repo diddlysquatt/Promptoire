@@ -89,6 +89,15 @@ class Api:
     def copy_text(self, text: str) -> dict:
         return ok() if clipboard.copy(text or "") else err("Clipboard unavailable")
 
+    def get_clipboard_text(self) -> dict:
+        try:
+            text = clipboard.paste()
+            if text is None:
+                return err("Clipboard unavailable")
+            return ok(text=text)
+        except Exception as e:
+            return err(str(e))
+
     # ---- prompt CRUD --------------------------------------------------------
 
     def add_prompt(self, category_id: str | None, fields: dict) -> dict:

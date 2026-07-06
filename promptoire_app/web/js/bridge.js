@@ -110,6 +110,7 @@
     },
     copy_prompt: (id, resolved) => ({ ok:true, spring:true, title:"Prompt" }),
     copy_text: () => ({ ok:true }),
+    get_clipboard_text: () => ({ ok:true, text:"Path: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}.\nNegative prompt: blurry, watermark" }),
     toggle_favorite: (id) => { for(const {p} of walk(mockCats)){ if(p.id===id){ p.favorite=!p.favorite; return {ok:true,favorite:p.favorite}; } } return {ok:false}; },
     get_export: () => ({ ok:true, json: JSON.stringify({version:3,categories:mockCats},null,2) }),
     copy_export: () => ({ ok:true, chars: 1234 }),

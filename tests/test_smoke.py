@@ -302,6 +302,8 @@ Bug sweep: Review {code} for bugs.
         "json_options_disclosure": "JSON options",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
+        "paste_clipboard_button": "Paste from clipboard",
+        "paste_clipboard_handler": "pasteClipboard",
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
         "numbered_prompt_blocks": "Prompt 1:",
@@ -315,6 +317,8 @@ Bug sweep: Review {code} for bugs.
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
     out["frontend.mock_nested_preview"] = "AI Art / Characters / Portraits" in bridge_js
     assert out["frontend.mock_nested_preview"], "AI Art / Characters / Portraits"
+    out["frontend.mock_clipboard_import"] = "get_clipboard_text" in bridge_js and "AI Art > Characters > Portraits" in bridge_js
+    assert out["frontend.mock_clipboard_import"], "get_clipboard_text"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
     out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
@@ -354,6 +358,7 @@ Bug sweep: Review {code} for bugs.
         "privacy_local_first": "local-first" in privacy_text.lower(),
         "privacy_optional_ai": "Improve with AI now" in privacy_text,
         "privacy_outline_clipboard": "Copy outline library" in privacy_text,
+        "privacy_paste_clipboard": "Paste from clipboard" in privacy_text,
         "security_sensitive_files": "prompts.json" in security_text and "promptoire.config.json" in security_text,
         "gitignore_private_prompt": "prompts.json" in gitignore_text,
         "gitignore_private_config": "promptoire.config.json" in gitignore_text,
@@ -368,6 +373,7 @@ Bug sweep: Review {code} for bugs.
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
         "shortcut_release_check": "PROMPTOIRE` desktop shortcut" in release_checklist,
         "outline_library_release_check": "Copy outline library" in release_checklist and "JSON options" in release_checklist,
+        "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens
@@ -377,6 +383,9 @@ Bug sweep: Review {code} for bugs.
     out["copy_export.ok"] = ce.get("ok")
     coe = api.copy_outline_export(True)
     out["copy_outline_export.ok"] = coe.get("ok")
+    clip = api.get_clipboard_text()
+    out["get_clipboard_text.shape"] = "ok" in clip and (clip.get("ok") is False or "text" in clip)
+    assert out["get_clipboard_text.shape"], clip
 
     # add/update/delete cycle (against a temp clone — we won't save)
     add = api.add_prompt(st["categories"][0]["id"], {"title": "ZZ smoke", "prompt": "hello {name}", "tags": ["smoke"]})

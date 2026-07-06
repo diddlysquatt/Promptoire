@@ -31,6 +31,28 @@ def copy(text: str) -> bool:
     return False
 
 
+def paste() -> str | None:
+    if _HAVE_PYPERCLIP:
+        try:
+            return pyperclip.paste()
+        except Exception:
+            pass
+    if sys.platform.startswith("win"):
+        try:
+            import subprocess
+            res = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", "Get-Clipboard -Raw"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            if res.returncode == 0:
+                return res.stdout
+        except Exception:
+            pass
+    return None
+
+
 def paste_into_active_window() -> bool:
     """Best-effort: send Ctrl+V to the previously focused window.
 

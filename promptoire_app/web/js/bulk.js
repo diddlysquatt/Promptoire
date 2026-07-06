@@ -108,6 +108,7 @@
       ]),
       pasteArea,
       el("div", { class: "btn-row", style: { marginTop: "10px" } }, [
+        el("button", { class: "btn", html: icon("copy") + " Paste from clipboard", onclick: pasteClipboard }),
         el("button", { class: "btn", text: "Load from file…", onclick: loadFile }),
         el("button", { class: "btn", text: "Use outline example", onclick: insertOutlineExample }),
         el("button", { class: "btn btn-primary", html: icon("check") + " Preview changes", onclick: preview }),
@@ -222,6 +223,16 @@
     const r = await PR.bridge.call("load_import_file");
     PR.state.suppressBlur = false;
     if (r && r.ok && r.text) { pasteArea.value = r.text; preview(); }
+  }
+  async function pasteClipboard() {
+    const r = await PR.bridge.call("get_clipboard_text");
+    const text = r && r.ok ? (r.text || "").trim() : "";
+    if (!text) {
+      toast((r && r.error) || "Clipboard is empty", { bad: true });
+      return;
+    }
+    pasteArea.value = r.text;
+    await preview();
   }
   function insertOutlineExample() {
     pasteArea.value = EXAMPLE_OUTLINE;
