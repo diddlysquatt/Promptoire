@@ -26,6 +26,7 @@ node --check promptoire_app/web/js/app.js
 node --check promptoire_app/web/js/settings.js
 node --check promptoire_app/web/js/bulk.js
 node --check promptoire_app/web/js/bridge.js
+.\.venv\Scripts\python.exe -m promptoire_app --selftest
 ```
 
 ## Repository Setup
@@ -40,6 +41,7 @@ node --check promptoire_app/web/js/bridge.js
 - Confirm the Improve Library panel has both `Copy for AI` for JSON updates and `Copy outline request` for non-JSON prompt batches.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
+- Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false` and an empty `"error"`.
 
 ## Optional Build
 

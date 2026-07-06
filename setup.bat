@@ -1,5 +1,5 @@
 @echo off
-rem ── One-time setup: create a venv and install Promptoire's dependencies ──
+rem One-time setup: create a venv and install Promptoire's dependencies
 setlocal
 cd /d "%~dp0"
 

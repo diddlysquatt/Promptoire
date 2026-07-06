@@ -1,5 +1,5 @@
 @echo off
-rem ── Build a standalone Promptoire.exe (one-dir) with PyInstaller ─────────
+rem Build a standalone Promptoire.exe (one-dir) with PyInstaller
 setlocal
 cd /d "%~dp0"
 
