@@ -735,6 +735,7 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "git remote" in publish_check_script
             and "check-release.bat" in publish_check_script
             and "Buy Me a Coffee support link" in publish_check_script
+            and "Project folder display name" in publish_check_script
             and "[WARN]" in publish_check_script
         ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,

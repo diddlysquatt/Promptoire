@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $root = (Get-Item -LiteralPath (Split-Path -Parent $MyInvocation.MyCommand.Path)).FullName
 Set-Location -LiteralPath $root
 
-# Checks git remote, clean state, private files, GitHub auth scope, and the local release gate.
+# Checks folder naming, git remote, clean state, private files, GitHub auth scope, and the local release gate.
 $failed = $false
 $warnings = 0
 
@@ -73,6 +73,15 @@ function Run-Git($arguments) {
 Write-Host "Promptoire GitHub publish readiness"
 Write-Host "Root: $root"
 Write-Host ""
+
+$folderName = Split-Path -Leaf $root
+if ($folderName -ceq "PROMPTOIRE") {
+  Pass "Project folder display name is PROMPTOIRE."
+} elseif ($folderName -ieq "PROMPTOIRE") {
+  Warn "Project folder display name is '$folderName'. Close tools in this folder and run Rename-PromptoireFolder.ps1 if you want PROMPTOIRE casing."
+} else {
+  Warn "Project folder display name is '$folderName'. Expected PROMPTOIRE before packaging or sharing."
+}
 
 if (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) {
   Fail "This folder is not a git repository."

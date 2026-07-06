@@ -26,6 +26,7 @@
 - Desktop shortcut creation through `setup.bat` and `Create-PromptoireShortcut.ps1`.
 - Desktop shortcut verification through `Check-PromptoireShortcut.ps1` and the local release gate.
 - GitHub publish-readiness verification through `Check-GitHubPublish.ps1`.
+- Publish-readiness warnings when the project folder still displays with non-`PROMPTOIRE` casing.
 - Publish-readiness warnings for blank/generic Buy Me a Coffee support links.
 - GitHub release materials: CI, issue templates, PR template, privacy/security docs, contributing guide, and `check-release.bat`.
 
