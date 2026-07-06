@@ -131,9 +131,14 @@ Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic
   - Research
     - Literature
       - Source map: Map the strongest sources for {topic}.
+
+Prompts:
+  - Title: Tight rewrite
+    Prompt: Rewrite {text} clearly while preserving voice.
+    Tags: editing, clarity
 ```
 
-Headings, `Path: Section > Subsection > Nested subsection`, `Section:` / `Subsection:` labels, indented plain text, nested bullet trees, and Markdown tables with `Title` + `Prompt` columns become categories and subcategories. For deeper labels, use `Sub-subsection:` or `Nested subsection:`. Repeated unindented `Subsection:` labels stay under the latest `Section:`. Prompt rows become prompts, and numbered blocks like `Prompt 1:` also work for multi-line prompts. Image labels like `Negative prompt:`, `Image model:`, `Parameters:`, and `CFG scale:` map to the normal image fields. If an LLM wraps the outline in a Markdown code fence, Promptoire reads the fenced outline instead of importing the fence text. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
+Headings, `Path: Section > Subsection > Nested subsection`, `Section:` / `Subsection:` labels, indented plain text, nested bullet trees, YAML-style `- Title:` blocks, and Markdown tables with `Title` + `Prompt` columns become categories and subcategories. For deeper labels, use `Sub-subsection:` or `Nested subsection:`. Repeated unindented `Subsection:` labels stay under the latest `Section:`. Prompt rows become prompts, and numbered blocks like `Prompt 1:` also work for multi-line prompts. Image labels like `Negative prompt:`, `Image model:`, `Parameters:`, and `CFG scale:` map to the normal image fields. If an LLM wraps the outline in a Markdown code fence, Promptoire reads the fenced outline instead of importing the fence text. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 

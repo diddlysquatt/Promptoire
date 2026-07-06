@@ -211,6 +211,43 @@ Tags: editing, clarity
     editing = next(p for p, _, _ in relaxed_prompts if p["title"].startswith("Rewrite"))
     assert editing["tags"] == ["editing", "clarity"], editing
 
+    yamlish_outline = """Section: Writing
+Subsection: Editing
+Prompts:
+  - Title: Tight rewrite
+    Prompt: Rewrite {text} clearly while preserving voice.
+    Tags: editing, clarity
+  - Title: Voice match
+    Prompt: Rewrite {text} so it matches this voice sample: {voice_sample}
+    Tags: writing
+
+Section: AI Art
+Subsection: Portraits
+Items:
+  - Title: Neon portrait
+    Type: image
+    Prompt: Neon portrait of {subject}.
+    Negative prompt: blurry, watermark
+    Image model: Midjourney v6
+    Parameters: --ar 4:5
+"""
+    yamlish = _parse_import_text(yamlish_outline)
+    assert yamlish is not None, yamlish_outline
+    yamlish_prompts = list(schema.iter_prompts(yamlish))
+    out["outline.yamlish.total"] = len(yamlish_prompts)
+    assert out["outline.yamlish.total"] == 3, yamlish_prompts
+    yamlish_paths = {p["title"]: path for p, _, path in yamlish_prompts}
+    assert yamlish_paths["Tight rewrite"] == ["Writing", "Editing"], yamlish_paths
+    assert yamlish_paths["Voice match"] == ["Writing", "Editing"], yamlish_paths
+    assert yamlish_paths["Neon portrait"] == ["AI Art", "Portraits"], yamlish_paths
+    voice = next(p for p, _, _ in yamlish_prompts if p["title"] == "Voice match")
+    assert voice["prompt"].startswith("Rewrite {text}"), voice
+    neon = next(p for p, _, _ in yamlish_prompts if p["title"] == "Neon portrait")
+    assert neon["type"] == "image", neon
+    assert neon["negative"] == "blurry, watermark", neon
+    assert neon["model"] == "Midjourney v6", neon
+    assert neon["params"] == "--ar 4:5", neon
+
     numbered_outline = """Section: Workflows
 Subsection: Cleanup
 Prompt 1:
@@ -430,6 +467,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
         "numbered_prompt_blocks": "Prompt 1:",
+        "yamlish_prompt_blocks": "- Title:",
         "nested_bullet_imports": "Nested bullet outlines",
         "table_imports": "Markdown tables",
     }
@@ -575,6 +613,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
         "outline_file_release_check": ".txt" in release_checklist and ".md" in release_checklist,
         "nested_bullet_release_check": "nested bullet outlines" in release_checklist,
+        "yamlish_release_check": "YAML-style" in release_checklist and "- Title:" in release_checklist,
         "markdown_table_release_check": "Markdown tables" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens

@@ -13,6 +13,7 @@
     "- For deeper labels, use Sub-subsection: or Nested subsection:.\n" +
     "- Use prompt rows like: Title: Prompt body\n" +
     "- Numbered blocks like Prompt 1: are fine when a prompt needs multiple lines.\n" +
+    "- YAML-style lists like - Title: ... with indented Prompt:/Tags: fields are fine.\n" +
     "- Markdown tables are fine if they include Title and Prompt columns.\n" +
     "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +
     "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +

@@ -503,6 +503,7 @@ _FIELD_RE = re.compile(
 )
 _SPLIT_RE = re.compile(r"\s+(?:[-–—]|::)\s+|:\s+")
 _SEPARATOR_RE = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
+_CONTAINER_LABEL_RE = re.compile(r"^\s*(?:prompts?|items?|entries)\s*:\s*$", re.IGNORECASE)
 
 
 def _parse_outline(text: str) -> dict | None:
@@ -611,12 +612,12 @@ def _parse_outline(text: str) -> dict | None:
         block["prompt_lines"].append(value)
         block["started"] = True
 
-    def apply_field(raw_key: str, value: str, was_previous_blank: bool) -> None:
+    def apply_field(raw_key: str, value: str, was_previous_blank: bool, *, force_new: bool = False) -> None:
         key = _normalize_outline_field(raw_key)
         value = value.strip()
         block = ensure_block()
         if key == "title":
-            if was_previous_blank and block["started"]:
+            if (force_new or was_previous_blank) and block["started"]:
                 finish_prompt()
                 block = ensure_block()
             block["title"] = value
@@ -672,6 +673,12 @@ def _parse_outline(text: str) -> dict | None:
             last_was_heading = False
             continue
 
+        if _CONTAINER_LABEL_RE.match(line):
+            finish_prompt()
+            previous_blank = False
+            last_was_heading = False
+            continue
+
         path_field = _PATH_FIELD_RE.match(line)
         if path_field:
             if add_path_field(path_field.group(1), path_field.group(2), raw):
@@ -720,7 +727,8 @@ def _parse_outline(text: str) -> dict | None:
 
             field = _FIELD_RE.match(value)
             if field:
-                apply_field(field.group(1), field.group(2), previous_blank)
+                force_new = _normalize_outline_field(field.group(1)) == "title"
+                apply_field(field.group(1), field.group(2), previous_blank, force_new=force_new)
                 previous_blank = False
                 last_was_heading = False
                 continue
@@ -819,6 +827,8 @@ def _looks_like_plain_heading(
     if _HEADING_RE.match(line) or _BULLET_RE.match(raw):
         return False
     if _FIELD_RE.match(raw.strip()) or _PATH_FIELD_RE.match(raw.strip()):
+        return False
+    if _CONTAINER_LABEL_RE.match(raw.strip()):
         return False
     if _split_title_body(line)[1]:
         return False
