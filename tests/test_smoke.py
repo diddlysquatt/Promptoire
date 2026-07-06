@@ -640,6 +640,13 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.mock_clipboard_import"], "get_clipboard_text"
     out["frontend.mock_save_outline"] = "save_outline_file" in bridge_js and "prompts-outline.txt" in bridge_js
     assert out["frontend.mock_save_outline"], "save_outline_file"
+    out["frontend.data_folder_button"] = (
+        "Local data folder" in settings_js
+        and "openDataFolder" in settings_js
+        and "open_data_folder" in bridge_js
+        and "def open_data_folder" in (Path(__file__).resolve().parents[1] / "promptoire_app" / "api.py").read_text(encoding="utf-8")
+    )
+    assert out["frontend.data_folder_button"], "open_data_folder"
     out["frontend.mock_outline_prompt_setting"] = "outline_prompt" in bridge_js
     assert out["frontend.mock_outline_prompt_setting"], "outline_prompt"
     out["frontend.empty_import_shortcut"] = (
@@ -743,6 +750,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
         "generic_support_release_check": "blank/generic root links" in release_checklist,
+        "data_folder_release_check": "local data folder" in release_checklist and "prompts.json" in release_checklist,
         "publish_check_documented": (
             "Check-GitHubPublish.ps1" in readme_text
             and "Check-GitHubPublish.ps1" in release_checklist

@@ -9,12 +9,15 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 import re
+import subprocess
+import sys
 import traceback
 import webbrowser
 from typing import Any
 
-from .core import schema
+from .core import paths, schema
 from .core.settings import DEFAULT_META_PROMPT, DEFAULT_OUTLINE_PROMPT
 from .platform import clipboard
 
@@ -342,6 +345,19 @@ class Api:
         try:
             self._app.library.save(backup=True)
             return ok()
+        except Exception as e:
+            return err(str(e))
+
+    def open_data_folder(self) -> dict:
+        try:
+            folder = paths.data_dir()
+            if hasattr(os, "startfile"):
+                os.startfile(str(folder))  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(folder)])
+            else:
+                subprocess.Popen(["xdg-open", str(folder)])
+            return ok(path=str(folder))
         except Exception as e:
             return err(str(e))
 

@@ -20,7 +20,7 @@ Most prompt tools are cloud apps, browser extensions that die the moment you lea
 - **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
-Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, timestamped backups, and a handful of themes.
+Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, timestamped backups, a one-click local data folder, and a handful of themes.
 
 ## ✨ Highlights
 

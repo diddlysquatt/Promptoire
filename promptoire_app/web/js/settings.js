@@ -55,7 +55,8 @@
     host.appendChild(section("System", card([
       toggleRow("Show tray icon", "Quick access from the system tray.", b.show_tray, (v) => save({ behavior: { show_tray: v } })),
       toggleRow("Launch at startup", "Start Promptoire when you sign in.", b.launch_at_startup, (v) => { save({ behavior: { launch_at_startup: v } }); toast(v ? "Promptoire will start with Windows" : "Startup disabled"); }),
-      rowBtn("Back up now", "Save a timestamped copy of your library.", "Backup", async () => { await PR.bridge.call("backup_now"); toast("Backup saved"); }),
+      rowBtn("Back up now", "Save a timestamped copy of your library.", "Backup", backupNow),
+      rowBtn("Local data folder", "Open prompts, settings, and backups.", "Open", openDataFolder),
     ])));
 
     /* AI (optional direct improve) */
@@ -158,6 +159,18 @@
     return row(t, d, sw);
   }
   function rowBtn(t, d, label, onclick) { return row(t, d, el("button", { class: "btn btn-sm", text: label, onclick })); }
+
+  async function backupNow() {
+    const r = await PR.bridge.call("backup_now");
+    if (r && r.ok) toast("Backup saved");
+    else toast((r && r.error) || "Backup failed", { bad: true });
+  }
+
+  async function openDataFolder() {
+    const r = await PR.bridge.call("open_data_folder");
+    if (r && r.ok) toast("Data folder opened");
+    else toast((r && r.error) || "Could not open data folder", { bad: true });
+  }
 
   function hotkeyCapture(current) {
     const cap = el("div", { class: "hotkey-cap", text: pretty(current), tabindex: "0" });

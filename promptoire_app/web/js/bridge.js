@@ -136,7 +136,7 @@
     reorder_category: (id, to) => { const find=(list)=>{ const i=list.findIndex(c=>c.id===id); if(i>=0){ const[c]=list.splice(i,1); list.splice(Math.max(0,Math.min(to,list.length)),0,c); return true;} return list.some(x=>find(x.subcategories||[])); }; return {ok:find(mockCats)}; },
     move_prompt: (pid, catId) => { let moved=null; for(const c of allCats()){ const i=(c.prompts||[]).findIndex(p=>p.id===pid); if(i>=0){ moved=c.prompts.splice(i,1)[0]; break; } } const dest=findCat(catId); if(moved&&dest) dest.prompts.push(moved); return {ok:!!(moved&&dest)}; },
     reorder_prompt: (catId, from, to) => { const c=findCat(catId); if(!c||!c.prompts[from]) return {ok:false}; const[p]=c.prompts.splice(from,1); c.prompts.splice(Math.max(0,Math.min(to,c.prompts.length)),0,p); return {ok:true}; },
-    hide_window: () => ({ ok:true }), open_external: () => ({ ok:true }), quit_app: () => ({ ok:true }),
+    hide_window: () => ({ ok:true }), open_external: () => ({ ok:true }), open_data_folder: () => ({ ok:true, path:"." }), quit_app: () => ({ ok:true }),
     backup_now: () => ({ ok:true }), notify_blur: () => ({ ok:true }),
   };
   function allCats(){ const out=[]; (function w(l){ for(const c of l){ out.push(c); w(c.subcategories||[]); } })(mockCats); return out; }
