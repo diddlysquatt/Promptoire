@@ -217,6 +217,15 @@ def looks_like_image_prompt(title: str, body: str) -> bool:
     return bool(_IMAGE_MARKERS.search(f"{title}\n{body}"))
 
 
+def _derive_title(text: Any) -> str:
+    clean = _re.sub(r"\s+", " ", _as_str(text)).strip()
+    if not clean:
+        return "Imported prompt"
+    if len(clean) <= 72:
+        return clean
+    return clean[:69].rstrip() + "..."
+
+
 # Category names that imply image prompts.
 _ART_CATEGORY = _re.compile(
     r"\b(ai ?art|image|images|midjourney|stable ?diffusion|diffusion|dall[- ]?e|"
@@ -231,6 +240,14 @@ def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
     `default_type` is a hint from the owning category (e.g. an art category),
     used only when the prompt itself doesn't declare a type.
     """
+    if isinstance(raw, str):
+        body = raw.strip()
+        if not body:
+            return None
+        ptype = "image" if looks_like_image_prompt("", body) else default_type
+        if ptype not in PROMPT_TYPES:
+            ptype = "text"
+        return new_prompt(_derive_title(body), body, ptype)
     if not isinstance(raw, dict):
         return None
     # Accept several historical body keys.

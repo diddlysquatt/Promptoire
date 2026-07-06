@@ -77,6 +77,7 @@ gh auth refresh --scopes workflow
 - Confirm JSON compatibility imports accept `sections/subsections/items` aliases as well as the native `categories/subcategories/prompts` shape.
 - Confirm flat JSON prompt rows can use `path`, `section`, and `subsection` fields to choose their destination section.
 - Confirm JSON image prompt rows accept aliases such as `negative_prompt`, `image_model`, `parameters`, and `cfg_scale`.
+- Confirm plain JSON string prompts import as prompts with derived titles.
 - Confirm import preview shows incoming/new/updated/unchanged counts and that the safe-merge note changes when only Add or only Update is selected.
 - Confirm the merge button is disabled when the selected Add/Update mode has no selected changes to merge.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.

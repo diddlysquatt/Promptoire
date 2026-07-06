@@ -427,6 +427,19 @@ Question planner: Turn {notes} into prioritized interview questions.
     out["loose_array.total"] = schema.count_prompts(array_lib)
     assert out["loose_array.total"] == 1, out
 
+    string_array_import = """[
+  "Summarize {article} into key takeaways.",
+  "Create an image prompt for a cinematic portrait of {subject}, --ar 4:5"
+]"""
+    string_array_data = _parse_import_text(string_array_import)
+    assert string_array_data is not None, string_array_import
+    string_array_lib = schema.normalize_library(string_array_data)
+    string_prompts = list(schema.iter_prompts(string_array_lib))
+    out["json_string_array.total"] = len(string_prompts)
+    assert out["json_string_array.total"] == 2, string_prompts
+    assert string_prompts[0][0]["title"] == "Summarize {article} into key takeaways.", string_prompts
+    assert string_prompts[1][0]["type"] == "image", string_prompts
+
     json_alias_import = """{
   "sections": [
     {
@@ -759,6 +772,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "json_alias_release_check": "sections/subsections/items" in release_checklist,
         "json_flat_path_release_check": "flat JSON prompt rows" in release_checklist,
         "json_image_alias_release_check": "negative_prompt" in release_checklist and "image_model" in release_checklist,
+        "json_string_prompt_release_check": "plain JSON string prompts" in release_checklist,
         "incoming_preview_release_check": "incoming/new/updated/unchanged counts" in release_checklist,
         "selected_changes_release_check": "no selected changes" in release_checklist.lower(),
     }
