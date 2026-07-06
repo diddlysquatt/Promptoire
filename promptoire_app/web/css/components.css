@@ -211,6 +211,10 @@
   border-color: var(--accent); background: var(--surface-2);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
+.input.is-invalid {
+  border-color: var(--bad);
+  box-shadow: 0 0 0 3px rgba(251,113,133,0.16);
+}
 .field-row { display: flex; gap: 10px; }
 .field-row .field { flex: 1; }
 .hint { font-size: 11px; color: var(--faint); margin-top: 5px; line-height: 1.45; }

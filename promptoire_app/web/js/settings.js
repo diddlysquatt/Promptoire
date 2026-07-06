@@ -199,8 +199,16 @@
       placeholder: "https://www.buymeacoffee.com/yourname" });
     coffeeUrl.addEventListener("change", () => {
       const value = coffeeUrl.value.trim();
-      save({ links: { coffee: value } });
-      toast(value ? "Coffee link saved" : "Coffee link cleared");
+      const clean = configuredCoffeeUrl(value);
+      if (value && !clean) {
+        coffeeUrl.classList.add("is-invalid");
+        toast("Use a full http:// or https:// link", { bad: true });
+        return;
+      }
+      coffeeUrl.classList.remove("is-invalid");
+      coffeeUrl.value = clean;
+      save({ links: { coffee: clean } });
+      toast(clean ? "Coffee link saved" : "Coffee link cleared");
     });
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: "About" })]);
     s.appendChild(el("div", { class: "about" }, [
@@ -221,7 +229,13 @@
 
   function configuredCoffeeUrl(raw) {
     const url = String(raw || "").trim();
-    return url && url !== GENERIC_COFFEE_URL ? url : "";
+    if (!url || url === GENERIC_COFFEE_URL) return "";
+    try {
+      const parsed = new URL(url);
+      return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+    } catch (e) {
+      return "";
+    }
   }
 
   function save(patch) {

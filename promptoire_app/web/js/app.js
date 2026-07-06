@@ -182,7 +182,13 @@
   function configuredCoffeeUrl() {
     const links = (PR.state.settings && PR.state.settings.links) || {};
     const url = String(links.coffee || "").trim();
-    return url && url !== GENERIC_COFFEE_URL ? url : "";
+    if (!url || url === GENERIC_COFFEE_URL) return "";
+    try {
+      const parsed = new URL(url);
+      return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+    } catch (e) {
+      return "";
+    }
   }
 
   /* ---- hooks Python calls ------------------------------------------------ */
