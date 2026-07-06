@@ -464,6 +464,8 @@ Question planner: Turn {notes} into prioritized interview questions.
         "paste_clipboard_handler": "pasteClipboard",
         "outline_first_import_help": "Paste an outline or JSON",
         "outline_first_empty_import": "Paste an outline or JSON first",
+        "import_error_recovery": "Import not readable",
+        "import_error_formats": "YAML-style list",
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
         "numbered_prompt_blocks": "Prompt 1:",

@@ -260,8 +260,9 @@
     if (!text) { toast("Paste an outline or JSON first", { bad: true }); return; }
     const r = await PR.bridge.call("merge_preview", text);
     if (!r || !r.ok) {
-      toast((r && r.error) || "Could not read import", { bad: true });
-      previewBox.innerHTML = "";
+      const message = (r && r.error) || "Could not read import";
+      toast(message, { bad: true });
+      renderImportError(message);
       delete previewBox.dataset.ready;
       syncMergeState();
       return;
@@ -290,6 +291,20 @@
         text: "Nothing would change — the incoming library matches what you have." }));
     }
     previewBox.appendChild(list);
+  }
+
+  function renderImportError(message) {
+    previewBox.innerHTML = "";
+    previewBox.appendChild(el("div", { class: "import-error-card" }, [
+      el("div", { class: "import-error-title", text: "Import not readable" }),
+      el("div", { class: "import-error-detail", text: message }),
+      el("div", { class: "import-error-formats", text: "Expected an outline, JSON, YAML-style list, or Markdown table." }),
+      el("pre", { class: "import-error-example", text:
+        "Section: Coding\n" +
+        "Subsection: Debugging\n" +
+        "Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests." }),
+      el("button", { class: "btn btn-ghost", text: "Insert example", onclick: insertOutlineExample }),
+    ]));
   }
 
   function newCategoryPreview(categories) {
