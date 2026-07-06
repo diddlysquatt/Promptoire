@@ -228,6 +228,10 @@ Tags: editing, clarity
     privacy_text = (root / "docs" / "PRIVACY.md").read_text(encoding="utf-8")
     security_text = (root / "SECURITY.md").read_text(encoding="utf-8")
     gitignore_text = (root / ".gitignore").read_text(encoding="utf-8")
+    bug_template = (root / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml").read_text(encoding="utf-8")
+    feature_template = (root / ".github" / "ISSUE_TEMPLATE" / "feature_request.yml").read_text(encoding="utf-8")
+    issue_config = (root / ".github" / "ISSUE_TEMPLATE" / "config.yml").read_text(encoding="utf-8")
+    pr_template = (root / ".github" / "PULL_REQUEST_TEMPLATE.md").read_text(encoding="utf-8")
     release_tokens = {
         "readme_privacy_link": "[Privacy](docs/PRIVACY.md)" in readme_text,
         "readme_security_link": "[Security](SECURITY.md)" in readme_text,
@@ -236,6 +240,10 @@ Tags: editing, clarity
         "security_sensitive_files": "prompts.json" in security_text and "promptoire.config.json" in security_text,
         "gitignore_private_prompt": "prompts.json" in gitignore_text,
         "gitignore_private_config": "promptoire.config.json" in gitignore_text,
+        "bug_template_privacy": "prompts.json" in bug_template and "API keys" in bug_template,
+        "feature_template_simple": "simple" in feature_template.lower() and "local-first" in feature_template,
+        "issue_blank_disabled": "blank_issues_enabled: false" in issue_config,
+        "pr_template_private_data": "prompts.json" in pr_template and "promptoire.config.json" in pr_template,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens

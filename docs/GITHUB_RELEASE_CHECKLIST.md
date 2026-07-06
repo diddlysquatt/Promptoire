@@ -35,6 +35,7 @@ node --check promptoire_app/web/js/bridge.js
 - Confirm GitHub Actions CI is green after the first push.
 - Confirm `.gitignore` excludes local runtime data.
 - Confirm `docs/PRIVACY.md` and `SECURITY.md` accurately describe current local data, optional AI calls, and sensitive files.
+- Confirm GitHub issue and pull request templates warn contributors not to paste private prompts, `prompts.json`, `promptoire.config.json`, or API keys.
 - Set the final Buy Me a Coffee link in Settings or keep the blank default; blank links prompt the user to configure support instead of opening a generic page.
 - Confirm the Improve Library panel has both `Copy for AI` for JSON updates and `Copy outline request` for non-JSON prompt batches.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
