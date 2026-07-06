@@ -355,6 +355,7 @@ Bug sweep: Review {code} for bugs.
     release_checklist = (root / "docs" / "GITHUB_RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
     launcher_bat = (root / "Promptoire.bat").read_text(encoding="utf-8")
     setup_bat = (root / "setup.bat").read_text(encoding="utf-8")
+    release_bat = (root / "check-release.bat").read_text(encoding="utf-8")
     shortcut_script = (root / "Create-PromptoireShortcut.ps1").read_text(encoding="utf-8")
     release_tokens = {
         "readme_privacy_link": "[Privacy](docs/PRIVACY.md)" in readme_text,
@@ -371,6 +372,9 @@ Bug sweep: Review {code} for bugs.
         "issue_blank_disabled": "blank_issues_enabled: false" in issue_config,
         "pr_template_private_data": "prompts.json" in pr_template and "promptoire.config.json" in pr_template,
         "release_selftest": "--selftest" in release_checklist and '"mock": false' in release_checklist,
+        "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
+        "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
+        "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,

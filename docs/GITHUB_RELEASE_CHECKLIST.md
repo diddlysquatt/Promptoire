@@ -19,6 +19,14 @@ That removes it from git without deleting the file locally.
 
 These are the same checks run by `.github/workflows/ci.yml`.
 
+Run the one-command local gate first:
+
+```bat
+check-release.bat
+```
+
+If that fails, run the individual checks below to isolate the problem:
+
 ```bash
 python tests/test_smoke.py
 python -m compileall -q promptoire_app tests
