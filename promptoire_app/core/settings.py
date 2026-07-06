@@ -56,7 +56,7 @@ DEFAULTS: dict[str, Any] = {
     },
     "ai": {
         # Optional: lets the "Improve with AI now" button call an API directly.
-        # Empty api_key = feature hidden; the manual copy/paste loop always works.
+        # Empty api_key = the button points to Settings; manual copy/paste always works.
         "provider": "anthropic",          # "anthropic" | "openai"
         "api_key": "",
         "model": "",                       # blank = provider default
@@ -82,6 +82,21 @@ def _deep_merge(base: dict, over: dict) -> dict:
     return out
 
 
+def _generic_url(value: Any) -> str:
+    return str(value or "").strip().rstrip("/").lower()
+
+
+def _sanitize_links(data: dict) -> None:
+    links = data.setdefault("links", {})
+    if not isinstance(links, dict):
+        data["links"] = copy.deepcopy(DEFAULTS["links"])
+        return
+    if _generic_url(links.get("coffee")) == "https://www.buymeacoffee.com":
+        links["coffee"] = ""
+    if _generic_url(links.get("repo")) == "https://github.com":
+        links["repo"] = ""
+
+
 class Settings:
     def __init__(self, path: str | Path):
         self.path = Path(path)
@@ -96,6 +111,7 @@ class Settings:
                     self.data = _deep_merge(DEFAULTS, saved)
         except Exception:
             self.data = copy.deepcopy(DEFAULTS)
+        _sanitize_links(self.data)
         return self
 
     def save(self) -> None:

@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from promptoire_app.api import _parse_import_text
 from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
-from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS
+from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS, Settings
 from promptoire_app.main import App
 
 
@@ -267,6 +267,20 @@ Bug sweep: Review {code} for bugs.
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
     out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
     assert out["settings.blank_repo_link"], SETTINGS_DEFAULTS["links"]
+    with tempfile.TemporaryDirectory() as settings_dir:
+        saved_settings = Path(settings_dir) / "promptoire.config.json"
+        saved_settings.write_text(json.dumps({
+            "links": {
+                "coffee": "https://www.buymeacoffee.com/",
+                "repo": "https://github.com/",
+            }
+        }), encoding="utf-8")
+        loaded_settings = Settings(saved_settings).load()
+        out["settings.sanitized_placeholder_links"] = (
+            loaded_settings.get("links", "coffee") == ""
+            and loaded_settings.get("links", "repo") == ""
+        )
+        assert out["settings.sanitized_placeholder_links"], loaded_settings.get("links")
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")
