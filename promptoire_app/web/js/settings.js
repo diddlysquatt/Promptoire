@@ -215,7 +215,7 @@
       const clean = configuredCoffeeUrl(value);
       if (value && !clean) {
         coffeeUrl.classList.add("is-invalid");
-        toast("Use a full http:// or https:// link", { bad: true });
+        toast("Use a valid support link", { bad: true });
         return;
       }
       coffeeUrl.classList.remove("is-invalid");
@@ -242,7 +242,7 @@
   }
 
   function configuredCoffeeUrl(raw) {
-    const url = String(raw || "").trim();
+    const url = normalizeUrl(raw);
     if (!url) return "";
     try {
       const parsed = new URL(url);
@@ -251,6 +251,13 @@
     } catch (e) {
       return "";
     }
+  }
+  function normalizeUrl(raw) {
+    const url = String(raw || "").trim();
+    if (!url) return "";
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) return url;
+    if (/^[^\s/]+\.[^\s]+/i.test(url)) return "https://" + url;
+    return url;
   }
 
   function isGenericCoffeeUrl(parsed) {

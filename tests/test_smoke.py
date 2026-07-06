@@ -667,6 +667,8 @@ Question planner: Turn {notes} into prioritized interview questions.
     out["frontend.generic_coffee_guard"] = (
         "isGenericCoffeeUrl" in app_js
         and "isGenericCoffeeUrl" in settings_js
+        and "normalizeUrl" in app_js
+        and "normalizeUrl" in settings_js
         and 'host === "buymeacoffee.com"' in app_js
         and 'host === "buymeacoffee.com"' in settings_js
     )
@@ -692,6 +694,20 @@ Question planner: Turn {notes} into prioritized interview questions.
             )
     out["settings.sanitized_placeholder_links"] = all(sanitized_cases)
     assert out["settings.sanitized_placeholder_links"], sanitized_cases
+    with tempfile.TemporaryDirectory() as settings_dir:
+        saved_settings = Path(settings_dir) / "promptoire.config.json"
+        saved_settings.write_text(json.dumps({
+            "links": {
+                "coffee": "buymeacoffee.com/promptoire",
+                "repo": "github.com/diddlysquatt/Promptoire",
+            }
+        }), encoding="utf-8")
+        loaded_settings = Settings(saved_settings).load()
+        out["settings.support_links_normalized"] = (
+            loaded_settings.get("links", "coffee") == "https://buymeacoffee.com/promptoire"
+            and loaded_settings.get("links", "repo") == "https://github.com/diddlysquatt/Promptoire"
+        )
+    assert out["settings.support_links_normalized"], loaded_settings.data.get("links")
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")

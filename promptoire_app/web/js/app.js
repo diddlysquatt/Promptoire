@@ -181,7 +181,7 @@
 
   function configuredCoffeeUrl() {
     const links = (PR.state.settings && PR.state.settings.links) || {};
-    const url = String(links.coffee || "").trim();
+    const url = normalizeUrl(links.coffee);
     if (!url) return "";
     try {
       const parsed = new URL(url);
@@ -190,6 +190,13 @@
     } catch (e) {
       return "";
     }
+  }
+  function normalizeUrl(raw) {
+    const url = String(raw || "").trim();
+    if (!url) return "";
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) return url;
+    if (/^[^\s/]+\.[^\s]+/i.test(url)) return "https://" + url;
+    return url;
   }
 
   function isGenericCoffeeUrl(parsed) {

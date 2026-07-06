@@ -179,7 +179,7 @@ For sharing or review, see [Contributing](CONTRIBUTING.md), [Changelog](CHANGELO
 
 ## ❤️ Support
 
-Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** from the titlebar or Settings → About. Set your real link in Settings or in `promptoire.config.json` under `links.coffee`.
+Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** from the titlebar or Settings → About. Set your real link in Settings or in `promptoire.config.json` under `links.coffee`; links with or without `https://` are normalized.
 
 ## 📄 License
 

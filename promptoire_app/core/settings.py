@@ -100,6 +100,19 @@ def _generic_url(value: Any) -> str:
     return str(value or "").strip().rstrip("/").lower()
 
 
+def _normalize_optional_url(value: Any) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw)
+    if not parsed.scheme and not raw.startswith(("/", "#")):
+        prefixed = "https://" + raw
+        parsed_prefixed = urlparse(prefixed)
+        if parsed_prefixed.netloc:
+            return prefixed
+    return raw
+
+
 def _generic_coffee_url(value: Any) -> bool:
     raw = str(value or "").strip()
     if not raw:
@@ -123,6 +136,8 @@ def _sanitize_links(data: dict) -> None:
     if not isinstance(links, dict):
         data["links"] = copy.deepcopy(DEFAULTS["links"])
         return
+    links["coffee"] = _normalize_optional_url(links.get("coffee"))
+    links["repo"] = _normalize_optional_url(links.get("repo"))
     if _generic_coffee_url(links.get("coffee")):
         links["coffee"] = ""
     if _generic_url(links.get("repo")) == "https://github.com":
