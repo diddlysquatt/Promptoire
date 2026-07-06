@@ -449,6 +449,12 @@ Question planner: Turn {notes} into prioritized interview questions.
     {
       "title": "Inbox triage",
       "prompt": "Turn {messages} into prioritized replies."
+    },
+    {
+      "section": "Coding",
+      "subsection": "Review",
+      "title": "Risk pass",
+      "content": "Review {code} for likely regressions."
     }
   ]
 }"""
@@ -456,13 +462,29 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert json_alias_data is not None, json_alias_import
     json_alias_lib = schema.normalize_library(json_alias_data)
     out["json_alias_import.total"] = schema.count_prompts(json_alias_lib)
-    assert out["json_alias_import.total"] == 2, json_alias_lib
+    assert out["json_alias_import.total"] == 3, json_alias_lib
     json_alias_paths = {p["title"]: path for p, _, path in schema.iter_prompts(json_alias_lib)}
     assert json_alias_paths["Tight rewrite"] == ["Writing", "Editing"], json_alias_paths
     assert json_alias_paths["Inbox triage"] == ["Uncategorized"], json_alias_paths
+    assert json_alias_paths["Risk pass"] == ["Coding", "Review"], json_alias_paths
     json_alias_prompt = next(p for p, _, _ in schema.iter_prompts(json_alias_lib) if p["title"] == "Tight rewrite")
     assert json_alias_prompt["prompt"].startswith("Rewrite {text}"), json_alias_prompt
     assert json_alias_prompt["tags"] == ["editing", "clarity"], json_alias_prompt
+
+    array_path_import = """[
+  {
+    "path": "Writing > Drafting",
+    "title": "First draft",
+    "prompt": "Draft a useful first pass about {topic}."
+  }
+]"""
+    array_path_data = _parse_import_text(array_path_import)
+    assert array_path_data is not None, array_path_import
+    array_path_lib = schema.normalize_library(array_path_data)
+    array_path_prompt, _, array_path = next(schema.iter_prompts(array_path_lib))
+    out["json_array_path"] = array_path
+    assert array_path_prompt["title"] == "First draft", array_path_prompt
+    assert array_path == ["Writing", "Drafting"], array_path
 
     with tempfile.TemporaryDirectory() as d:
         tmp_lib = PromptLibrary(Path(d) / "prompts.json")
@@ -702,6 +724,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "markdown_table_release_check": "Markdown tables" in release_checklist,
         "csv_table_release_check": "CSV tables" in release_checklist,
         "json_alias_release_check": "sections/subsections/items" in release_checklist,
+        "json_flat_path_release_check": "flat JSON prompt rows" in release_checklist,
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens

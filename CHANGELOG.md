@@ -13,6 +13,7 @@
 - Markdown table imports with `Title` and `Prompt` columns.
 - CSV table imports with `Title` and `Prompt` columns.
 - JSON compatibility imports accept common LLM aliases such as `sections`, `subsections`, `items`, and `entries`.
+- Flat JSON prompt rows can use `path`, `section`, and `subsection` fields to land in the right nested section.
 - Editable outline AI instructions used by both copy/paste export and direct AI improve.
 - Outline export to `.txt`, plus an outline request helper for generating new prompt batches.
 - Import preview chips for new nested sections and title-matched updates.

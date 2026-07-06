@@ -102,6 +102,42 @@ def _first_value(raw: dict, *keys: str) -> Any:
     return None
 
 
+def _split_path(value: Any) -> list[str]:
+    raw = _as_str(value).strip()
+    if not raw:
+        return []
+    return [p.strip() for p in _re.split(r"\s*>\s*|\s*/\s*", raw) if p.strip()]
+
+
+def _prompt_path_parts(raw: dict) -> list[str]:
+    path = _first_value(raw, "path", "category_path", "categoryPath", "section_path", "sectionPath", "folder_path", "folderPath")
+    parts = _split_path(path)
+    if parts:
+        return parts
+
+    parts = []
+    for key in ("section", "category", "folder", "group", "subsection", "subcategory", "sub_category", "subsubsection", "subsubcategory", "nestedsubsection"):
+        value = _as_str(raw.get(key)).strip()
+        if value:
+            parts.extend(_split_path(value) or [value])
+    return parts
+
+
+def _category_for_path(categories: list[dict], parts: list[str]) -> dict:
+    if not parts:
+        parts = ["Uncategorized"]
+    siblings = categories
+    current = None
+    for name in parts:
+        key = name.strip().lower()
+        current = next((c for c in siblings if c.get("name", "").strip().lower() == key), None)
+        if current is None:
+            current = new_category(name)
+            siblings.append(current)
+        siblings = current.setdefault("subcategories", [])
+    return current
+
+
 def new_prompt(
     title: str = "",
     body: str = "",
@@ -280,12 +316,14 @@ def normalize_library(data: Any) -> dict:
     if not isinstance(data, dict):
         # A bare list is interpreted as a list of prompts.
         if isinstance(data, list):
-            cat = new_category("Imported")
+            categories: list[dict] = []
             for rp in data:
                 np = normalize_prompt(rp)
-                if np:
-                    cat["prompts"].append(np)
-            return {"version": SCHEMA_VERSION, "categories": [cat] if cat["prompts"] else []}
+                if not np:
+                    continue
+                path = _prompt_path_parts(rp) if isinstance(rp, dict) else []
+                _category_for_path(categories, path or ["Imported"]).setdefault("prompts", []).append(np)
+            return {"version": SCHEMA_VERSION, "categories": categories}
         return {"version": SCHEMA_VERSION, "categories": []}
 
     categories = _normalize_categories_container(
@@ -294,14 +332,12 @@ def normalize_library(data: Any) -> dict:
 
     # Stray top-level prompts (old format had an unused `prompts: []`).
     loose_container = _first_value(data, "prompts", "items", "entries")
-    loose = [normalize_prompt(p) for p in _as_list(loose_container)]
-    loose = [p for p in loose if p]
-    if loose:
-        bucket = next((c for c in categories if c["name"].lower() == "uncategorized"), None)
-        if bucket is None:
-            bucket = new_category("Uncategorized")
-            categories.append(bucket)
-        bucket["prompts"].extend(loose)
+    for raw_prompt in _as_list(loose_container):
+        prompt = normalize_prompt(raw_prompt)
+        if not prompt:
+            continue
+        path = _prompt_path_parts(raw_prompt) if isinstance(raw_prompt, dict) else []
+        _category_for_path(categories, path or ["Uncategorized"]).setdefault("prompts", []).append(prompt)
 
     return {"version": SCHEMA_VERSION, "categories": categories}
 
