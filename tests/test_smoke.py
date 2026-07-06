@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 import tempfile
+from html.parser import HTMLParser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -16,6 +17,20 @@ from promptoire_app.api import _parse_import_text
 from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
 from promptoire_app.main import App
+
+
+class _ShellParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.ids = set()
+        self.scripts = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if attrs.get("id"):
+            self.ids.add(attrs["id"])
+        if tag == "script" and attrs.get("src"):
+            self.scripts.append(attrs["src"])
 
 
 def _run_checks():
@@ -113,6 +128,24 @@ Params: --ar 4:5 --stylize 250
     example = schema.normalize_library(example)
     out["example.total"] = schema.count_prompts(example)
     assert out["example.total"] >= 5, out
+
+    shell = _ShellParser()
+    shell.feed((Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8"))
+    required_ids = {
+        "app", "brandCount", "btnPin", "btnImprove", "btnEditor", "btnSettings",
+        "btnCoffee", "btnClose", "viewLauncher", "search", "filters", "catrail",
+        "results", "btnAdd", "btnImprove2", "viewEditor", "btnAddCategory",
+        "viewBulk", "bulkBody", "viewSettings", "settingsBody", "toastHost", "modalHost",
+    }
+    missing_ids = sorted(required_ids - shell.ids)
+    out["frontend.required_ids_missing"] = missing_ids
+    assert not missing_ids, missing_ids
+    expected_scripts = [
+        "js/bridge.js", "js/state.js", "js/components.js", "js/launcher.js",
+        "js/editor.js", "js/bulk.js", "js/settings.js", "js/app.js",
+    ]
+    out["frontend.script_order"] = shell.scripts
+    assert shell.scripts == expected_scripts, shell.scripts
 
     # copy_export (clipboard may be unavailable in headless; just check shape)
     ce = api.copy_export(True, False)
