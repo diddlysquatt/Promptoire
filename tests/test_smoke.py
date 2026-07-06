@@ -804,6 +804,8 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "Buy Me a Coffee support link" in publish_check_script
             and "Project folder display name" in publish_check_script
             and "Normalize-OptionalUrl" in publish_check_script
+            and "Next steps:" in publish_check_script
+            and "gh auth refresh -h github.com -s workflow" in publish_check_script
             and "[WARN]" in publish_check_script
         ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
