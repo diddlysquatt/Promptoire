@@ -95,9 +95,10 @@ Title: Portrait Builder
 Type: image
 Prompt: Create a cinematic portrait of {subject} with dramatic rim lighting.
 Tags: portrait, cinematic
-Negative: blurry, watermark
-Model: Midjourney v6
-Params: --ar 4:5 --stylize 250
+Negative prompt: blurry, watermark
+Image model: Midjourney v6
+Parameters: --ar 4:5 --stylize 250
+CFG scale: 7
 
 # Workflows
 ## Research
@@ -113,6 +114,7 @@ Params: --ar 4:5 --stylize 250
     assert portrait["negative"] == "blurry, watermark", portrait
     assert portrait["model"] == "Midjourney v6", portrait
     assert portrait["params"] == "--ar 4:5 --stylize 250", portrait
+    assert portrait["cfg"] == "7", portrait
     research_path = next(path for p, _, path in rich_prompts if p["title"] == "Source map")
     assert research_path == ["Workflows", "Research"], research_path
 

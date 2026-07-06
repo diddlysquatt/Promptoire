@@ -10,6 +10,7 @@
     "- Return only the outline. Do not wrap it in a code fence.\n" +
     "- Use # headings, Section/Subsection labels, or indentation for nested sections.\n" +
     "- Use prompt rows like: Title: Prompt body\n" +
+    "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +
     "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
     "- Use {placeholders} where the user should fill in a value.\n" +
     "- Make sections and subsections organized enough that I can merge them into an existing library.\n\n" +
@@ -22,6 +23,14 @@
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Subsection: Drafting\n" +
     "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
+    "Section: AI Art\n" +
+    "Subsection: Characters\n" +
+    "Title: Cinematic portrait\n" +
+    "Type: image\n" +
+    "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.\n" +
+    "Negative prompt: blurry, watermark, extra fingers\n" +
+    "Image model: Midjourney v6\n" +
+    "Parameters: --ar 4:5 --stylize 250\n\n" +
     "Now create prompts for this topic or workflow:\n\n";
 
   const EXAMPLE_OUTLINE =
@@ -32,7 +41,15 @@
     "Subsection: Editing\n" +
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Subsection: Drafting\n" +
-    "First draft: Draft a first pass about {topic} in a clear, useful structure.\n";
+    "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
+    "Section: AI Art\n" +
+    "Subsection: Characters\n" +
+    "Title: Cinematic portrait\n" +
+    "Type: image\n" +
+    "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.\n" +
+    "Negative prompt: blurry, watermark, extra fingers\n" +
+    "Image model: Midjourney v6\n" +
+    "Parameters: --ar 4:5 --stylize 250\n";
 
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote;
 
@@ -69,7 +86,7 @@
 
     // STEP 2 — import
     pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
-      placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nSection: AI Art\nSubsection: Characters\nCinematic portrait: A dramatic 85mm portrait of {subject}..." });
+      placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nSection: AI Art\nSubsection: Characters\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}...\nNegative prompt: blurry, watermark\nParameters: --ar 4:5" });
     pasteArea.addEventListener("input", () => {
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;

@@ -415,7 +415,12 @@ _PATH_FIELD_RE = re.compile(
     re.IGNORECASE,
 )
 _FIELD_RE = re.compile(
-    r"^\s*(title|prompt|body|text|tags|type|note|negative|model|params|seed|sampler|cfg)\s*:\s*(.*?)\s*$",
+    r"^\s*("
+    r"title|prompt|body|text|tags|type|note|"
+    r"negative(?:[\s_-]+prompt)?|image[\s_-]+model|model|"
+    r"params?|parameters?|settings?|seed|sampler|"
+    r"cfg(?:[\s_-]+scale)?|guidance(?:[\s_-]+scale)?"
+    r")\s*:\s*(.*?)\s*$",
     re.IGNORECASE,
 )
 _SPLIT_RE = re.compile(r"\s+(?:[-–—]|::)\s+|:\s+")
@@ -574,7 +579,7 @@ def _parse_outline(text: str) -> dict | None:
 
         field = _FIELD_RE.match(line)
         if field:
-            key = field.group(1).lower()
+            key = _normalize_outline_field(field.group(1))
             value = field.group(2).strip()
             block = ensure_block()
             if key == "title":
@@ -717,6 +722,23 @@ def _split_tags(value: str) -> list[str]:
         if item and item not in tags:
             tags.append(item)
     return tags
+
+
+def _normalize_outline_field(raw_key: str) -> str:
+    key = re.sub(r"[\s_-]+", " ", raw_key.strip().lower())
+    aliases = {
+        "negative prompt": "negative",
+        "image model": "model",
+        "param": "params",
+        "parameter": "params",
+        "parameters": "params",
+        "setting": "params",
+        "settings": "params",
+        "cfg scale": "cfg",
+        "guidance": "cfg",
+        "guidance scale": "cfg",
+    }
+    return aliases.get(key, key)
 
 
 def _outline_block_to_prompt(block: dict) -> dict | None:
