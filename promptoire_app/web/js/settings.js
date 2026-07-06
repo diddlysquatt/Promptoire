@@ -207,6 +207,7 @@
   function aboutBlock() {
     const links = (PR.state.settings && PR.state.settings.links) || {};
     const currentCoffee = configuredCoffeeUrl(links.coffee);
+    const currentRepo = configuredRepoUrl(links.repo);
     const coffeeUrl = el("input", { class: "input coffee-link", value: currentCoffee,
       id: "coffeeLinkField",
       placeholder: "https://www.buymeacoffee.com/yourname" });
@@ -229,13 +230,18 @@
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
       el("div", { class: "ver", text: "v" + (PR.state.version || "2.3.0") + " · local-first · open source" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
-      el("button", { class: "coffee", title: currentCoffee ? "Open Buy Me a Coffee" : "Set Buy Me a Coffee link",
-        html: "☕ &nbsp;Buy Me a Coffee",
-        onclick: () => {
-          const url = configuredCoffeeUrl((PR.state.settings.links || {}).coffee);
-          if (url) PR.bridge.call("open_external", url);
-          else { coffeeUrl.focus(); coffeeUrl.select && coffeeUrl.select(); toast("Paste your Buy Me a Coffee link here"); }
-        } }),
+      el("div", { class: "about-actions" }, [
+        el("button", { class: "coffee", title: currentCoffee ? "Open Buy Me a Coffee" : "Set Buy Me a Coffee link",
+          html: "☕ &nbsp;Buy Me a Coffee",
+          onclick: () => {
+            const url = configuredCoffeeUrl((PR.state.settings.links || {}).coffee);
+            if (url) PR.bridge.call("open_external", url);
+            else { coffeeUrl.focus(); coffeeUrl.select && coffeeUrl.select(); toast("Paste your Buy Me a Coffee link here"); }
+          } }),
+        currentRepo ? el("button", { class: "source-link", text: "GitHub",
+          title: "Open Promptoire on GitHub",
+          onclick: () => PR.bridge.call("open_external", configuredRepoUrl((PR.state.settings.links || {}).repo)) }) : null,
+      ]),
       el("div", { class: "coffee-url" }, [coffeeUrl]),
     ]));
     return s;
@@ -247,6 +253,19 @@
     try {
       const parsed = new URL(url);
       if (!["http:", "https:"].includes(parsed.protocol) || isGenericCoffeeUrl(parsed)) return "";
+      return parsed.href;
+    } catch (e) {
+      return "";
+    }
+  }
+  function configuredRepoUrl(raw) {
+    const url = normalizeUrl(raw);
+    if (!url) return "";
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+      const path = parsed.pathname.replace(/\/+$/, "");
+      if (!["http:", "https:"].includes(parsed.protocol) || (host === "github.com" && !path)) return "";
       return parsed.href;
     } catch (e) {
       return "";

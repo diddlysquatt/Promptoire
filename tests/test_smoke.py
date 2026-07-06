@@ -664,6 +664,13 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.empty_import_shortcut"], "empty import shortcut"
     out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
     assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
+    out["frontend.github_source_link"] = (
+        "source-link" in settings_js
+        and "configuredRepoUrl" in settings_js
+        and "Open Promptoire on GitHub" in settings_js
+        and "source-link" in components_css
+    )
+    assert out["frontend.github_source_link"], "source-link"
     out["frontend.generic_coffee_guard"] = (
         "isGenericCoffeeUrl" in app_js
         and "isGenericCoffeeUrl" in settings_js
@@ -675,8 +682,8 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.generic_coffee_guard"], "isGenericCoffeeUrl"
     out["settings.outline_prompt_default"] = "Return only the outline" in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
     assert out["settings.outline_prompt_default"], SETTINGS_DEFAULTS["bulk_improve"]
-    out["settings.blank_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == ""
-    assert out["settings.blank_repo_link"], SETTINGS_DEFAULTS["links"]
+    out["settings.default_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == "https://github.com/diddlysquatt/Promptoire"
+    assert out["settings.default_repo_link"], SETTINGS_DEFAULTS["links"]
     sanitized_cases = []
     for coffee_url in ("https://www.buymeacoffee.com/", "https://buymeacoffee.com"):
         with tempfile.TemporaryDirectory() as settings_dir:
@@ -773,6 +780,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
         "generic_support_release_check": "blank/generic root links" in release_checklist,
+        "github_source_release_check": "GitHub source link" in release_checklist,
         "data_folder_release_check": "local data folder" in release_checklist and "prompts.json" in release_checklist,
         "publish_check_documented": (
             "Check-GitHubPublish.ps1" in readme_text

@@ -79,8 +79,7 @@ DEFAULTS: dict[str, Any] = {
     "links": {
         # Set this to your own Buy Me a Coffee / Ko-fi / GitHub Sponsors URL.
         "coffee": "",
-        # Blank until the real public repository exists.
-        "repo": "",
+        "repo": "https://github.com/diddlysquatt/Promptoire",
     },
     "onboarded": False,
 }

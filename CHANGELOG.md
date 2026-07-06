@@ -25,6 +25,7 @@
 - Manual paste into the import box now auto-previews changes.
 - The import panel now has a `Clear` action for resetting the pasted text and preview.
 - Settings can open the local data folder that contains prompts, settings, and backups.
+- Settings About includes a GitHub source link for the public repository.
 - Safe merge disables the merge action when the selected Add/Update mode has no applicable changes.
 - Markdown-fenced outline replies are accepted without importing the fence text.
 - Desktop shortcut creation through `setup.bat` and `Create-PromptoireShortcut.ps1`.
