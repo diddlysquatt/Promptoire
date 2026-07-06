@@ -18,6 +18,7 @@ call :run node --check promptoire_app\web\js\settings.js || exit /b 1
 call :run node --check promptoire_app\web\js\bulk.js || exit /b 1
 call :run node --check promptoire_app\web\js\bridge.js || exit /b 1
 call :run "%PY%" -m promptoire_app --selftest || exit /b 1
+call :run powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Check-PromptoireShortcut.ps1" || exit /b 1
 
 if not exist "_selftest.json" (
   echo Self-test report was not written.

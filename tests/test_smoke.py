@@ -450,6 +450,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     setup_bat = (root / "setup.bat").read_text(encoding="utf-8")
     release_bat = (root / "check-release.bat").read_text(encoding="utf-8")
     shortcut_script = (root / "Create-PromptoireShortcut.ps1").read_text(encoding="utf-8")
+    shortcut_check_script = (root / "Check-PromptoireShortcut.ps1").read_text(encoding="utf-8")
     rename_script = (root / "Rename-PromptoireFolder.ps1").read_text(encoding="utf-8")
     release_tokens = {
         "readme_privacy_link": "[Privacy](docs/PRIVACY.md)" in readme_text,
@@ -487,7 +488,13 @@ Question planner: Turn {notes} into prioritized interview questions.
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "outline_file_dialogs": "*.txt;*.md" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
         "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
+        "shortcut_check_script": (
+            "Check-PromptoireShortcut.ps1" in release_bat
+            and "PROMPTOIRE.lnk" in shortcut_check_script
+            and "Promptoire.bat" in shortcut_check_script
+        ),
         "shortcut_release_check": "PROMPTOIRE` desktop shortcut" in release_checklist,
+        "shortcut_release_verifier": "Check-PromptoireShortcut.ps1" in release_checklist,
         "folder_rename_helper": (
             "Rename-PromptoireFolder.ps1" in readme_text
             and "Rename-PromptoireFolder.ps1" in release_checklist

@@ -13,6 +13,7 @@
 - Import preview chips for new nested sections and title-matched updates.
 - Markdown-fenced outline replies are accepted without importing the fence text.
 - Desktop shortcut creation through `setup.bat` and `Create-PromptoireShortcut.ps1`.
+- Desktop shortcut verification through `Check-PromptoireShortcut.ps1` and the local release gate.
 - GitHub release materials: CI, issue templates, PR template, privacy/security docs, contributing guide, and `check-release.bat`.
 
 ### Changed
