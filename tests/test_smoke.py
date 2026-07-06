@@ -294,6 +294,7 @@ Bug sweep: Review {code} for bugs.
         "pr_template_private_data": "prompts.json" in pr_template and "promptoire.config.json" in pr_template,
         "release_selftest": "--selftest" in release_checklist and '"mock": false' in release_checklist,
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
+        "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
     }
     out["release.docs_ready"] = release_tokens

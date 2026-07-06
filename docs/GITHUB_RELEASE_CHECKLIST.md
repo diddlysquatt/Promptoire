@@ -32,6 +32,13 @@ node --check promptoire_app/web/js/bridge.js
 ## Repository Setup
 
 - Add the real GitHub remote.
+- Before pushing workflow changes for the first time, confirm `gh auth status` includes `workflow`.
+  If GitHub rejects the push for workflow scope, run:
+
+```bash
+gh auth refresh --scopes workflow
+```
+
 - Commit on a clean branch.
 - Confirm GitHub Actions CI is green after the first push.
 - Confirm `.gitignore` excludes local runtime data.
