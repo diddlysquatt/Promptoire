@@ -22,7 +22,7 @@
     "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Now create prompts for this topic or workflow:\n\n";
 
-  let pasteArea, previewBox, applyBtn, optUpdate, optAdd;
+  let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote;
 
   function render() {
     const host = document.getElementById("bulkBody");
@@ -58,7 +58,11 @@
     // STEP 2 — import
     pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
       placeholder: "Paste improved JSON, or a simple outline:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nSection: AI Art\nSubsection: Characters\nCinematic portrait: A dramatic 85mm portrait of {subject}..." });
-    pasteArea.addEventListener("input", () => { applyBtn.disabled = true; previewBox.innerHTML = ""; });
+    pasteArea.addEventListener("input", () => {
+      previewBox.innerHTML = "";
+      delete previewBox.dataset.ready;
+      syncMergeState();
+    });
 
     const step2 = el("div", { class: "step" }, [
       el("div", { class: "step-head" }, [
@@ -75,26 +79,42 @@
 
     // preview + apply
     previewBox = el("div", {});
-    const opts = el("div", { class: "row-between", style: { margin: "8px 2px" } }, [
-      toggleInline("Update existing", true, (r) => (optUpdate = r)),
-      toggleInline("Add new", true, (r) => (optAdd = r)),
+    mergeNote = el("div", { class: "merge-note", text: "Preview an import first" });
+    const opts = el("div", { class: "merge-options" }, [
+      toggleInline("Update existing", true, (r) => (optUpdate = r), syncMergeState),
+      toggleInline("Add new", true, (r) => (optAdd = r), syncMergeState),
     ]);
     applyBtn = el("button", { class: "btn btn-primary", html: icon("check") + " Merge into library", disabled: "disabled",
       onclick: apply });
-    const applyRow = el("div", { class: "btn-row", style: { marginTop: "6px" } }, [ applyBtn,
-      el("button", { class: "btn btn-danger", text: "Replace everything…", onclick: replaceAll }) ]);
+    const mergeCard = el("div", { class: "merge-card" }, [
+      el("div", { class: "merge-head" }, [
+        el("div", { class: "merge-title", text: "Safe merge" }),
+        mergeNote,
+      ]),
+      opts,
+      el("div", { class: "btn-row" }, [ applyBtn ]),
+    ]);
+    const replaceDanger = el("details", { class: "danger-zone" }, [
+      el("summary", { text: "Replace library" }),
+      el("div", { class: "danger-body" }, [
+        el("p", { class: "txt-muted", text: "Replaces every local prompt with the pasted import after saving a backup." }),
+        el("button", { class: "btn btn-danger", text: "Replace everything…", onclick: replaceAll }),
+      ]),
+    ]);
 
     host.appendChild(step1);
     host.appendChild(step2);
     host.appendChild(previewBox);
-    host.appendChild(opts);
-    host.appendChild(applyRow);
+    host.appendChild(mergeCard);
+    host.appendChild(replaceDanger);
+    syncMergeState();
   }
 
-  function toggleInline(label, checked, ref) {
+  function toggleInline(label, checked, ref, onChange) {
     const input = el("input", { type: "checkbox" });
     input.checked = checked;
     if (ref) ref(input);
+    if (onChange) input.addEventListener("change", onChange);
     return el("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--muted)" } },
       [ wrapSwitch(input), label ]);
   }
@@ -166,9 +186,16 @@
     const text = pasteArea.value.trim();
     if (!text) { toast("Paste JSON or an outline first", { bad: true }); return; }
     const r = await PR.bridge.call("merge_preview", text);
-    if (!r || !r.ok) { toast((r && r.error) || "Could not read import", { bad: true }); previewBox.innerHTML = ""; applyBtn.disabled = true; return; }
+    if (!r || !r.ok) {
+      toast((r && r.error) || "Could not read import", { bad: true });
+      previewBox.innerHTML = "";
+      delete previewBox.dataset.ready;
+      syncMergeState();
+      return;
+    }
     renderPreview(r.preview);
-    applyBtn.disabled = false;
+    previewBox.dataset.ready = "1";
+    syncMergeState();
   }
 
   function renderPreview(pv) {
@@ -207,13 +234,31 @@
     const text = pasteArea.value.trim();
     const upd = optUpdate ? optUpdate.checked : true;
     const add = optAdd ? optAdd.checked : true;
+    if (!upd && !add) {
+      toast("Choose Add new or Update existing", { bad: true });
+      return;
+    }
     const r = await PR.bridge.call("apply_merge", text, upd, add);
     if (r && r.ok) {
       await PR.app.refreshState();
       const res = r.result || {};
       toast(`Merged into library: ${res.updated || 0} updated, ${res.added || 0} added`);
-      pasteArea.value = ""; previewBox.innerHTML = ""; applyBtn.disabled = true;
+      pasteArea.value = "";
+      previewBox.innerHTML = "";
+      delete previewBox.dataset.ready;
+      syncMergeState();
     } else toast((r && r.error) || "Merge failed", { bad: true });
+  }
+
+  function syncMergeState() {
+    if (!applyBtn || !previewBox) return;
+    const hasPreview = previewBox.dataset.ready === "1";
+    const canApply = (!optUpdate || optUpdate.checked) || (!optAdd || optAdd.checked);
+    applyBtn.disabled = !hasPreview || !canApply;
+    if (!mergeNote) return;
+    if (!hasPreview) mergeNote.textContent = "Preview an import first";
+    else if (!canApply) mergeNote.textContent = "Choose at least one merge action";
+    else mergeNote.textContent = "Adds and updates only";
   }
 
   function replaceAll() {

@@ -36,6 +36,7 @@ node --check promptoire_app/web/js/bridge.js
 - Confirm `.gitignore` excludes local runtime data.
 - Set the final Buy Me a Coffee link in Settings or keep the blank default; blank links prompt the user to configure support instead of opening a generic page.
 - Confirm the Improve Library panel has both `Copy for AI` for JSON updates and `Copy outline request` for non-JSON prompt batches.
+- Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 
 ## Optional Build

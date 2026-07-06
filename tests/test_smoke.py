@@ -178,6 +178,16 @@ Tags: editing, clarity
     ]
     out["frontend.script_order"] = shell.scripts
     assert shell.scripts == expected_scripts, shell.scripts
+    bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
+    bulk_tokens = {
+        "safe_merge_card": "merge-card",
+        "replace_danger_zone": "danger-zone",
+        "merge_action_guard": "Choose Add new or Update existing",
+        "merge_state_sync": "syncMergeState",
+    }
+    missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
+    out["frontend.bulk_contract_missing"] = missing_bulk_tokens
+    assert not missing_bulk_tokens, missing_bulk_tokens
 
     # copy_export (clipboard may be unavailable in headless; just check shape)
     ce = api.copy_export(True, False)
