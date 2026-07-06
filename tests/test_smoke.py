@@ -148,6 +148,27 @@ Tags: editing, clarity
     editing = next(p for p, _, _ in relaxed_prompts if p["title"].startswith("Rewrite"))
     assert editing["tags"] == ["editing", "clarity"], editing
 
+    numbered_outline = """Section: Workflows
+Subsection: Cleanup
+Prompt 1:
+Review {notes} and extract the next actions.
+Prompt 2: Summarize {topic} for a busy reader.
+Prompt three:
+Title: Follow-up writer
+Prompt: Write a concise follow-up about {topic}.
+Tags: follow-up, email
+"""
+    numbered = _parse_import_text(numbered_outline)
+    assert numbered is not None, numbered_outline
+    numbered_prompts = list(schema.iter_prompts(numbered))
+    out["outline.numbered_labels.total"] = len(numbered_prompts)
+    assert out["outline.numbered_labels.total"] == 3, out
+    numbered_paths = {p["title"]: path for p, _, path in numbered_prompts}
+    assert numbered_paths["Review {notes} and extract the next actions."] == ["Workflows", "Cleanup"], numbered_paths
+    assert numbered_paths["Summarize {topic} for a busy reader."] == ["Workflows", "Cleanup"], numbered_paths
+    follow_up = next(p for p, _, _ in numbered_prompts if p["title"] == "Follow-up writer")
+    assert follow_up["tags"] == ["follow-up", "email"], follow_up
+
     path_outline = """Path: AI Art > Scenes > Landscapes
 Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic light.
 """
@@ -255,6 +276,7 @@ Bug sweep: Review {code} for bugs.
         "outline_example_handler": "insertOutlineExample",
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
+        "numbered_prompt_blocks": "Prompt 1:",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens

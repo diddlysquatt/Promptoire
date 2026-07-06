@@ -10,6 +10,7 @@
     "- Return only the outline. Do not wrap it in a code fence.\n" +
     "- Use # headings, Path: Section > Subsection > Nested subsection, Section/Subsection labels, or indentation for nested sections.\n" +
     "- Use prompt rows like: Title: Prompt body\n" +
+    "- Numbered blocks like Prompt 1: are fine when a prompt needs multiple lines.\n" +
     "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +
     "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
     "- Use {placeholders} where the user should fill in a value.\n" +
@@ -20,7 +21,8 @@
     "    Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
     "Section: Writing\n" +
     "Subsection: Editing\n" +
-    "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
+    "Prompt 1:\n" +
+    "Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Subsection: Drafting\n" +
     "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
     "Path: AI Art > Characters > Portraits\n" +
@@ -38,7 +40,8 @@
     "    Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
     "Section: Writing\n" +
     "Subsection: Editing\n" +
-    "Tight rewrite: Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
+    "Prompt 1:\n" +
+    "Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
     "Subsection: Drafting\n" +
     "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
     "Path: AI Art > Characters > Portraits\n" +

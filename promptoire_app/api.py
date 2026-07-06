@@ -410,6 +410,11 @@ def _parse_loose_json(text: str) -> Any:
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _BULLET_RE = re.compile(r"^\s*(?:[-*+]|[0-9]+[.)])\s+(.+?)\s*$")
+_PROMPT_MARKER_RE = re.compile(
+    r"^\s*(?:prompt|item|entry)\s*#?\s*"
+    r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*:\s*(.*?)\s*$",
+    re.IGNORECASE,
+)
 _PATH_FIELD_RE = re.compile(
     r"^\s*("
     r"section|category|folder|group|path|folder[\s_-]+path|"
@@ -438,9 +443,10 @@ def _parse_outline(text: str) -> dict | None:
       ## Subsection
       - Prompt title: prompt body
 
-    Headings become nested categories. Bullets, numbered items, `Title:` /
-    `Prompt:` fields, and separated paragraphs become prompts. This is meant
-    to make LLM-authored imports easy without forcing users to hand-edit JSON.
+    Headings become nested categories. Bullets, numbered items, `Prompt 1:`
+    markers, `Title:` / `Prompt:` fields, and separated paragraphs become
+    prompts. This is meant to make LLM-authored imports easy without forcing
+    users to hand-edit JSON.
     """
     if text is None:
         return None
@@ -564,6 +570,17 @@ def _parse_outline(text: str) -> dict | None:
                     add_heading(2, value)
                 last_was_heading = True
             previous_blank = False
+            continue
+
+        marker = _PROMPT_MARKER_RE.match(line)
+        if marker:
+            finish_prompt()
+            block = ensure_block()
+            value = marker.group(1).strip()
+            if value:
+                _seed_outline_block(block, value)
+            previous_blank = False
+            last_was_heading = False
             continue
 
         if _looks_like_plain_heading(raw, lines, idx, current, previous_blank):
