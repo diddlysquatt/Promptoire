@@ -22,6 +22,7 @@
 - Topic-aware outline requests for asking an LLM to generate a brand-new prompt batch.
 - Import preview chips for new nested sections and title-matched updates.
 - Import preview now shows total incoming prompts and clearer safe-merge mode notes.
+- Manual paste into the import box now auto-previews changes.
 - Settings can open the local data folder that contains prompts, settings, and backups.
 - Safe merge disables the merge action when the selected Add/Update mode has no applicable changes.
 - Markdown-fenced outline replies are accepted without importing the fence text.

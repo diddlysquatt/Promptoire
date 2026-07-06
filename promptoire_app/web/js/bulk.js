@@ -107,6 +107,11 @@
       lastPreview = null;
       syncMergeState();
     });
+    pasteArea.addEventListener("paste", () => {
+      setTimeout(() => {
+        if (pasteArea.value.trim()) preview();
+      }, 0);
+    });
 
     const step2 = el("div", { class: "step" }, [
       el("div", { class: "step-head" }, [
