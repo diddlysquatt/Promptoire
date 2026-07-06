@@ -243,6 +243,7 @@
       pv.new_categories.length ? el("span", { class: "diff-pill", text: pv.new_categories.length + " new categories" }) : null,
     ]);
     previewBox.appendChild(summary);
+    if (pv.new_categories.length) previewBox.appendChild(newCategoryPreview(pv.new_categories));
 
     const list = el("div", { class: "diff-list" });
     pv.updated.forEach((it) => list.appendChild(diffItem("upd", it)));
@@ -252,6 +253,19 @@
         text: "Nothing would change — the incoming library matches what you have." }));
     }
     previewBox.appendChild(list);
+  }
+
+  function newCategoryPreview(categories) {
+    const limit = 8;
+    const shown = categories.slice(0, limit);
+    const chips = [
+      el("span", { class: "newcat-label", text: "New sections" }),
+      ...shown.map((name) => el("span", { class: "diff-cat-chip", text: name })),
+    ];
+    if (categories.length > limit) {
+      chips.push(el("span", { class: "diff-cat-chip more", text: "+" + (categories.length - limit) + " more" }));
+    }
+    return el("div", { class: "diff-newcats" }, chips);
   }
 
   function diffItem(kind, it) {

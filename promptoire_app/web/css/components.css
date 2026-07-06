@@ -381,6 +381,15 @@
 .diff-pill.add { color: var(--good); background: rgba(52,211,153,0.12); }
 .diff-pill.upd { color: var(--accent-2); background: rgba(34,211,238,0.12); }
 .diff-pill.same { color: var(--faint); }
+.diff-newcats { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin: -3px 0 10px; padding: 8px 10px; border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border)); }
+.newcat-label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.diff-cat-chip { max-width: 100%; overflow-wrap: anywhere; font-size: 11px; font-weight: 650;
+  color: var(--text); padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08); }
+.diff-cat-chip.more { color: var(--muted); }
 .diff-list { max-height: 220px; overflow-y: auto; margin-top: 6px;
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 10px, #000 calc(100% - 12px), transparent 100%);
           mask-image: linear-gradient(180deg, transparent 0, #000 10px, #000 calc(100% - 12px), transparent 100%); }

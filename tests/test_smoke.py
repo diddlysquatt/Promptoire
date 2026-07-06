@@ -241,6 +241,7 @@ Bug sweep: Review {code} for bugs.
     out["frontend.script_order"] = shell.scripts
     assert shell.scripts == expected_scripts, shell.scripts
     bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
+    components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     bulk_tokens = {
         "safe_merge_card": "merge-card",
         "replace_danger_zone": "danger-zone",
@@ -249,10 +250,14 @@ Bug sweep: Review {code} for bugs.
         "title_match_badge": "matched by title",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
+        "new_category_preview": "newCategoryPreview",
+        "new_section_label": "New sections",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
     assert not missing_bulk_tokens, missing_bulk_tokens
+    out["frontend.new_category_preview_css"] = "diff-cat-chip" in components_css
+    assert out["frontend.new_category_preview_css"], "diff-cat-chip"
 
     root = Path(__file__).resolve().parents[1]
     readme_text = (root / "README.md").read_text(encoding="utf-8")
