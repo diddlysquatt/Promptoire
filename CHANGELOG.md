@@ -6,6 +6,9 @@
 
 - Add proper Windows product/version metadata to the standalone executable.
 - Keep unused AVIF and WebP codecs out of the portable build to reduce its footprint.
+- Let prompts be dropped anywhere in a destination category, including its empty-state area or a specific row position.
+- Validate drag-and-drop destinations before removing prompts from their current category.
+- Stop continuously animating the decorative background aura so the open app stays quiet at idle.
 - Silence the standalone browser-preview favicon request and ignore local visual-QA artifacts.
 
 ## 2.3.0 - 2026-07-06

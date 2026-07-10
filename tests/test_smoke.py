@@ -886,6 +886,32 @@ Question planner: Turn {notes} into prioritized interview questions.
     pid = add["prompt"]["id"]
     upd = api.update_prompt(pid, {"title": "ZZ smoke 2"})
     out["update.ok"] = upd["ok"]
+    target_id = st["categories"][1]["id"]
+    moved = api.move_prompt(pid, target_id, 0)
+    moved_prompt, moved_cat, _ = app.library.find_prompt(pid)
+    out["move_prompt.ok"] = (
+        moved.get("ok") is True
+        and moved_prompt is not None
+        and moved_cat is not None
+        and moved_cat.get("id") == target_id
+        and moved_cat.get("prompts", [])[0].get("id") == pid
+    )
+    assert out["move_prompt.ok"], moved
+    refused = api.move_prompt(pid, "cat_missing", None)
+    still_there, still_cat, _ = app.library.find_prompt(pid)
+    out["move_prompt.invalid_is_safe"] = (
+        refused.get("ok") is False
+        and still_there is not None
+        and still_cat is not None
+        and still_cat.get("id") == target_id
+    )
+    assert out["move_prompt.invalid_is_safe"], refused
+    destination_prompts = moved_cat.get("prompts", [])
+    reordered = api.reorder_prompt(target_id, 0, len(destination_prompts) - 1)
+    out["reorder_prompt.ok"] = (
+        reordered.get("ok") is True and destination_prompts[-1].get("id") == pid
+    )
+    assert out["reorder_prompt.ok"], reordered
     dele = api.delete_prompt(pid)
     out["delete.ok"] = dele["ok"]
 

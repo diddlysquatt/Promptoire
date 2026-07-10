@@ -210,21 +210,37 @@
     list.addEventListener("dragend", (e) => {
       e.stopPropagation();
       drag = null;
-      list.querySelectorAll(".dragging, .drop-target").forEach((r) => r.classList.remove("dragging", "drop-target"));
-      document.querySelectorAll(".drop-into").forEach((h) => h.classList.remove("drop-into"));
+      document.querySelectorAll(".dragging, .drop-target, .drop-into").forEach((node) =>
+        node.classList.remove("dragging", "drop-target", "drop-into"));
     });
     list.addEventListener("dragover", (e) => {
-      if (!drag || drag.kind !== "prompt" || drag.fromCatId !== cat.id) return;
+      if (!drag || drag.kind !== "prompt") return;
       e.preventDefault(); e.stopPropagation();
       const row = e.target.closest(".prow");
-      list.querySelectorAll(".drop-target").forEach((r) => r.classList.remove("drop-target"));
+      document.querySelectorAll(".prow.drop-target").forEach((r) => r.classList.remove("drop-target"));
+      document.querySelectorAll(".cat-prompts.drop-into").forEach((other) => {
+        if (other !== list) other.classList.remove("drop-into");
+      });
+      list.classList.toggle("drop-into", drag.fromCatId !== cat.id);
       if (row && row.dataset.id !== drag.id) row.classList.add("drop-target");
     });
+    list.addEventListener("dragleave", (e) => {
+      if (!list.contains(e.relatedTarget)) list.classList.remove("drop-into");
+    });
     list.addEventListener("drop", async (e) => {
-      if (!drag || drag.kind !== "prompt" || drag.fromCatId !== cat.id) return;
+      if (!drag || drag.kind !== "prompt") return;
       e.preventDefault(); e.stopPropagation();
       const target = e.target.closest(".prow");
       const moved = drag; drag = null;
+      list.classList.remove("drop-into");
+      if (moved.fromCatId !== cat.id) {
+        const to = target ? +target.dataset.idx : null;
+        const r = await PR.bridge.call("move_prompt", moved.id, cat.id, to);
+        if (r && r.ok) {
+          await PR.app.refreshState(); render(); toast("Moved to “" + cat.name + "”");
+        }
+        return;
+      }
       if (!target || target.dataset.id === moved.id) return;
       const from = (cat.prompts || []).findIndex((x) => x.id === moved.id);
       const to = +target.dataset.idx;

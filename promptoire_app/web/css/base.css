@@ -155,11 +155,6 @@ button { cursor: pointer; border: none; background: none; }
   filter: blur(28px);
   pointer-events: none;
   opacity: 0.9;
-  animation: aura-drift 18s var(--ease) infinite alternate;
-}
-@keyframes aura-drift {
-  0%   { transform: translate3d(-2%, -1%, 0) scale(1.0); }
-  100% { transform: translate3d(3%, 2%, 0) scale(1.08); }
 }
 .bg-grid {
   position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5;
@@ -386,5 +381,4 @@ button { cursor: pointer; border: none; background: none; }
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .bg-aura { animation: none; }
 }

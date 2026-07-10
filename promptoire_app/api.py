@@ -165,7 +165,9 @@ class Api:
 
     def reorder_prompt(self, category_id: str, from_index: int, to_index: int) -> dict:
         try:
-            self._app.library.reorder_prompt(category_id, from_index, to_index)
+            okk = self._app.library.reorder_prompt(category_id, from_index, to_index)
+            if not okk:
+                return err("Reorder failed")
             self._app.save_library()
             return ok()
         except Exception as e:
@@ -201,7 +203,9 @@ class Api:
 
     def reorder_category(self, category_id: str, to_index: int) -> dict:
         try:
-            self._app.library.reorder_category(category_id, to_index)
+            okk = self._app.library.reorder_category(category_id, to_index)
+            if not okk:
+                return err("Reorder failed")
             self._app.save_library()
             return ok()
         except Exception as e:

@@ -174,14 +174,13 @@ class PromptLibrary:
         return None
 
     def move_prompt(self, prompt_id: str, target_category_id: str, index: int | None = None) -> bool:
+        cat, _, _ = self.find_category(target_category_id)
+        if cat is None:
+            # Validate the destination before removing anything from the source.
+            return False
         removed = self.delete_prompt(prompt_id)
         if removed is None:
             return False
-        cat, _, _ = self.find_category(target_category_id)
-        if cat is None:
-            # Put it back where deletion happened is hard; drop into first cat.
-            cats = self.categories()
-            cat = cats[0] if cats else self.categories().append(new_category("My Prompts")) or self.categories()[0]
         prompts = cat.setdefault("prompts", [])
         if index is None or index < 0 or index > len(prompts):
             prompts.append(removed)
