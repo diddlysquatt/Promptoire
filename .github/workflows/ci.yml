@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  smoke:
+    name: Smoke and Syntax Checks
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run backend smoke test
+        shell: pwsh
+        run: python tests\test_smoke.py
+
+      - name: Compile Python modules
+        shell: pwsh
+        run: python -m compileall -q promptoire_app tests
+
+      - name: Check frontend JavaScript syntax
+        shell: pwsh
+        run: |
+          $files = @(
+            "bridge.js",
+            "state.js",
+            "components.js",
+            "launcher.js",
+            "editor.js",
+            "bulk.js",
+            "settings.js",
+            "app.js"
+          )
+          foreach ($file in $files) {
+            node --check "promptoire_app\web\js\$file"
+          }
+
