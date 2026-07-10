@@ -1,0 +1,172 @@
+{
+  "version": 3,
+  "categories": [
+    {
+      "id": "cat_example_writing",
+      "name": "Writing",
+      "icon": "W",
+      "color": "#7c5cff",
+      "collapsed": false,
+      "prompts": [
+        {
+          "id": "prm_example_rewrite",
+          "type": "text",
+          "title": "Improve this writing",
+          "prompt": "Improve the following text. Make it clearer, tighter, and more engaging while keeping my voice. Return only the rewrite.\n\n{text}",
+          "tags": ["editing", "rewrite"],
+          "note": "A simple everyday rewrite prompt.",
+          "favorite": false,
+          "uses": 0,
+          "created_at": "2026-01-01T00:00:00+00:00",
+          "updated_at": "2026-01-01T00:00:00+00:00",
+          "negative": "",
+          "model": "",
+          "params": "",
+          "seed": "",
+          "sampler": "",
+          "cfg": ""
+        },
+        {
+          "id": "prm_example_summary",
+          "type": "text",
+          "title": "Summarize to bullet points",
+          "prompt": "Summarize the text below into 5-7 crisp bullet points capturing the key ideas.\n\n{text}",
+          "tags": ["summary"],
+          "note": "",
+          "favorite": false,
+          "uses": 0,
+          "created_at": "2026-01-01T00:00:00+00:00",
+          "updated_at": "2026-01-01T00:00:00+00:00",
+          "negative": "",
+          "model": "",
+          "params": "",
+          "seed": "",
+          "sampler": "",
+          "cfg": ""
+        }
+      ],
+      "subcategories": []
+    },
+    {
+      "id": "cat_example_coding",
+      "name": "Coding",
+      "icon": "C",
+      "color": "#22d3ee",
+      "collapsed": false,
+      "prompts": [
+        {
+          "id": "prm_example_handoff",
+          "type": "text",
+          "title": "New-chat handoff brief",
+          "prompt": "Create a NEW CHAT HANDOFF that summarizes everything needed to continue this work immediately: objective, current state, constraints, decisions made, key files/paths, commands to run, known bugs, and the next steps in priority order.",
+          "tags": ["workflow", "context"],
+          "note": "",
+          "favorite": false,
+          "uses": 0,
+          "created_at": "2026-01-01T00:00:00+00:00",
+          "updated_at": "2026-01-01T00:00:00+00:00",
+          "negative": "",
+          "model": "",
+          "params": "",
+          "seed": "",
+          "sampler": "",
+          "cfg": ""
+        },
+        {
+          "id": "prm_example_review",
+          "type": "text",
+          "title": "Pragmatic code review",
+          "prompt": "Review the code below for correctness bugs and clear, low-risk improvements. Prioritize real issues over style. For each finding: what, why it matters, and the minimal fix.\n\n{code}",
+          "tags": ["review"],
+          "note": "",
+          "favorite": false,
+          "uses": 0,
+          "created_at": "2026-01-01T00:00:00+00:00",
+          "updated_at": "2026-01-01T00:00:00+00:00",
+          "negative": "",
+          "model": "",
+          "params": "",
+          "seed": "",
+          "sampler": "",
+          "cfg": ""
+        }
+      ],
+      "subcategories": [
+        {
+          "id": "cat_example_debugging",
+          "name": "Debugging",
+          "icon": "",
+          "color": "",
+          "collapsed": false,
+          "prompts": [
+            {
+              "id": "prm_example_error",
+              "type": "text",
+              "title": "Explain this error",
+              "prompt": "Here is an error and the relevant code. Explain the root cause in plain terms and give the smallest correct fix.\n\nError:\n{error}\n\nCode:\n{code}",
+              "tags": ["debug"],
+              "note": "",
+              "favorite": false,
+              "uses": 0,
+              "created_at": "2026-01-01T00:00:00+00:00",
+              "updated_at": "2026-01-01T00:00:00+00:00",
+              "negative": "",
+              "model": "",
+              "params": "",
+              "seed": "",
+              "sampler": "",
+              "cfg": ""
+            }
+          ],
+          "subcategories": []
+        }
+      ]
+    },
+    {
+      "id": "cat_example_art",
+      "name": "AI Art",
+      "icon": "A",
+      "color": "#f472b6",
+      "collapsed": false,
+      "prompts": [
+        {
+          "id": "prm_example_portrait",
+          "type": "image",
+          "title": "Cinematic portrait",
+          "prompt": "cinematic portrait of {subject}, dramatic rim lighting, 85mm, shallow depth of field, film grain, moody color grade, highly detailed",
+          "tags": ["portrait", "cinematic"],
+          "note": "",
+          "favorite": false,
+          "uses": 0,
+          "created_at": "2026-01-01T00:00:00+00:00",
+          "updated_at": "2026-01-01T00:00:00+00:00",
+          "negative": "blurry, lowres, extra fingers, watermark, text",
+          "model": "Midjourney v6",
+          "params": "--ar 4:5 --stylize 250",
+          "seed": "",
+          "sampler": "",
+          "cfg": ""
+        },
+        {
+          "id": "prm_example_asset",
+          "type": "image",
+          "title": "Isometric asset",
+          "prompt": "isometric {object}, clean vector style, soft studio lighting, pastel palette, centered, game asset, white background",
+          "tags": ["isometric", "asset"],
+          "note": "",
+          "favorite": false,
+          "uses": 0,
+          "created_at": "2026-01-01T00:00:00+00:00",
+          "updated_at": "2026-01-01T00:00:00+00:00",
+          "negative": "text, busy background, noise",
+          "model": "SDXL",
+          "params": "Steps: 30, CFG: 6",
+          "seed": "",
+          "sampler": "",
+          "cfg": ""
+        }
+      ],
+      "subcategories": []
+    }
+  ]
+}
