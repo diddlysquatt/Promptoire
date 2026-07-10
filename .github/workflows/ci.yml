@@ -55,4 +55,3 @@ jobs:
           foreach ($file in $files) {
             node --check "promptoire_app\web\js\$file"
           }
-
