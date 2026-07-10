@@ -745,6 +745,8 @@ Question planner: Turn {notes} into prioritized interview questions.
     launcher_bat = (root / "Promptoire.bat").read_text(encoding="utf-8")
     setup_bat = (root / "setup.bat").read_text(encoding="utf-8")
     release_bat = (root / "check-release.bat").read_text(encoding="utf-8")
+    spec_text = (root / "Promptoire.spec").read_text(encoding="utf-8")
+    version_info_text = (root / "version_info.txt").read_text(encoding="utf-8")
     publish_check_script = (root / "Check-GitHubPublish.ps1").read_text(encoding="utf-8")
     shortcut_script = (root / "Create-PromptoireShortcut.ps1").read_text(encoding="utf-8")
     shortcut_check_script = (root / "Check-PromptoireShortcut.ps1").read_text(encoding="utf-8")
@@ -782,6 +784,14 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
+        "packaged_version_metadata": (
+            "version='version_info.txt'" in spec_text
+            and f"StringStruct('FileVersion', '{__version__}')" in version_info_text
+            and f"StringStruct('ProductVersion', '{__version__}')" in version_info_text
+        ),
+        "lightweight_image_plugins": (
+            "PIL.AvifImagePlugin" in spec_text and "PIL.WebPImagePlugin" in spec_text
+        ),
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "all_frontend_js_checked": (
             all(f"node --check promptoire_app/web/js/{name}" in release_checklist for name in (

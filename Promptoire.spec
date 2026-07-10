@@ -20,7 +20,13 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter', 'matplotlib', 'numpy', 'PySide6', 'PyQt5'],
+    excludes=[
+        'tkinter', 'matplotlib', 'numpy', 'PySide6', 'PyQt5',
+        # The tray icon is generated from simple Pillow drawing primitives;
+        # Promptoire never decodes AVIF/WebP files. Leaving these plugins out
+        # trims several megabytes from the portable build.
+        'PIL.AvifImagePlugin', 'PIL.WebPImagePlugin',
+    ],
     noarchive=False,
     optimize=0,
 )
@@ -43,6 +49,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['icons\\replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico'],
+    version='version_info.txt',
 )
 
 coll = COLLECT(

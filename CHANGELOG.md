@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Add proper Windows product/version metadata to the standalone executable.
+- Keep unused AVIF and WebP codecs out of the portable build to reduce its footprint.
+- Silence the standalone browser-preview favicon request and ignore local visual-QA artifacts.
+
 ## 2.3.0 - 2026-07-06
 
 ### Added
