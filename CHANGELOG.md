@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Default the launcher to a compact one-line prompt layout, with Comfortable and Titles-only density choices available from the launcher or Settings.
+- Make the category rail reliably mouse-draggable and translate vertical wheel input into horizontal rail scrolling when needed.
+- Add native side and corner resizing to the frameless Windows window and remember the resulting size between launches.
+- Require the local release gate to generate a fresh WebView self-test report instead of accepting a stale report when another instance is running.
 - Add proper Windows product/version metadata to the standalone executable.
 - Keep unused AVIF and WebP codecs out of the portable build to reduce its footprint.
 - Let prompts be dropped anywhere in a destination category, including its empty-state area or a specific row position.

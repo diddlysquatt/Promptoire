@@ -5,6 +5,8 @@
 
   const views = { launcher: "viewLauncher", editor: "viewEditor", bulk: "viewBulk", settings: "viewSettings" };
   const GENERIC_COFFEE_URL = "https://www.buymeacoffee.com/";
+  const DENSITIES = ["comfortable", "compact", "titles"];
+  const DENSITY_NAMES = { comfortable: "Comfortable", compact: "Compact", titles: "Titles only" };
 
   async function boot() {
     let bootError = "";
@@ -14,6 +16,7 @@
       applyTheme();
       PR.launcher.init();
       wireChrome();
+      wireResizeHandles();
       wireGlobalKeys();
       wireBlur();
       showView("launcher");
@@ -43,6 +46,7 @@
           cats: (PR.state.categories || []).length,
           mock: PR.bridge.isMock(),
           theme: document.documentElement.getAttribute("data-theme"),
+          density: document.documentElement.getAttribute("data-density"),
           first: (document.querySelector(".card-title") || {}).textContent || "",
           get_state_type: typeof api.get_state,
           api_count: Object.keys(api).length,
@@ -75,6 +79,20 @@
     const t = (PR.state.settings && PR.state.settings.theme) || "matrix";
     document.documentElement.setAttribute("data-theme", t);
     applyAccent((PR.state.settings && PR.state.settings.accent) || "");
+    applyDensity((PR.state.settings && PR.state.settings.density) || "compact");
+  }
+
+  function applyDensity(value) {
+    const density = DENSITIES.includes(value) ? value : "compact";
+    document.documentElement.setAttribute("data-density", density);
+    const button = document.getElementById("btnDensity");
+    if (button) {
+      const name = DENSITY_NAMES[density];
+      button.dataset.density = density;
+      button.title = "Prompt density: " + name + " (click to change)";
+      button.setAttribute("aria-label", "Prompt density: " + name + ". Click to change.");
+    }
+    return density;
   }
 
   function applyAccent(hex) {
@@ -116,6 +134,7 @@
     document.getElementById("btnAdd").addEventListener("click", () => PR.editor.newPrompt(null));
     document.getElementById("btnAddCategory").addEventListener("click", () => PR.editor.addCategory(null));
     document.getElementById("btnClose").addEventListener("click", () => PR.bridge.call("hide_window"));
+    document.getElementById("btnDensity").addEventListener("click", cycleDensity);
 
     const pin = document.getElementById("btnPin");
     pin.addEventListener("click", () => {
@@ -126,6 +145,30 @@
     });
 
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => showView("launcher")));
+  }
+
+  function cycleDensity() {
+    const current = applyDensity((PR.state.settings && PR.state.settings.density) || "compact");
+    const next = DENSITIES[(DENSITIES.indexOf(current) + 1) % DENSITIES.length];
+    PR.state.settings.density = next;
+    applyDensity(next);
+    PR.bridge.call("update_settings", { density: next });
+    PR.ui.toast("Prompt density: " + DENSITY_NAMES[next]);
+  }
+
+  function wireResizeHandles() {
+    document.querySelectorAll("[data-resize]").forEach((handle) => {
+      handle.addEventListener("pointerdown", async (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        PR.state.suppressBlur = true;
+        try {
+          await PR.bridge.call("begin_window_resize", handle.dataset.resize);
+        } finally {
+          setTimeout(() => { PR.state.suppressBlur = false; }, 120);
+        }
+      });
+    });
   }
 
   function wireGlobalKeys() {
@@ -210,6 +253,7 @@
     refreshState,
     showView,
     applyAccent,
+    applyDensity,
     openCoffee,
     onShown() { showView("launcher"); PR.launcher.runSearch().then(() => PR.launcher.focusSearch()); },
     openSettings() { showView("settings"); },

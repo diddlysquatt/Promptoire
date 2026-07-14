@@ -405,6 +405,12 @@ class Api:
         except Exception as e:
             return err(str(e))
 
+    def begin_window_resize(self, direction: str) -> dict:
+        try:
+            return ok(started=self._app.begin_window_resize(direction))
+        except Exception as e:
+            return err(str(e))
+
     def open_external(self, url: str) -> dict:
         try:
             webbrowser.open(url)

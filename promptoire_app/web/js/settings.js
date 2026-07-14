@@ -49,7 +49,11 @@
       });
       themeGrid.appendChild(sw);
     });
-    host.appendChild(section("Appearance", el("div", {}, [themeGrid, accentPicker(s)])));
+    host.appendChild(section("Appearance", el("div", {}, [
+      card([row("Prompt density", "Choose more context or fit more prompts at once.", densityPicker(s))]),
+      themeGrid,
+      accentPicker(s),
+    ])));
 
     /* System */
     host.appendChild(section("System", card([
@@ -113,6 +117,29 @@
     return sec;
   }
   function sBtn(label, on, onclick) { return el("button", { class: on ? "on" : "", text: label, onclick }); }
+
+  function densityPicker(s) {
+    const names = [
+      { id: "comfortable", label: "Roomy" },
+      { id: "compact", label: "Compact" },
+      { id: "titles", label: "Titles" },
+    ];
+    const current = names.some((x) => x.id === s.density) ? s.density : "compact";
+    const seg = el("div", { class: "segmented density-picker" });
+    names.forEach((item) => {
+      const button = sBtn(item.label, current === item.id, () => {
+        seg.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        button.classList.add("on");
+        s.density = item.id;
+        if (PR.app && PR.app.applyDensity) PR.app.applyDensity(item.id);
+        save({ density: item.id });
+      });
+      button.title = item.id === "comfortable" ? "Two-line previews and full metadata" :
+        item.id === "compact" ? "One-line previews with less metadata" : "Prompt titles only";
+      seg.appendChild(button);
+    });
+    return seg;
+  }
 
   function accentPicker(s) {
     const colors = ["#7c5cff", "#22d3ee", "#34d399", "#f472b6", "#fb923c", "#f43f5e", "#fbbf24", "#e5e7eb"];

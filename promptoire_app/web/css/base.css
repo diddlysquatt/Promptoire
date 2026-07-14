@@ -265,15 +265,30 @@ button { cursor: pointer; border: none; background: none; }
 }
 @keyframes chip-pop { 0% { transform: scale(0.96); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
 
+.density-toggle {
+  width: 29px; height: 29px; margin-left: auto; flex: 0 0 auto;
+  display: grid; place-items: center; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+              background var(--dur-1) var(--ease);
+}
+.density-toggle:hover { color: var(--fg); border-color: var(--border-2); background: var(--surface-2); }
+.density-toggle .ic { width: 15px; height: 15px; }
+.density-toggle[data-density="compact"] { color: var(--accent); }
+.density-toggle[data-density="titles"] { color: var(--accent-2); }
+
 /* ---- category rail (browse-by-category chips) --------------------------- */
 .catrail {
   display: flex; gap: 6px; padding: 0 14px 10px;
   overflow-x: auto; overflow-y: hidden; flex: 0 0 auto;
-  scrollbar-width: none;
+  scrollbar-width: none; cursor: grab; touch-action: pan-y;
+  overscroll-behavior-x: contain;
   -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent);
           mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent);
 }
 .catrail::-webkit-scrollbar { display: none; }
+.catrail.is-dragging { cursor: grabbing; scroll-behavior: auto; }
+.catrail.is-dragging .railchip { pointer-events: none; }
 .railchip {
   display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
   font-size: 11.5px; font-weight: 600; color: var(--muted);
@@ -356,6 +371,73 @@ button { cursor: pointer; border: none; background: none; }
   background: linear-gradient(180deg, transparent, rgba(0,0,0,0.18));
 }
 .actionbar .btn-primary { margin-left: auto; }
+
+/* Compact is the default launcher density; Titles keeps the same shell and
+   removes body details in components.css. Comfortable preserves the original
+   spacious layout. */
+html:is([data-density="compact"], [data-density="titles"]) .titlebar {
+  padding: 7px 8px 7px 10px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .brand { gap: 7px; }
+html:is([data-density="compact"], [data-density="titles"]) .brand-mark {
+  width: 22px; height: 22px; border-radius: 6px; font-size: 13px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .tbtn {
+  width: 26px; height: 26px; border-radius: 8px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .titlebar-actions { gap: 3px; }
+html:is([data-density="compact"], [data-density="titles"]) .searchwrap { margin: 0 10px 7px; }
+html:is([data-density="compact"], [data-density="titles"]) .search { height: 38px; font-size: 13.5px; }
+html:is([data-density="compact"], [data-density="titles"]) .filters {
+  gap: 5px; padding: 0 10px 6px; flex-wrap: nowrap;
+}
+html:is([data-density="compact"], [data-density="titles"]) .chip {
+  padding: 4px 8px; font-size: 11px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .density-toggle {
+  width: 25px; height: 25px; border-radius: 7px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .catrail {
+  gap: 5px; padding: 0 10px 6px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .railchip {
+  gap: 5px; padding: 3px 7px; border-radius: 7px; font-size: 11px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .railcount {
+  font-size: 9.5px; padding: 0 4px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .results { padding: 1px 7px 4px; }
+html:is([data-density="compact"], [data-density="titles"]) .group { margin: 0 1px 4px; }
+html:is([data-density="compact"], [data-density="titles"]) .group.nested {
+  margin: 0 0 1px 7px; padding-left: 6px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .group-head {
+  gap: 5px; padding: 4px 6px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .group-name { font-size: 11.5px; }
+html:is([data-density="compact"], [data-density="titles"]) .group-count {
+  font-size: 9.5px; padding: 0 5px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .actionbar {
+  gap: 6px; padding: 7px 10px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .actionbar .btn {
+  height: 32px; padding: 0 10px; font-size: 12px;
+}
+
+/* Native edge/corner hit zones for the frameless desktop window. */
+.resize-handle { position: fixed; z-index: 10000; touch-action: none; }
+.resize-n, .resize-s { left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+.resize-n { top: 0; }
+.resize-s { bottom: 0; }
+.resize-e, .resize-w { top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
+.resize-e { right: 0; }
+.resize-w { left: 0; }
+.resize-ne, .resize-se, .resize-sw, .resize-nw { width: 12px; height: 12px; }
+.resize-ne { right: 0; top: 0; cursor: nesw-resize; }
+.resize-se { right: 0; bottom: 0; cursor: nwse-resize; }
+.resize-sw { left: 0; bottom: 0; cursor: nesw-resize; }
+.resize-nw { left: 0; top: 0; cursor: nwse-resize; }
 
 /* ---- panel heads -------------------------------------------------------- */
 .panel-head {

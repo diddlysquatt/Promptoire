@@ -185,7 +185,7 @@ class App:
         if self.window is None or self._quitting:
             return
         try:
-            self._remember_position()
+            self._remember_geometry()
             self.window.hide()
             self._visible = False
         except Exception:
@@ -198,9 +198,18 @@ class App:
 
     def resize(self, width: int, height: int):
         if self.window is not None:
+            width = max(360, int(width))
+            height = max(420, int(height))
             self.window.resize(width, height)
             self.settings.update({"window": {"width": width, "height": height}})
             self.settings.save()
+
+    def begin_window_resize(self, direction: str) -> bool:
+        resized = window_fx.begin_resize(self._hwnd, direction)
+        if resized:
+            # The native helper returns when the user releases the mouse.
+            self._remember_geometry()
+        return resized
 
     def _move_near_cursor(self):
         try:
@@ -245,13 +254,21 @@ class App:
         except Exception:
             pass
 
-    def _remember_position(self):
+    def _remember_geometry(self):
         try:
-            if not self.settings.get("window", "remember_position", default=True):
+            if self.window is None:
                 return
-            x, y = self.window.x, self.window.y
-            if isinstance(x, int) and isinstance(y, int):
-                self.settings.update({"window": {"x": x, "y": y}})
+            patch = {}
+            width, height = self.window.width, self.window.height
+            if isinstance(width, int) and isinstance(height, int):
+                patch.update(width=max(360, width), height=max(420, height))
+            if self.settings.get("window", "remember_position", default=True):
+                x, y = self.window.x, self.window.y
+                if isinstance(x, int) and isinstance(y, int):
+                    patch.update(x=x, y=y)
+            if patch and any(self.settings.get("window", k) != v for k, v in patch.items()):
+                self.settings.update({"window": patch})
+                self.settings.save()
         except Exception:
             pass
 
@@ -364,7 +381,7 @@ class App:
             return
         self._quitting = True
         try:
-            self._remember_position()
+            self._remember_geometry()
             self.settings.save()
             self.library.save(backup=True)
         except Exception:

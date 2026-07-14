@@ -87,7 +87,7 @@
   const MOCK = {
     get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.3.0-preview",
       hotkey_available:true, platform:"windows",
-      settings: { theme:"matrix", accent:"", hotkey:"ctrl+alt+space",
+      settings: { theme:"matrix", accent:"", density:"compact", hotkey:"ctrl+alt+space",
         behavior:{copy_then_hide:true,hide_on_blur:true,open_at_cursor:true,paste_after_copy:false,launch_at_startup:false,show_tray:true},
         window:{width:460,height:560,opacity:1.0}, bulk_improve:{
           outline_prompt:"Improve this Promptoire outline. Return only the outline.",
@@ -136,7 +136,8 @@
     reorder_category: (id, to) => { const find=(list)=>{ const i=list.findIndex(c=>c.id===id); if(i>=0){ const[c]=list.splice(i,1); list.splice(Math.max(0,Math.min(to,list.length)),0,c); return true;} return list.some(x=>find(x.subcategories||[])); }; return {ok:find(mockCats)}; },
     move_prompt: (pid, catId, index) => { const dest=findCat(catId); if(!dest) return {ok:false}; let moved=null; for(const c of allCats()){ const i=(c.prompts||[]).findIndex(p=>p.id===pid); if(i>=0){ moved=c.prompts.splice(i,1)[0]; break; } } if(!moved) return {ok:false}; const prompts=dest.prompts||(dest.prompts=[]); if(Number.isInteger(index)&&index>=0&&index<=prompts.length) prompts.splice(index,0,moved); else prompts.push(moved); return {ok:true}; },
     reorder_prompt: (catId, from, to) => { const c=findCat(catId); if(!c||!c.prompts[from]) return {ok:false}; const[p]=c.prompts.splice(from,1); c.prompts.splice(Math.max(0,Math.min(to,c.prompts.length)),0,p); return {ok:true}; },
-    hide_window: () => ({ ok:true }), open_external: () => ({ ok:true }), open_data_folder: () => ({ ok:true, path:"." }), quit_app: () => ({ ok:true }),
+    hide_window: () => ({ ok:true }), begin_window_resize: () => ({ ok:true }),
+    open_external: () => ({ ok:true }), open_data_folder: () => ({ ok:true, path:"." }), quit_app: () => ({ ok:true }),
     backup_now: () => ({ ok:true }), notify_blur: () => ({ ok:true }),
   };
   function allCats(){ const out=[]; (function w(l){ for(const c of l){ out.push(c); w(c.subcategories||[]); } })(mockCats); return out; }

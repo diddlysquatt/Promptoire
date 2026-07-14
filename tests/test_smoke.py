@@ -19,6 +19,7 @@ from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
 from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS, Settings
 from promptoire_app.main import App
+from promptoire_app.platform import window_fx
 
 
 class _ShellParser(HTMLParser):
@@ -47,6 +48,33 @@ def _run_checks():
     out["state.hotkey_available"] = st["hotkey_available"]
     out["state.version"] = st["version"]
     assert out["state.version"] == __version__, out["state.version"]
+
+    out["settings.default_density"] = SETTINGS_DEFAULTS["density"]
+    assert out["settings.default_density"] == "compact", SETTINGS_DEFAULTS["density"]
+    with tempfile.TemporaryDirectory() as density_dir:
+        density_path = Path(density_dir) / "promptoire.config.json"
+        density_path.write_text(json.dumps({"density": "enormous"}), encoding="utf-8")
+        sanitized_density = Settings(density_path).load().get("density")
+    out["settings.invalid_density_fallback"] = sanitized_density
+    assert sanitized_density == "compact", sanitized_density
+    resize_codes = {
+        edge: window_fx.resize_hit_test(edge)
+        for edge in ("left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right")
+    }
+    out["window.resize_hit_tests"] = resize_codes
+    assert all(resize_codes.values()) and window_fx.resize_hit_test("invalid") == 0, resize_codes
+    resize_geometry = {
+        "right": window_fx.resize_bounds((100, 100, 560, 660), "right", 80, 0, 360, 420),
+        "top_left": window_fx.resize_bounds((100, 100, 560, 660), "top-left", 30, 40, 360, 420),
+        "minimum": window_fx.resize_bounds((100, 100, 560, 660), "bottom-right", -900, -900, 360, 420),
+    }
+    out["window.resize_geometry"] = resize_geometry
+    assert resize_geometry["right"] == (100, 100, 640, 660), resize_geometry
+    assert resize_geometry["top_left"] == (130, 140, 560, 660), resize_geometry
+    assert resize_geometry["minimum"] == (100, 100, 460, 520), resize_geometry
+    native_resize = api.begin_window_resize("left")
+    out["window.resize_api_shape"] = native_resize
+    assert native_resize.get("ok") is True and native_resize.get("started") is False, native_resize
 
     s = api.search("review")
     assert s["ok"], s
@@ -561,7 +589,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     shell = _ShellParser()
     shell.feed((Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8"))
     required_ids = {
-        "app", "brandCount", "btnPin", "btnImprove", "btnEditor", "btnSettings",
+        "app", "brandCount", "btnPin", "btnImprove", "btnEditor", "btnSettings", "btnDensity",
         "btnCoffee", "btnClose", "viewLauncher", "search", "filters", "catrail",
         "results", "btnAdd", "btnImprove2", "viewEditor", "btnAddCategory",
         "viewBulk", "bulkBody", "viewSettings", "settingsBody", "toastHost", "modalHost",
@@ -581,6 +609,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     launcher_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "launcher.js").read_text(encoding="utf-8")
     settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
+    base_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "base.css").read_text(encoding="utf-8")
     bulk_tokens = {
         "safe_merge_card": "merge-card",
         "replace_danger_zone": "danger-zone",
@@ -680,6 +709,18 @@ Question planner: Turn {notes} into prioritized interview questions.
         and 'host === "buymeacoffee.com"' in settings_js
     )
     assert out["frontend.generic_coffee_guard"], "isGenericCoffeeUrl"
+    density_contract = {
+        "three_modes": all(mode in app_js and mode in settings_js for mode in ("comfortable", "compact", "titles")),
+        "saved_setting": 'update_settings", { density: next }' in app_js and "densityPicker" in settings_js,
+        "compact_cards": 'data-density="compact"' in components_css and "-webkit-line-clamp: 1" in components_css,
+        "titles_only": 'data-density="titles"' in components_css and ".card-preview" in components_css,
+        "rail_pointer_drag": all(token in launcher_js for token in ("setPointerCapture", "is-dragging", "startScroll", "suppressRailClick")),
+        "rail_wheel_scroll": 'addEventListener("wheel"' in launcher_js and "scrollLeft += e.deltaY" in launcher_js,
+        "resize_handles": "data-resize" in (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8") and "resize-handle" in base_css,
+        "resize_bridge": "begin_window_resize" in bridge_js and "begin_window_resize" in app_js,
+    }
+    out["frontend.compact_resize_contract"] = density_contract
+    assert all(density_contract.values()), density_contract
     out["settings.outline_prompt_default"] = "Return only the outline" in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
     assert out["settings.outline_prompt_default"], SETTINGS_DEFAULTS["bulk_improve"]
     out["settings.default_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == "https://github.com/diddlysquatt/Promptoire"
@@ -784,6 +825,7 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
         "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
+        "release_batch_fresh_selftest": 'del /q "_selftest.json"' in release_bat,
         "packaged_version_metadata": (
             "version='version_info.txt'" in spec_text
             and f"StringStruct('FileVersion', '{__version__}')" in version_info_text

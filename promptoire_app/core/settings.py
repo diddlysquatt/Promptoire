@@ -39,10 +39,13 @@ DEFAULT_OUTLINE_PROMPT = (
     "- For image prompts, keep fields like Type, Negative prompt, Image model, Parameters, and CFG scale.\n"
 )
 
+DENSITY_OPTIONS = ("comfortable", "compact", "titles")
+
 DEFAULTS: dict[str, Any] = {
     "version": 2,
     "theme": "matrix",          # key into the web theme registry
     "accent": "",                # optional override hex; "" = theme default
+    "density": "compact",        # "comfortable" | "compact" | "titles"
     "hotkey": "ctrl+alt+space",  # global toggle for the launcher
     "behavior": {
         "copy_then_hide": True,   # spring-loaded: vanish after a copy
@@ -143,6 +146,11 @@ def _sanitize_links(data: dict) -> None:
         links["repo"] = ""
 
 
+def _sanitize_density(data: dict) -> None:
+    if data.get("density") not in DENSITY_OPTIONS:
+        data["density"] = DEFAULTS["density"]
+
+
 class Settings:
     def __init__(self, path: str | Path):
         self.path = Path(path)
@@ -158,6 +166,7 @@ class Settings:
         except Exception:
             self.data = copy.deepcopy(DEFAULTS)
         _sanitize_links(self.data)
+        _sanitize_density(self.data)
         return self
 
     def save(self) -> None:
@@ -186,3 +195,4 @@ class Settings:
     def update(self, patch: dict) -> None:
         self.data = _deep_merge(self.data, patch or {})
         _sanitize_links(self.data)
+        _sanitize_density(self.data)

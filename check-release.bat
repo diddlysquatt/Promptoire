@@ -16,6 +16,7 @@ call :run "%PY%" -m compileall -q promptoire_app tests || exit /b 1
 for %%F in (bridge.js state.js components.js launcher.js editor.js bulk.js settings.js app.js) do (
   call :run node --check promptoire_app\web\js\%%F || exit /b 1
 )
+if exist "_selftest.json" del /q "_selftest.json"
 call :run "%PY%" -m promptoire_app --selftest || exit /b 1
 call :run powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Check-PromptoireShortcut.ps1" || exit /b 1
 

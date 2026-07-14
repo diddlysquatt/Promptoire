@@ -13,6 +13,7 @@
   const COLLAPSE_KEY = "promptoire.launcher.collapsed";
 
   let resultsEl, searchEl, railEl, debounceTimer, staggerNext = true;
+  let railDrag = null, suppressRailClick = false;
   let collapsed = loadCollapsed();
 
   function loadCollapsed() {
@@ -35,6 +36,7 @@
       debounceTimer = setTimeout(() => runSearch(false), 70); // typing: no re-stagger
     });
     searchEl.addEventListener("keydown", onSearchKey);
+    wireRailDrag();
 
     document.getElementById("filters").addEventListener("click", (e) => {
       const chip = e.target.closest(".chip");
@@ -43,6 +45,12 @@
     });
 
     railEl.addEventListener("click", (e) => {
+      if (suppressRailClick) {
+        e.preventDefault();
+        e.stopPropagation();
+        suppressRailClick = false;
+        return;
+      }
       const chip = e.target.closest(".railchip");
       if (!chip) return;
       const id = chip.dataset.id;
@@ -65,6 +73,47 @@
       runSearch();
       focusSearch();
     });
+  }
+
+  function wireRailDrag() {
+    railEl.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      railDrag = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startScroll: railEl.scrollLeft,
+        moved: false,
+      };
+      try { railEl.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    railEl.addEventListener("pointermove", (e) => {
+      if (!railDrag || railDrag.pointerId !== e.pointerId) return;
+      const dx = e.clientX - railDrag.startX;
+      if (!railDrag.moved && Math.abs(dx) < 4) return;
+      railDrag.moved = true;
+      railEl.classList.add("is-dragging");
+      railEl.scrollLeft = railDrag.startScroll - dx;
+      e.preventDefault();
+    });
+    const finish = (e) => {
+      if (!railDrag || railDrag.pointerId !== e.pointerId) return;
+      if (railDrag.moved) {
+        suppressRailClick = true;
+        setTimeout(() => { suppressRailClick = false; }, 150);
+      }
+      try { railEl.releasePointerCapture(e.pointerId); } catch (err) {}
+      railEl.classList.remove("is-dragging");
+      railDrag = null;
+    };
+    railEl.addEventListener("pointerup", finish);
+    railEl.addEventListener("pointercancel", finish);
+    railEl.addEventListener("wheel", (e) => {
+      if (railEl.scrollWidth <= railEl.clientWidth) return;
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        railEl.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 
   function setFilter(f) {
@@ -302,7 +351,7 @@
       : (!opts.hideCat ? p.category_name : "");
 
     const node = el("button", {
-      class: "card", dataset: { idx: i, id: p.id },
+      class: "card " + (opts.hideCat ? "browse-card" : "search-card"), dataset: { idx: i, id: p.id },
       style: accent ? { "--card-accent": accent } : {},
     }, [
       el("div", { class: "card-top" }, [

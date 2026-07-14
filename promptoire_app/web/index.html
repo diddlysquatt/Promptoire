@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="matrix">
+<html lang="en" data-theme="matrix" data-density="compact">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -61,6 +61,12 @@
         <button class="chip" data-filter="text">✎ Text</button>
         <button class="chip" data-filter="image">▦ Image</button>
         <button class="chip" data-filter="favorites">★ Favorites</button>
+        <button class="density-toggle" id="btnDensity" title="Prompt density: Compact"
+                aria-label="Change prompt density">
+          <svg viewBox="0 0 24 24" class="ic" aria-hidden="true">
+            <path d="M5 7h14M5 12h14M5 17h14"/>
+          </svg>
+        </button>
       </div>
 
       <div class="catrail" id="catrail"></div>
@@ -112,6 +118,18 @@
   <!-- toast + modal hosts -->
   <div class="toast-host" id="toastHost"></div>
   <div class="modal-host hidden" id="modalHost"></div>
+
+  <!-- Frameless WebView windows need explicit native resize hit areas. -->
+  <div class="resize-handles" aria-hidden="true">
+    <div class="resize-handle resize-n" data-resize="top"></div>
+    <div class="resize-handle resize-e" data-resize="right"></div>
+    <div class="resize-handle resize-s" data-resize="bottom"></div>
+    <div class="resize-handle resize-w" data-resize="left"></div>
+    <div class="resize-handle resize-ne" data-resize="top-right"></div>
+    <div class="resize-handle resize-se" data-resize="bottom-right"></div>
+    <div class="resize-handle resize-sw" data-resize="bottom-left"></div>
+    <div class="resize-handle resize-nw" data-resize="top-left"></div>
+  </div>
 
   <script src="js/bridge.js"></script>
   <script src="js/state.js"></script>

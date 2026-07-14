@@ -20,7 +20,7 @@ Most prompt tools are cloud apps, browser extensions that die the moment you lea
 - **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
-Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, timestamped backups, a one-click local data folder, and a handful of themes.
+Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and a handful of themes.
 
 ## ✨ Highlights
 
@@ -28,11 +28,12 @@ Plus the basics done well: a global hotkey that pops the launcher at your cursor
 |---|---|
 | ⌨️ **Global hotkey** | Summon it anywhere (default `Ctrl+Alt+Space`), at your cursor. |
 | 🌳 **The tree, right in the launcher** | Browse your whole library grouped by category — collapsible, color-coded, icons and counts — before you type a single letter. |
-| 🏷️ **Category rail + tag search** | One-tap category filter chips; type `#tag` (or click any tag) to filter; multi-word queries must all match. |
+| 🏷️ **Category rail + tag search** | One-tap category filters with reliable click-drag/wheel scrolling; type `#tag` (or click any tag) to filter. |
 | ⚡ **Copy & vanish** | Click a prompt → it's on your clipboard → window hides. Or pin it open. |
+| ↕️ **Your preferred density** | Cycle Roomy, Compact, or Titles-only from the launcher; drag any window edge or corner to resize. |
 | 🔣 **Placeholders** | `{topic}`, `{tone}`, `{code}` → quick fill-in form before copy. |
 | 🗂️ **Real organization** | Subcategories, emoji icons, accent colors, drag prompts between categories, drag to reorder categories, filter the manage view. |
-| 🪶 **Light & fast** | Renders through the system WebView (no bundled browser). Tiny footprint. |
+| 🪶 **Light & fast** | Renders through the system WebView, stays quiet at idle, and does not bundle a second browser. |
 | 🎨 **Themeable** | Matrix, Cyber, Aurora, Ember, Sunset, Emerald, Mono, Paper (light). |
 | 💾 **Safe** | Atomic saves + rolling timestamped backups. |
 

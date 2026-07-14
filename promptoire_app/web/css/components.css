@@ -43,7 +43,7 @@
 
 /* ---- result cards ------------------------------------------------------- */
 .card {
-  position: relative; display: block; width: 100%; text-align: left;
+  position: relative; display: block; width: calc(100% - 8px); text-align: left;
   padding: 13px 13px 13px 15px; margin: 4px 4px;
   border-radius: var(--r-md);
   background: var(--surface); border: 1px solid var(--border);
@@ -131,6 +131,37 @@
 .iconbtn.fav.on { color: var(--warn); }
 .iconbtn .ic { width: 14px; height: 14px; }
 .iconbtn.fav.on .ic { fill: currentColor; stroke-width: 0.5; }
+
+/* Launcher density modes. Compact keeps one useful preview line; Titles is
+   the fastest scan mode and intentionally reduces every card to its identity. */
+html:is([data-density="compact"], [data-density="titles"]) .card {
+  width: calc(100% - 4px); padding: 8px 9px 8px 11px; margin: 2px;
+  border-radius: 8px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .card-top { gap: 6px; }
+html:is([data-density="compact"], [data-density="titles"]) .card-title { font-size: 12.5px; }
+html:is([data-density="compact"], [data-density="titles"]) .type-glyph {
+  width: 16px; height: 16px; border-radius: 5px; font-size: 10px;
+}
+html:is([data-density="compact"], [data-density="titles"]) .card-preview {
+  margin-top: 2px; font-size: 11.5px; line-height: 1.35; -webkit-line-clamp: 1;
+}
+html:is([data-density="compact"], [data-density="titles"]) .card-meta {
+  gap: 4px; margin-top: 5px; flex-wrap: nowrap; overflow: hidden;
+}
+html:is([data-density="compact"], [data-density="titles"]) .cat-chip {
+  padding: 2px 6px; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+html:is([data-density="compact"], [data-density="titles"]) .tag { padding: 1px 5px; font-size: 10px; }
+html:is([data-density="compact"], [data-density="titles"]) .card-meta .tag:nth-of-type(n+2) { display: none; }
+html:is([data-density="compact"], [data-density="titles"]) .browse-card .card-meta { display: none; }
+html:is([data-density="compact"], [data-density="titles"]) .card-actions { right: 5px; top: 4px; }
+html:is([data-density="compact"], [data-density="titles"]) .card-actions .iconbtn {
+  width: 25px; height: 25px;
+}
+html[data-density="titles"] .card { padding-top: 7px; padding-bottom: 7px; }
+html[data-density="titles"] .card-preview,
+html[data-density="titles"] .card-meta { display: none; }
 
 /* copy ripple cue */
 .copied-cue {
@@ -237,6 +268,9 @@
   position: absolute; inset: 0; border-radius: 99px; background: var(--surface-3);
   border: 1px solid var(--border); transition: all 0.2s var(--ease);
 }
+.density-picker { flex-wrap: nowrap; }
+.density-picker button { padding-left: 9px; padding-right: 9px; }
+.themes { margin-top: 12px; }
 .switch .knob {
   position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 99px;
   background: var(--muted); transition: all 0.22s var(--ease);
