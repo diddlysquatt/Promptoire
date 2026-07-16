@@ -85,6 +85,32 @@ def find_hwnd_for_title(title: str) -> int:
         return 0
 
 
+def show_existing_window(title: str) -> bool:
+    """Reveal and focus an existing Promptoire window after a duplicate launch."""
+    if not _is_windows():
+        return False
+    try:
+        hwnd = find_hwnd_for_title(title)
+        if not hwnd:
+            return False
+        user32 = ctypes.windll.user32
+        SW_SHOW = 5
+        HWND_TOPMOST = -1
+        HWND_NOTOPMOST = -2
+        SWP_NOSIZE = 0x0001
+        SWP_NOMOVE = 0x0002
+        SWP_SHOWWINDOW = 0x0040
+        flags = SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW
+        user32.ShowWindow(wintypes.HWND(hwnd), SW_SHOW)
+        user32.SetWindowPos(wintypes.HWND(hwnd), HWND_TOPMOST, 0, 0, 0, 0, flags)
+        user32.SetWindowPos(wintypes.HWND(hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, flags)
+        user32.BringWindowToTop(wintypes.HWND(hwnd))
+        user32.SetForegroundWindow(wintypes.HWND(hwnd))
+        return True
+    except Exception:
+        return False
+
+
 def resize_hit_test(direction: str) -> int:
     """Return the Win32 hit-test code for a resize edge/corner."""
     return RESIZE_HIT_TESTS.get(str(direction or "").strip().lower(), 0)

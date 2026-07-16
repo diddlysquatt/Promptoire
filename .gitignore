@@ -34,6 +34,7 @@ __diag*.py
 __tmp*.py
 .playwright-cli/
 output/playwright/
+.launch/
 
 # User data (generated at runtime)
 state.json

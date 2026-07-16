@@ -4,13 +4,42 @@
 
 **A fast, beautiful, local-first home for your text *and* image prompts — with one-click AI bulk-improve.**
 
-*Hit a hotkey → fuzzy-search your library → click to copy → it vanishes. Then hand your whole library to any LLM and let it rewrite everything at once.*
+*Hit a hotkey → find a prompt → click to copy → keep moving. Then hand any part of your library to an LLM and safely bring the improved version back.*
 
-![status](https://img.shields.io/badge/status-active-brightgreen) ![platform](https://img.shields.io/badge/Windows-supported-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![local-first](https://img.shields.io/badge/local--first-no%20account-7c5cff)
+[![CI](https://github.com/diddlysquatt/Promptoire/actions/workflows/ci.yml/badge.svg)](https://github.com/diddlysquatt/Promptoire/actions/workflows/ci.yml) ![platform](https://img.shields.io/badge/Windows-10%20%7C%2011-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![local-first](https://img.shields.io/badge/local--first-no%20account-7c5cff)
 
 </div>
 
+<p align="center">
+  <img src="docs/assets/promptoire-launcher.png" width="46%" alt="Promptoire compact prompt launcher with categories and one-line prompt previews">
+  <img src="docs/assets/promptoire-improve-library.png" width="46%" alt="Promptoire outline-first LLM export and safe import workflow">
+</p>
+
+<p align="center">
+  <a href="https://github.com/diddlysquatt/Promptoire/releases/latest"><strong>Download for Windows</strong></a>
+  · <a href="#how-it-works">How it works</a>
+  · <a href="docs/PRIVACY.md">Privacy</a>
+  · <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
 ---
+
+## Download
+
+Promptoire is a portable Windows 10/11 app. It has no installer, account, cloud service, or bundled browser.
+
+1. Download `Promptoire-2.3.0-windows-x64.zip` from the [latest release](https://github.com/diddlysquatt/Promptoire/releases/latest).
+2. Extract the folder somewhere permanent.
+3. Run `Promptoire.exe`.
+4. Set your preferred global hotkey under **Settings → Activation**.
+
+Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 and most Windows 10 systems. The release also includes a SHA-256 checksum. Because the executable is not code-signed, Windows SmartScreen may initially show **Unknown publisher**; verify the checksum and use **More info → Run anyway** if you trust the download.
+
+## How it works
+
+1. **Summon it anywhere.** Press your configurable hotkey and Promptoire opens near the cursor.
+2. **Find and copy fast.** Search, browse nested categories, or use favorites. Clicking a prompt copies it, and Promptoire can disappear immediately.
+3. **Improve the whole system.** Export an outline to any LLM, ask it to rewrite or expand your prompts, then preview and safely merge the result back.
 
 ## Why Promptoire
 
@@ -37,7 +66,7 @@ Plus the basics done well: a global hotkey that pops the launcher at your cursor
 | 🎨 **Themeable** | Matrix, Cyber, Aurora, Ember, Sunset, Emerald, Mono, Paper (light). |
 | 💾 **Safe** | Atomic saves + rolling timestamped backups. |
 
-## 🚀 Quick start (from source)
+## Run from source
 
 Requires **Python 3.9+** and the **WebView2 runtime** (preinstalled on Windows 11 and most Windows 10).
 
@@ -63,7 +92,7 @@ python -m promptoire_app
 
 To launch at login, enable **Launch at startup** in Settings.
 
-## 📦 Build a standalone .exe
+## Build a standalone `.exe`
 
 ```bat
 build.bat            :: → dist\Promptoire\Promptoire.exe
@@ -85,7 +114,10 @@ For brand-new prompt batches without exporting your existing library, use **Copy
 
 **Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the outline library, gets an importable reply back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
 
-## 🗃️ Data format
+<details>
+<summary><strong>Data format and supported LLM import shapes</strong></summary>
+
+<br>
 
 Everything lives in `prompts.json` next to the app — human-readable and easy to edit by hand or with an LLM:
 
@@ -143,6 +175,8 @@ Headings, `Path: Section > Subsection > Nested subsection`, `Section:` / `Subsec
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 
+</details>
+
 ## ⌨️ Shortcuts
 
 | Action | Key |
@@ -163,24 +197,19 @@ For public forks and packaged releases, `prompts.json` is treated as local user 
 - **Backend** (`promptoire_app/core`, `/platform`): Python. Data layer (v3 schema, migration, search, merge), settings, global hotkey, tray, clipboard.
 - **Frontend** (`promptoire_app/web`): zero-build vanilla HTML/CSS/JS, rendered by the system WebView through [pywebview](https://pywebview.flowrl.com/). No framework, no bundler.
 
-## ✅ GitHub readiness
+## Development and trust
 
-Before the first public push, make sure your personal library is not part of the commit. This repo ignores `prompts.json`; if an older/local clone still shows it as tracked, remove it from the index without deleting your local file:
+- Run `check-release.bat` for the complete local release gate.
+- Run `Check-GitHubPublish.ps1` immediately before changing the repository from private to public.
+- Read [Contributing](CONTRIBUTING.md) before opening a pull request.
+- See the [Changelog](CHANGELOG.md), [Privacy](docs/PRIVACY.md), and [Security](SECURITY.md) documents.
+- Maintainers can use the detailed [GitHub release checklist](docs/GITHUB_RELEASE_CHECKLIST.md).
 
-```bash
-git rm --cached prompts.json
-```
-
-Then commit the app changes normally. `prompts.json` stays on your machine, but public commits should use `prompts.example.json` as the reference library.
-
-Run `check-release.bat` before pushing. It runs the smoke tests, compile checks, frontend syntax checks, real WebView self-test, and a guard that fails if private runtime files are tracked.
-Before the first GitHub push, run `Check-GitHubPublish.ps1`. It verifies the origin remote, clean working tree, private-file guard, GitHub Actions workflow, local release gate, GitHub CLI `workflow` token scope, and warns if the folder still displays lowercase or the Buy Me a Coffee support link is still blank.
-
-For sharing or review, see [Contributing](CONTRIBUTING.md), [Changelog](CHANGELOG.md), [Privacy](docs/PRIVACY.md), and [Security](SECURITY.md). Short version: Promptoire has no telemetry, stores data locally by default, and only sends prompt data out when you copy it to another tool or use the optional direct AI improve button.
+Promptoire has no telemetry. It stores prompts and settings locally and only sends prompt data elsewhere when you explicitly copy/export it or use the optional direct AI-improve action.
 
 ## ❤️ Support
 
-Promptoire is free and open source. If it earns a spot in your workflow, you can **buy me a coffee** from the titlebar or Settings → About. Settings → About also links to the GitHub source. Set your real support link in Settings or in `promptoire.config.json` under `links.coffee`; links with or without `https://` are normalized.
+Promptoire is free and open source. If it earns a spot in your workflow, you can use the support link in the titlebar or under **Settings → About**.
 
 ## 📄 License
 

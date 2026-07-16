@@ -19,7 +19,8 @@ from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
 from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS, Settings
 from promptoire_app.main import App
-from promptoire_app.platform import window_fx
+from promptoire_app.platform import startup, window_fx
+from promptoire_app.platform.hotkey import GlobalHotkey
 
 
 class _ShellParser(HTMLParser):
@@ -57,6 +58,23 @@ def _run_checks():
         sanitized_density = Settings(density_path).load().get("density")
     out["settings.invalid_density_fallback"] = sanitized_density
     assert sanitized_density == "compact", sanitized_density
+    hotkey_normalization = {
+        raw: GlobalHotkey().normalize(raw)
+        for raw in ("F8", "F9", "~", "`", "grave", "backquote", "Alt C", "Control Z")
+    }
+    out["settings.hotkey_normalization"] = hotkey_normalization
+    assert hotkey_normalization == {
+        "F8": "f8",
+        "F9": "f9",
+        "~": "`",
+        "`": "`",
+        "grave": "`",
+        "backquote": "`",
+        "Alt C": "alt+c",
+        "Control Z": "ctrl+z",
+    }, hotkey_normalization
+    out["settings.startup_command"] = startup._launch_command()
+    assert "Promptoire.bat" in out["settings.startup_command"], out["settings.startup_command"]
     resize_codes = {
         edge: window_fx.resize_hit_test(edge)
         for edge in ("left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right")
@@ -691,8 +709,13 @@ Question planner: Turn {notes} into prioritized interview questions.
         and "empty-actions" in components_css
     )
     assert out["frontend.empty_import_shortcut"], "empty import shortcut"
-    out["frontend.coffee_button_label"] = "Buy Me a Coffee" in settings_js and "Set coffee link" not in settings_js
-    assert out["frontend.coffee_button_label"], "Buy Me a Coffee"
+    out["frontend.support_button_compact"] = (
+        'id="btnCoffee"' in (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8")
+        and "Buy Me a Coffee" not in settings_js
+        and "coffeeLinkField" not in settings_js
+        and 'class: "coffee"' not in settings_js
+    )
+    assert out["frontend.support_button_compact"], "topbar-only support button"
     out["frontend.github_source_link"] = (
         "source-link" in settings_js
         and "configuredRepoUrl" in settings_js
@@ -702,13 +725,26 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["frontend.github_source_link"], "source-link"
     out["frontend.generic_coffee_guard"] = (
         "isGenericCoffeeUrl" in app_js
-        and "isGenericCoffeeUrl" in settings_js
         and "normalizeUrl" in app_js
-        and "normalizeUrl" in settings_js
         and 'host === "buymeacoffee.com"' in app_js
-        and 'host === "buymeacoffee.com"' in settings_js
     )
     assert out["frontend.generic_coffee_guard"], "isGenericCoffeeUrl"
+    settings_controls = {
+        "toggle_click_target": (
+            "z-index: 2" in components_css
+            and components_css.count("pointer-events: none") >= 2
+        ),
+        "save_errors_rollback": (
+            "async function save(patch)" in settings_js
+            and "PR.state.settings = previous" in settings_js
+            and "input.checked = !next" in settings_js
+        ),
+        "modifier_free_safe_keys": "F1–F24" in settings_js and 'key === "`"' in settings_js,
+        "capture_stops_global_shortcuts": "e.stopPropagation()" in settings_js,
+        "startup_and_tray_rows": "Launch at startup" in settings_js and "Show tray icon" in settings_js,
+    }
+    out["frontend.settings_controls"] = settings_controls
+    assert all(settings_controls.values()), settings_controls
     density_contract = {
         "three_modes": all(mode in app_js and mode in settings_js for mode in ("comfortable", "compact", "titles")),
         "saved_setting": 'update_settings", { density: next }' in app_js and "densityPicker" in settings_js,

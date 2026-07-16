@@ -4,7 +4,6 @@
   const PR = window.PROMPTOIRE;
 
   const views = { launcher: "viewLauncher", editor: "viewEditor", bulk: "viewBulk", settings: "viewSettings" };
-  const GENERIC_COFFEE_URL = "https://www.buymeacoffee.com/";
   const DENSITIES = ["comfortable", "compact", "titles"];
   const DENSITY_NAMES = { comfortable: "Comfortable", compact: "Compact", titles: "Titles only" };
 
@@ -214,12 +213,7 @@
       PR.bridge.call("open_external", url);
       return;
     }
-    showView("settings");
-    setTimeout(() => {
-      const field = document.getElementById("coffeeLinkField");
-      if (field) { field.focus(); field.select && field.select(); }
-      PR.ui.toast("Add your Buy Me a Coffee link in Settings");
-    }, 80);
+    PR.ui.toast("Support page is being set up");
   }
 
   function configuredCoffeeUrl() {

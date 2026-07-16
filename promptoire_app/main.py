@@ -28,6 +28,15 @@ class App:
         self.selftest = selftest
         self.version = __version__
         self.settings = Settings(paths.settings_file()).load()
+        if sys.platform.startswith("win"):
+            try:
+                from .platform import startup
+                startup_enabled = startup.is_enabled()
+                if self.settings.get("behavior", "launch_at_startup", default=False) != startup_enabled:
+                    self.settings.update({"behavior": {"launch_at_startup": startup_enabled}})
+                    self.settings.save()
+            except Exception:
+                pass
         self.library = PromptLibrary(paths.prompts_file()).load()
 
         self.window = None
@@ -54,8 +63,10 @@ class App:
     def run(self):
         if self.settings.get("behavior", "single_instance", default=True):
             if not _acquire_single_instance_lock():
-                # Another instance owns it. Nothing to do here.
-                print("Promptoire is already running.")
+                # A hidden launcher must not make the desktop shortcut appear
+                # broken. Reveal the existing window instead of silently exiting.
+                shown = window_fx.show_existing_window(__app_name__)
+                print("Promptoire is already running." + (" Existing window shown." if shown else ""))
                 return
 
         w = int(self.settings.get("window", "width", default=460))
@@ -276,9 +287,13 @@ class App:
 
     def set_hotkey(self, combo: str) -> bool:
         combo = self.hotkey.normalize(combo)
+        previous = self.settings.get("hotkey", default="")
         applied = self.hotkey.register(combo, self._hotkey_fired)
-        self.settings.update({"hotkey": combo})
-        self.settings.save()
+        if applied:
+            self.settings.update({"hotkey": combo})
+            self.settings.save()
+        elif previous and previous != combo:
+            self.hotkey.register(previous, self._hotkey_fired)
         return applied
 
     def _hotkey_fired(self):
@@ -287,29 +302,55 @@ class App:
 
     # ---- settings application ----------------------------------------------
 
-    def apply_settings(self, patch: dict):
+    def apply_settings(self, patch: dict) -> dict:
         prev_hotkey = self.settings.get("hotkey")
         prev_tray = self.settings.get("behavior", "show_tray", default=True)
         prev_startup = self.settings.get("behavior", "launch_at_startup", default=False)
         self.settings.update(patch)
         self.settings.save()
+        effects = {}
 
         new_startup = self.settings.get("behavior", "launch_at_startup", default=False)
         if new_startup != prev_startup:
             from .platform import startup
-            startup.set_enabled(new_startup)
+            startup_ok = startup.set_enabled(new_startup)
+            effects["startup"] = startup_ok
+            if not startup_ok:
+                self.settings.update({"behavior": {"launch_at_startup": prev_startup}})
+                self.settings.save()
+                raise RuntimeError("Windows startup setting could not be changed.")
 
         new_hotkey = self.settings.get("hotkey")
         if new_hotkey != prev_hotkey:
-            self.set_hotkey(new_hotkey)
+            normalized_hotkey = self.hotkey.normalize(new_hotkey)
+            hotkey_ok = self.hotkey.register(normalized_hotkey, self._hotkey_fired)
+            effects["hotkey"] = hotkey_ok
+            if not hotkey_ok:
+                self.settings.update({"hotkey": prev_hotkey})
+                self.settings.save()
+                if prev_hotkey:
+                    self.hotkey.register(prev_hotkey, self._hotkey_fired)
+                raise RuntimeError("That global hotkey could not be registered.")
+            self.settings.update({"hotkey": normalized_hotkey})
+            self.settings.save()
 
         new_tray = self.settings.get("behavior", "show_tray", default=True)
         if new_tray != prev_tray:
             if new_tray:
-                self.tray.start(on_show=self.show_window, on_settings=self._tray_settings,
-                                on_quit=self.quit, icon_image=_load_tray_icon())
+                tray_ok = self.tray.start(
+                    on_show=self.show_window,
+                    on_settings=self._tray_settings,
+                    on_quit=self.quit,
+                    icon_image=_load_tray_icon(),
+                )
+                effects["tray"] = tray_ok
+                if not tray_ok:
+                    self.settings.update({"behavior": {"show_tray": prev_tray}})
+                    self.settings.save()
+                    raise RuntimeError("The system tray icon could not be started.")
             else:
                 self.tray.stop()
+                effects["tray"] = True
 
         # Push theme/opacity changes to the live UI.
         try:
@@ -318,6 +359,7 @@ class App:
             )
         except Exception:
             pass
+        return effects
 
     def _tray_settings(self):
         self.show_window(at_cursor=False)

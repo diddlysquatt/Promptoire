@@ -262,11 +262,15 @@ html[data-density="titles"] .card-meta { display: none; }
   background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
 
 /* toggle switch */
-.switch { position: relative; width: 40px; height: 23px; flex: 0 0 auto; }
-.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.switch { position: relative; width: 40px; height: 23px; flex: 0 0 auto; cursor: pointer; }
+.switch input {
+  position: absolute; inset: 0; z-index: 2; opacity: 0;
+  width: 100%; height: 100%; cursor: pointer;
+}
 .switch .track {
   position: absolute; inset: 0; border-radius: 99px; background: var(--surface-3);
   border: 1px solid var(--border); transition: all 0.2s var(--ease);
+  pointer-events: none;
 }
 .density-picker { flex-wrap: nowrap; }
 .density-picker button { padding-left: 9px; padding-right: 9px; }
@@ -274,6 +278,7 @@ html[data-density="titles"] .card-meta { display: none; }
 .switch .knob {
   position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 99px;
   background: var(--muted); transition: all 0.22s var(--ease);
+  pointer-events: none;
 }
 .switch input:checked + .track { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; }
 .switch input:checked + .track + .knob { left: 20px; background: #fff; }
@@ -505,7 +510,7 @@ html[data-density="titles"] .card-meta { display: none; }
   padding: 10px; max-height: 120px; overflow-y: auto; line-height: 1.5; white-space: pre-wrap; }
 .ph-preview mark { background: var(--accent-soft); color: var(--fg); border-radius: 3px; padding: 0 2px; }
 
-/* ---- about / coffee ----------------------------------------------------- */
+/* ---- about -------------------------------------------------------------- */
 .about { text-align: center; padding: 18px 8px; }
 .about .logo-big { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 12px;
   display: grid; place-items: center; font-size: 28px; font-weight: 800; color: var(--accent-ink);
@@ -513,24 +518,13 @@ html[data-density="titles"] .card-meta { display: none; }
   box-shadow: 0 8px 30px -8px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.3); }
 .about .ver { font-size: 11.5px; color: var(--faint); }
 .about .tagline { font-size: 12.5px; color: var(--muted); margin: 8px auto 16px; max-width: 280px; line-height: 1.5; }
-.about-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.coffee {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  width: min(260px, 100%); height: 42px; padding: 0 18px;
-  border-radius: 99px; font-weight: 800; font-size: 13px; color: #1a1208;
-  background: linear-gradient(135deg, #ffdd55, #fbb034);
-  box-shadow: 0 6px 22px -6px rgba(251,176,52,0.6);
-  transition: transform 0.14s var(--ease), filter 0.14s var(--ease);
-}
-.coffee:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.about-actions { display: flex; justify-content: center; align-items: center; gap: 8px; }
 .source-link {
   color: var(--muted); font-size: 12px; font-weight: 700;
   border: 1px solid var(--border); border-radius: 99px;
   padding: 7px 14px; background: var(--surface);
 }
 .source-link:hover { color: var(--fg); border-color: var(--border-2); background: var(--surface-2); }
-.coffee-url { margin: 12px auto 0; max-width: 320px; }
-.coffee-link { text-align: center; font-size: 12px; }
 
 /* utility */
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

@@ -372,8 +372,8 @@ class Api:
 
     def update_settings(self, patch: dict) -> dict:
         try:
-            self._app.apply_settings(patch or {})
-            return ok(settings=self._app.settings.data)
+            effects = self._app.apply_settings(patch or {})
+            return ok(settings=self._app.settings.data, effects=effects)
         except Exception as e:
             return err(str(e))
 

@@ -3,7 +3,6 @@
   "use strict";
   const PR = window.PROMPTOIRE;
   const { el, toast } = PR.ui;
-  const GENERIC_COFFEE_URL = "https://www.buymeacoffee.com/";
 
   const THEMES = [
     { id: "matrix", name: "Matrix", c1: "#7c5cff", c2: "#22d3ee" },
@@ -58,7 +57,11 @@
     /* System */
     host.appendChild(section("System", card([
       toggleRow("Show tray icon", "Quick access from the system tray.", b.show_tray, (v) => save({ behavior: { show_tray: v } })),
-      toggleRow("Launch at startup", "Start Promptoire when you sign in.", b.launch_at_startup, (v) => { save({ behavior: { launch_at_startup: v } }); toast(v ? "Promptoire will start with Windows" : "Startup disabled"); }),
+      toggleRow("Launch at startup", "Start Promptoire when you sign in.", b.launch_at_startup, async (v) => {
+        const saved = await save({ behavior: { launch_at_startup: v } });
+        if (saved) toast(v ? "Promptoire will start with Windows" : "Startup disabled");
+        return saved;
+      }),
       rowBtn("Back up now", "Save a timestamped copy of your library.", "Backup", backupNow),
       rowBtn("Local data folder", "Open prompts, settings, and backups.", "Open", openDataFolder),
     ])));
@@ -181,7 +184,14 @@
   function toggleRow(t, d, checked, onChange) {
     const input = el("input", { type: "checkbox" });
     input.checked = !!checked;
-    input.addEventListener("change", () => onChange(input.checked));
+    input.setAttribute("aria-label", t);
+    input.addEventListener("change", async () => {
+      const next = input.checked;
+      input.disabled = true;
+      const saved = await onChange(next);
+      if (saved === false) input.checked = !next;
+      input.disabled = false;
+    });
     const sw = el("span", { class: "switch" }, [input, el("span", { class: "track" }), el("span", { class: "knob" })]);
     return row(t, d, sw);
   }
@@ -200,14 +210,21 @@
   }
 
   function hotkeyCapture(current) {
-    const cap = el("div", { class: "hotkey-cap", text: pretty(current), tabindex: "0" });
+    const cap = el("div", { class: "hotkey-cap", text: pretty(current), tabindex: "0",
+      role: "button", "aria-label": "Change global hotkey" });
     let capturing = false;
-    function start() { capturing = true; cap.classList.add("capturing"); cap.textContent = "Press keys…"; }
+    function start() {
+      capturing = true;
+      cap.classList.add("capturing");
+      cap.textContent = "Press keys…";
+      cap.focus();
+    }
     function stop() { capturing = false; cap.classList.remove("capturing"); }
     cap.addEventListener("click", start);
     cap.addEventListener("keydown", async (e) => {
       if (!capturing) { if (e.key === "Enter") start(); return; }
       e.preventDefault();
+      e.stopPropagation();
       const mods = [];
       if (e.ctrlKey) mods.push("ctrl");
       if (e.altKey) mods.push("alt");
@@ -215,42 +232,34 @@
       if (e.metaKey) mods.push("win");
       const k = e.key.toLowerCase();
       if (["control", "alt", "shift", "meta"].includes(k)) return;
-      const key = k === " " ? "space" : k;
+      const key = e.code === "Backquote" ? "`" : (k === " " ? "space" : k);
       const combo = [...mods, key].join("+");
-      if (!mods.length) { cap.textContent = "Use a modifier (Ctrl/Alt/Shift)"; return; }
+      const safeSingleKey = /^f(?:[1-9]|1\d|2[0-4])$/.test(key) || key === "`";
+      if (!mods.length && !safeSingleKey) {
+        cap.textContent = "Use Ctrl/Alt/Shift, F1–F24, or `";
+        return;
+      }
       cap.textContent = pretty(combo); stop();
       const r = await PR.bridge.call("set_hotkey", combo);
-      PR.state.settings.hotkey = combo;
-      if (r && r.ok) toast(r.applied ? "Hotkey set: " + pretty(combo) : "Saved (couldn't bind globally — check permissions)", { bad: !r.applied });
+      if (r && r.ok && r.applied) {
+        PR.state.settings.hotkey = combo;
+        toast("Hotkey set: " + pretty(combo));
+      } else {
+        cap.textContent = pretty(PR.state.settings.hotkey || current);
+        toast((r && r.error) || "That hotkey could not be registered", { bad: true });
+      }
     });
     cap.addEventListener("blur", stop);
     return cap;
   }
   function pretty(combo) {
     return (combo || "").split("+").map((p) => p === "ctrl" ? "Ctrl" : p === "alt" ? "Alt" : p === "shift" ? "Shift" :
-      p === "win" ? "Win" : p === "space" ? "Space" : p.toUpperCase()).join(" + ");
+      p === "win" ? "Win" : p === "space" ? "Space" : p === "`" ? "` / ~" : p.toUpperCase()).join(" + ");
   }
 
   function aboutBlock() {
     const links = (PR.state.settings && PR.state.settings.links) || {};
-    const currentCoffee = configuredCoffeeUrl(links.coffee);
     const currentRepo = configuredRepoUrl(links.repo);
-    const coffeeUrl = el("input", { class: "input coffee-link", value: currentCoffee,
-      id: "coffeeLinkField",
-      placeholder: "https://www.buymeacoffee.com/yourname" });
-    coffeeUrl.addEventListener("change", () => {
-      const value = coffeeUrl.value.trim();
-      const clean = configuredCoffeeUrl(value);
-      if (value && !clean) {
-        coffeeUrl.classList.add("is-invalid");
-        toast("Use a valid support link", { bad: true });
-        return;
-      }
-      coffeeUrl.classList.remove("is-invalid");
-      coffeeUrl.value = clean;
-      save({ links: { coffee: clean } });
-      toast(clean ? "Coffee link saved" : "Coffee link cleared");
-    });
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: "About" })]);
     s.appendChild(el("div", { class: "about" }, [
       el("div", { class: "logo-big", text: "P" }),
@@ -258,33 +267,14 @@
       el("div", { class: "ver", text: "v" + (PR.state.version || "2.3.0") + " · local-first · open source" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("div", { class: "about-actions" }, [
-        el("button", { class: "coffee", title: currentCoffee ? "Open Buy Me a Coffee" : "Set Buy Me a Coffee link",
-          html: "☕ &nbsp;Buy Me a Coffee",
-          onclick: () => {
-            const url = configuredCoffeeUrl((PR.state.settings.links || {}).coffee);
-            if (url) PR.bridge.call("open_external", url);
-            else { coffeeUrl.focus(); coffeeUrl.select && coffeeUrl.select(); toast("Paste your Buy Me a Coffee link here"); }
-          } }),
         currentRepo ? el("button", { class: "source-link", text: "GitHub",
           title: "Open Promptoire on GitHub",
           onclick: () => PR.bridge.call("open_external", configuredRepoUrl((PR.state.settings.links || {}).repo)) }) : null,
       ]),
-      el("div", { class: "coffee-url" }, [coffeeUrl]),
     ]));
     return s;
   }
 
-  function configuredCoffeeUrl(raw) {
-    const url = normalizeUrl(raw);
-    if (!url) return "";
-    try {
-      const parsed = new URL(url);
-      if (!["http:", "https:"].includes(parsed.protocol) || isGenericCoffeeUrl(parsed)) return "";
-      return parsed.href;
-    } catch (e) {
-      return "";
-    }
-  }
   function configuredRepoUrl(raw) {
     const url = normalizeUrl(raw);
     if (!url) return "";
@@ -306,15 +296,18 @@
     return url;
   }
 
-  function isGenericCoffeeUrl(parsed) {
-    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
-    const path = parsed.pathname.replace(/\/+$/, "");
-    return host === "buymeacoffee.com" && !path && !parsed.search && !parsed.hash;
-  }
-
-  function save(patch) {
-    PR.bridge.call("update_settings", patch);
-    PR.state.settings = deepMerge(PR.state.settings, patch);
+  async function save(patch) {
+    const previous = PR.state.settings;
+    const optimistic = deepMerge(previous, patch);
+    PR.state.settings = optimistic;
+    const result = await PR.bridge.call("update_settings", patch);
+    if (!result || !result.ok) {
+      PR.state.settings = previous;
+      toast((result && result.error) || "Setting could not be saved", { bad: true });
+      return false;
+    }
+    PR.state.settings = result.settings || optimistic;
+    return true;
   }
   function deepMerge(a, b) {
     const out = Object.assign({}, a);

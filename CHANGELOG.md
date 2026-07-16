@@ -5,6 +5,11 @@
 ### Changed
 
 - Default the launcher to a compact one-line prompt layout, with Comfortable and Titles-only density choices available from the launcher or Settings.
+- Fix every Settings toggle so the visible switch is the real click target, and roll the UI back with an error message if a system setting cannot be applied.
+- Repair Windows launch-at-startup registration, remove the obsolete pre-rebuild Startup-folder script, and keep the displayed setting synchronized with the actual Run entry.
+- Allow modifier-free `F1`–`F24` and tilde/backquote global hotkeys while retaining modifier combinations such as `Alt+C`.
+- Reopen the hidden existing window when Promptoire is launched a second time instead of silently exiting.
+- Keep support to the compact coffee icon in the top toolbar and remove the oversized donation treatment and link editor from Settings.
 - Make the category rail reliably mouse-draggable and translate vertical wheel input into horizontal rail scrolling when needed.
 - Add native side and corner resizing to the frameless Windows window and remember the resulting size between launches.
 - Require the local release gate to generate a fresh WebView self-test report instead of accepting a stale report when another instance is running.

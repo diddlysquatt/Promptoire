@@ -40,6 +40,8 @@ class Tray:
               icon_image=None) -> bool:
         if not _HAVE:
             return False
+        if self._icon is not None:
+            return True
         try:
             image = icon_image or _default_icon()
             menu = pystray.Menu(
@@ -53,6 +55,8 @@ class Tray:
             self._thread.start()
             return True
         except Exception:
+            self._icon = None
+            self._thread = None
             return False
 
     def _quit(self, on_quit):
@@ -75,3 +79,4 @@ class Tray:
             except Exception:
                 pass
             self._icon = None
+            self._thread = None

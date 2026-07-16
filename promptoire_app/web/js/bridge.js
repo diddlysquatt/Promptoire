@@ -82,18 +82,22 @@
       { id: mkId("clause"), type:"text", title:"Contract clause explainer", prompt:"Explain the following clause in plain English, flag risks for the {party}, and suggest safer alternative language.", tags:["contracts"], note:"", favorite:false, uses:1 },
     ]},
   ];
+  const mockSettings = {
+    theme:"matrix", accent:"", density:"compact", hotkey:"ctrl+alt+space",
+    behavior:{copy_then_hide:true,hide_on_blur:true,open_at_cursor:true,paste_after_copy:false,launch_at_startup:false,show_tray:true},
+    window:{width:460,height:560,opacity:1.0}, bulk_improve:{
+      outline_prompt:"Improve this Promptoire outline. Return only the outline.",
+      meta_prompt:"You are a senior prompt engineer..."
+    },
+    ai:{provider:"anthropic",api_key:"",model:"",base_url:""},
+    links:{coffee:"",repo:"https://github.com/diddlysquatt/Promptoire"}
+  };
   function walk(cats, path, color){ let out=[]; path=path||[]; for(const c of cats){ const eff=c.color||color||""; const here=path.concat([c.name]); for(const p of c.prompts){ out.push({p,c,path:here,color:eff}); } if(c.subcategories) out=out.concat(walk(c.subcategories, here, eff)); } return out; }
 
   const MOCK = {
     get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.3.0-preview",
       hotkey_available:true, platform:"windows",
-      settings: { theme:"matrix", accent:"", density:"compact", hotkey:"ctrl+alt+space",
-        behavior:{copy_then_hide:true,hide_on_blur:true,open_at_cursor:true,paste_after_copy:false,launch_at_startup:false,show_tray:true},
-        window:{width:460,height:560,opacity:1.0}, bulk_improve:{
-          outline_prompt:"Improve this Promptoire outline. Return only the outline.",
-          meta_prompt:"You are a senior prompt engineer..."
-        },
-        links:{coffee:"",repo:""} } }),
+      settings: mockSettings }),
     search: (q="", type="all", fav=false) => {
       q=(q||"").toLowerCase(); let res=[];
       const toks=q.split(/\s+/).filter(Boolean);
@@ -125,8 +129,11 @@
     merge_preview: () => ({ ok:true, preview:{added:[{id:"new_1",title:"Cinematic portrait",type:"image",category_name:"AI Art / Characters / Portraits"}], updated:[{id:"prm_x",title:"Refactor for clarity",type:"text",category_name:"Coding",changes:{prompt:{}}, before_title:"Refactor for clarity"}], unchanged_count:4, new_categories:["AI Art / Characters / Portraits"], incoming_total:6} }),
     apply_merge: () => ({ ok:true, result:{updated:1,added:1,new_categories:0}, stats:stats(), categories:mockCats }),
     ai_improve: () => ({ ok:false, error:"(preview mode — connect the real app and set an API key to use this)" }),
-    update_settings: (p) => ({ ok:true, settings:{} }),
-    set_hotkey: () => ({ ok:true, applied:true, available:true }),
+    update_settings: (p) => ({ ok:true, settings: mergeSettings(mockSettings, p || {}) }),
+    set_hotkey: (combo) => {
+      mockSettings.hotkey = combo;
+      return { ok:true, applied:true, available:true };
+    },
     add_prompt: () => ({ ok:true, prompt:{} }), update_prompt: () => ({ ok:true }),
     delete_prompt: (id) => { for(const c of allCats()){ const i=(c.prompts||[]).findIndex(p=>p.id===id); if(i>=0) return {ok:true, removed:c.prompts.splice(i,1)[0]}; } return {ok:false}; },
     restore_prompt: (catId, p, idx) => { const c=findCat(catId); if(c) c.prompts.splice(idx<0?c.prompts.length:idx,0,p); return {ok:true}; },
@@ -143,4 +150,14 @@
   function allCats(){ const out=[]; (function w(l){ for(const c of l){ out.push(c); w(c.subcategories||[]); } })(mockCats); return out; }
   function findCat(id){ return allCats().find(c=>c.id===id) || null; }
   function stats(){ const all=walk(mockCats); return { total:all.length, text:all.filter(x=>x.p.type==="text").length, image:all.filter(x=>x.p.type==="image").length, favorites:all.filter(x=>x.p.favorite).length, categories:mockCats.length }; }
+  function mergeSettings(target, patch){
+    for(const key in patch){
+      const value=patch[key];
+      if(value && typeof value==="object" && !Array.isArray(value)){
+        if(!target[key] || typeof target[key]!=="object" || Array.isArray(target[key])) target[key]={};
+        mergeSettings(target[key], value);
+      } else target[key]=value;
+    }
+    return target;
+  }
 })();

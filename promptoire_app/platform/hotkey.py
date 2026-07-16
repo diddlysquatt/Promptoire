@@ -64,4 +64,17 @@ class GlobalHotkey:
         self._handle = None
 
     def normalize(self, combo: str) -> str:
-        return (combo or "").strip().lower().replace(" ", "")
+        raw = (combo or "").strip().lower()
+        if "+" in raw:
+            parts = raw.replace(" ", "").split("+")
+        else:
+            parts = raw.split()
+        aliases = {
+            "control": "ctrl",
+            "meta": "win",
+            "windows": "win",
+            "backquote": "`",
+            "grave": "`",
+            "~": "`",
+        }
+        return "+".join(aliases.get(part, part) for part in parts if part)
