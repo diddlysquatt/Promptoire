@@ -81,6 +81,7 @@ class App:
             width=w,
             height=h,
             min_size=(360, 420),
+            resizable=True,
             frameless=True,
             easy_drag=False,
             on_top=on_top,
@@ -100,10 +101,18 @@ class App:
         )
 
     def _on_started(self):
+        # webview.start invokes this worker before the WinForms window is
+        # guaranteed to exist. Wait for the first native show so handle lookup
+        # cannot permanently cache 0 and silently disable resizing/focus.
+        try:
+            self.window.events.shown.wait(timeout=5.0)
+        except Exception:
+            pass
+
         # Native polish once the OS window exists.
         try:
-            self._hwnd = window_fx.find_hwnd_for_title(__app_name__)
-            window_fx.apply_polish(self._hwnd, dark=True, rounded=True, acrylic=False)
+            hwnd = self._resolve_hwnd()
+            window_fx.apply_polish(hwnd, dark=True, rounded=True, acrylic=False)
         except Exception:
             pass
 
@@ -165,11 +174,12 @@ class App:
             self.show_window()
 
     def _is_foreground(self) -> bool:
-        if not sys.platform.startswith("win") or not self._hwnd:
+        if not sys.platform.startswith("win"):
             return True
         try:
             import ctypes
-            return ctypes.windll.user32.GetForegroundWindow() == self._hwnd
+            hwnd = self._resolve_hwnd()
+            return not hwnd or ctypes.windll.user32.GetForegroundWindow() == hwnd
         except Exception:
             return True
 
@@ -216,7 +226,7 @@ class App:
             self.settings.save()
 
     def begin_window_resize(self, direction: str) -> bool:
-        resized = window_fx.begin_resize(self._hwnd, direction)
+        resized = window_fx.begin_resize(self._resolve_hwnd(), direction)
         if resized:
             # The native helper returns when the user releases the mouse.
             self._remember_geometry()
@@ -238,7 +248,7 @@ class App:
         """Reliably steal focus even from a background (hotkey) thread by
         briefly attaching to the current foreground thread's input queue —
         the standard workaround for Windows' SetForegroundWindow lock."""
-        if not sys.platform.startswith("win") or not self._hwnd:
+        if not sys.platform.startswith("win"):
             return
         try:
             import ctypes
@@ -246,7 +256,9 @@ class App:
             k = ctypes.windll.kernel32
             HWND_TOPMOST = -1
             SWP = 0x0001 | 0x0002 | 0x0040  # NOSIZE | NOMOVE | SHOWWINDOW
-            hwnd = self._hwnd
+            hwnd = self._resolve_hwnd()
+            if not hwnd:
+                return
 
             fg = u.GetForegroundWindow()
             cur_tid = k.GetCurrentThreadId()
@@ -264,6 +276,32 @@ class App:
                 u.AttachThreadInput(fg_tid, cur_tid, False)
         except Exception:
             pass
+
+    def _resolve_hwnd(self) -> int:
+        """Return a live native handle, recovering from startup races."""
+        if not sys.platform.startswith("win") or self.window is None:
+            return 0
+        try:
+            import ctypes
+            if self._hwnd and ctypes.windll.user32.IsWindow(self._hwnd):
+                return self._hwnd
+        except Exception:
+            self._hwnd = 0
+
+        try:
+            native = getattr(self.window, "native", None) if self.window is not None else None
+            handle = getattr(native, "Handle", None)
+            candidate = int(handle.ToInt64()) if hasattr(handle, "ToInt64") else int(handle or 0)
+            if candidate:
+                self._hwnd = candidate
+                return candidate
+        except Exception:
+            pass
+
+        candidate = window_fx.find_hwnd_for_title(__app_name__)
+        if candidate:
+            self._hwnd = candidate
+        return candidate
 
     def _remember_geometry(self):
         try:

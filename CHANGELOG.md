@@ -4,6 +4,11 @@
 
 ### Changed
 
+- Remove the launcher footer so every recovered pixel belongs to prompt results; move **+ New** beside the All/Text/Image/Favorites filters and rename the pencil action to **Edit Library**.
+- Fix the pywebview startup race that could leave frameless edge/corner resizing connected to a zero native handle; 360×420 remains the minimum while both axes can expand.
+- Keep improvement instructions visible in Improve Library, clarify library/instruction copy actions, move optional AI configuration to that panel, and narrow direct calls to OpenAI's current GPT-5.6 family.
+- Make safe-merge preview and apply share one plan, skip repeated or ambiguous rows, preserve nonblank local fields when an import omits them, and report missing nested category nodes consistently.
+- Generate unique prompt ids instead of content-derived ids and repair duplicate ids from older local libraries at load time.
 - Default the launcher to a compact one-line prompt layout, with Comfortable and Titles-only density choices available from the launcher or Settings.
 - Fix every Settings toggle so the visible switch is the real click target, and roll the UI back with an error message if a system setting cannot be applied.
 - Repair Windows launch-at-startup registration, remove the obsolete pre-rebuild Startup-folder script, and keep the displayed setting synchronized with the actual Run entry.

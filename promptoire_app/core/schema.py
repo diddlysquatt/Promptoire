@@ -67,9 +67,12 @@ def _short_hash(*parts: str, n: int = 12) -> str:
 
 
 def make_prompt_id(title: str = "", body: str = "") -> str:
-    """Stable, content-derived id when we have content; random otherwise."""
-    if title or body:
-        return "prm_" + _short_hash(title, body)
+    """Create a globally unique prompt id.
+
+    Titles and bodies are not identities: users may intentionally keep the
+    same prompt in more than one section. IDs stay stable after creation and
+    are carried through exports for exact round trips.
+    """
     return "prm_" + uuid.uuid4().hex[:12]
 
 
@@ -399,6 +402,29 @@ def iter_prompts(library: dict):
             yield from walk(cat.get("subcategories", []), here)
 
     yield from walk(library.get("categories", []), [])
+
+
+def repair_duplicate_prompt_ids(library: dict) -> int:
+    """Give repeated/missing prompt ids fresh values, preserving the first.
+
+    Older Promptoire versions derived ids from content, so identical prompts
+    in different categories could collide. This migration makes normal CRUD
+    and id-first merges unambiguous without changing prompt content.
+    """
+    seen: set[str] = set()
+    repaired = 0
+    for prompt, _, _ in iter_prompts(library):
+        prompt_id = _as_str(prompt.get("id"))
+        if prompt_id.startswith("prm_") and prompt_id not in seen:
+            seen.add(prompt_id)
+            continue
+        fresh = make_prompt_id()
+        while fresh in seen:
+            fresh = make_prompt_id()
+        prompt["id"] = fresh
+        seen.add(fresh)
+        repaired += 1
+    return repaired
 
 
 def iter_categories(library: dict):

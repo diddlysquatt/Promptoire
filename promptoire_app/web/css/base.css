@@ -203,7 +203,7 @@ button { cursor: pointer; border: none; background: none; }
       stroke-linecap: round; stroke-linejoin: round; }
 .tbtn .ic { width: 16px; height: 16px; }
 /* the star & sparkle glyphs read better filled */
-#btnImprove .ic, #btnImprove2 .ic, #btnPin .ic { fill: currentColor; stroke-width: 0.6; }
+#btnImprove .ic, #btnPin .ic { fill: currentColor; stroke-width: 0.6; }
 
 /* ---- views -------------------------------------------------------------- */
 .view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
@@ -276,6 +276,19 @@ button { cursor: pointer; border: none; background: none; }
 .density-toggle .ic { width: 15px; height: 15px; }
 .density-toggle[data-density="compact"] { color: var(--accent); }
 .density-toggle[data-density="titles"] { color: var(--accent-2); }
+
+.filter-new {
+  height: 29px; padding: 0 9px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  color: var(--accent); font-size: 11.5px; font-weight: 700;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 8px;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+              background var(--dur-1) var(--ease), transform 0.1s var(--ease);
+}
+.filter-new:hover { color: var(--fg); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
+.filter-new:active { transform: scale(0.96); }
+.filter-new .ic { width: 13px; height: 13px; }
 
 /* ---- category rail (browse-by-category chips) --------------------------- */
 .catrail {
@@ -363,15 +376,6 @@ button { cursor: pointer; border: none; background: none; }
                       #000 calc(100% - 18px), transparent 100%);
 }
 
-/* ---- action bar --------------------------------------------------------- */
-.actionbar {
-  flex: 0 0 auto; display: flex; gap: 8px; align-items: center;
-  padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.18));
-}
-.actionbar .btn-primary { margin-left: auto; }
-
 /* Compact is the default launcher density; Titles keeps the same shell and
    removes body details in components.css. Comfortable preserves the original
    spacious layout. */
@@ -397,6 +401,9 @@ html:is([data-density="compact"], [data-density="titles"]) .chip {
 html:is([data-density="compact"], [data-density="titles"]) .density-toggle {
   width: 25px; height: 25px; border-radius: 7px;
 }
+html:is([data-density="compact"], [data-density="titles"]) .filter-new {
+  height: 25px; padding: 0 7px; border-radius: 7px; font-size: 10.5px;
+}
 html:is([data-density="compact"], [data-density="titles"]) .catrail {
   gap: 5px; padding: 0 10px 6px;
 }
@@ -418,26 +425,25 @@ html:is([data-density="compact"], [data-density="titles"]) .group-name { font-si
 html:is([data-density="compact"], [data-density="titles"]) .group-count {
   font-size: 9.5px; padding: 0 5px;
 }
-html:is([data-density="compact"], [data-density="titles"]) .actionbar {
-  gap: 6px; padding: 7px 10px;
-}
-html:is([data-density="compact"], [data-density="titles"]) .actionbar .btn {
-  height: 32px; padding: 0 10px; font-size: 12px;
-}
-
 /* Native edge/corner hit zones for the frameless desktop window. */
 .resize-handle { position: fixed; z-index: 10000; touch-action: none; }
-.resize-n, .resize-s { left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+.resize-n, .resize-s { left: 12px; right: 12px; height: 8px; cursor: ns-resize; }
 .resize-n { top: 0; }
 .resize-s { bottom: 0; }
-.resize-e, .resize-w { top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
+.resize-e, .resize-w { top: 12px; bottom: 12px; width: 8px; cursor: ew-resize; }
 .resize-e { right: 0; }
 .resize-w { left: 0; }
-.resize-ne, .resize-se, .resize-sw, .resize-nw { width: 12px; height: 12px; }
+.resize-ne, .resize-se, .resize-sw, .resize-nw { width: 16px; height: 16px; }
 .resize-ne { right: 0; top: 0; cursor: nesw-resize; }
 .resize-se { right: 0; bottom: 0; cursor: nwse-resize; }
 .resize-sw { left: 0; bottom: 0; cursor: nesw-resize; }
 .resize-nw { left: 0; top: 0; cursor: nwse-resize; }
+.resize-se::after {
+  content: ""; position: absolute; right: 4px; bottom: 4px; width: 6px; height: 6px;
+  border-right: 1px solid color-mix(in srgb, var(--muted) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--muted) 55%, transparent);
+  pointer-events: none;
+}
 
 /* ---- panel heads -------------------------------------------------------- */
 .panel-head {

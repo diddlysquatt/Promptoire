@@ -4,6 +4,13 @@
   const PR = window.PROMPTOIRE;
   const { el, icon, toast, escapeHtml } = PR.ui;
 
+  const OPENAI_MODELS = [
+    { id: "gpt-5.6", label: "GPT-5.6 · recommended alias" },
+    { id: "gpt-5.6-sol", label: "GPT-5.6 sol · highest capability" },
+    { id: "gpt-5.6-terra", label: "GPT-5.6 terra · balanced" },
+    { id: "gpt-5.6-luna", label: "GPT-5.6 luna · fast and efficient" },
+  ];
+
   const OUTLINE_REQUEST =
     "Create a batch of prompts for my Promptoire library using this simple import outline format.\n\n" +
     "Rules:\n" +
@@ -58,43 +65,58 @@
     "Parameters: --ar 4:5 --stylize 250\n";
 
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote, lastPreview;
+  let instructionsArea, aiKeyField, aiModelField;
 
   function render() {
     const host = document.getElementById("bulkBody");
     host.innerHTML = "";
 
     host.appendChild(el("p", { class: "bulk-intro", html:
-      "Hand your <b>entire</b> prompt library to any LLM in one shot, let it rewrite and expand everything, " +
-      "then merge the result back. Imports match by id first, then by title inside the same section." }));
+      "Improve or share your <b>entire</b> prompt library with any LLM, then safely merge the result back. " +
+      "Promptoire matches an id first, otherwise the same title in the same section." }));
+
+    instructionsArea = el("textarea", { class: "textarea instructions-area", id: "outlineInstructions",
+      "aria-label": "Improvement instructions", spellcheck: "true" });
+    instructionsArea.value = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.outline_prompt) || "";
+    instructionsArea.addEventListener("change", () => persistOutlineInstructions(false));
 
     // STEP 1 — export
     const step1 = el("div", { class: "step" }, [
       el("div", { class: "step-head" }, [
         el("span", { class: "step-num", text: "1" }),
-        el("div", {}, [ el("div", { class: "t", text: "Send your library to an AI" }),
-          el("div", { class: "d", text: "Copies a ready-to-paste prompt plus your library." }) ]),
+        el("div", {}, [ el("div", { class: "t", text: "Improve or export your library" }),
+          el("div", { class: "d", text: "Use OpenAI directly, or copy a clean request to any LLM." }) ]),
+      ]),
+      el("div", { class: "ai-direct" }, [
+        el("button", { class: "btn btn-primary ai-go",
+          html: '<svg viewBox="0 0 24 24" class="ic" style="fill:currentColor;stroke-width:.6"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> Improve with AI now',
+          onclick: improveNow }),
+        el("span", { class: "ai-direct-hint", id: "aiHint", text: "Optional · uses your own OpenAI API key" }),
+      ]),
+      el("div", { class: "instructions-block" }, [
+        el("label", { class: "instructions-label", for: "outlineInstructions", text: "Improvement instructions" }),
+        instructionsArea,
+        el("div", { class: "instructions-hint", text: "These instructions go first; your complete outline library is appended below." }),
+        el("div", { class: "btn-row instructions-actions" }, [
+          el("button", { class: "btn btn-sm", text: "Save instructions", onclick: () => persistOutlineInstructions(true) }),
+          el("button", { class: "btn btn-sm btn-ghost", text: "Reset default", onclick: resetOutlineInstructions }),
+          el("button", { class: "btn btn-sm btn-ghost", html: icon("copy") + " Copy instructions only", onclick: copyInstructionsOnly }),
+        ]),
       ]),
       el("div", { class: "btn-row" }, [
-        el("button", { class: "btn btn-primary", html: icon("copy") + " Copy outline library", onclick: copyOutlineExport }),
-        el("button", { class: "btn", text: "Copy outline request", onclick: copyOutlineRequest }),
-        el("button", { class: "btn btn-ghost", text: "Save outline", onclick: saveOutlineFile }),
-        el("button", { class: "btn btn-ghost", text: "Edit instructions", onclick: editOutlineInstructions }),
+        el("button", { class: "btn btn-primary", html: icon("copy") + " Copy instructions + library", onclick: () => copyOutlineExport(true) }),
+        el("button", { class: "btn", html: icon("copy") + " Copy library only", onclick: () => copyOutlineExport(false) }),
+        el("button", { class: "btn btn-ghost", text: "Save library outline", onclick: saveOutlineFile }),
       ]),
       el("details", { class: "export-more" }, [
-        el("summary", { text: "JSON options" }),
+        el("summary", { text: "More options" }),
         el("div", { class: "btn-row" }, [
-          el("button", { class: "btn", html: icon("copy") + " Copy for AI", onclick: copyForAI }),
+          el("button", { class: "btn", text: "Create prompts for a topic…", onclick: copyOutlineRequest }),
+          el("button", { class: "btn", html: icon("copy") + " Copy JSON request + library", onclick: copyForAI }),
           el("button", { class: "btn", text: "Copy JSON only", onclick: () => copyExport(false) }),
           el("button", { class: "btn btn-ghost", text: "Save .json", onclick: saveFile }),
           el("button", { class: "btn btn-ghost", text: "Edit JSON instructions", onclick: editJsonInstructions }),
         ]),
-      ]),
-      el("div", { class: "ai-direct" }, [
-        el("div", { class: "ai-direct-or", text: "— or skip the copy/paste —" }),
-        el("button", { class: "btn btn-primary ai-go",
-          html: '<svg viewBox="0 0 24 24" class="ic" style="fill:currentColor;stroke-width:.6"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> Improve with AI now',
-          onclick: improveNow }),
-        el("span", { class: "ai-direct-hint", id: "aiHint" }),
       ]),
     ]);
 
@@ -133,8 +155,10 @@
     previewBox = el("div", {});
     mergeNote = el("div", { class: "merge-note", text: "Preview an import first" });
     const opts = el("div", { class: "merge-options" }, [
-      toggleInline("Update existing", true, (r) => (optUpdate = r), syncMergeState),
-      toggleInline("Add new", true, (r) => (optAdd = r), syncMergeState),
+      toggleInline("Update existing", "Replace changed, nonblank fields on exact matches; never move or delete.", true,
+        (r) => (optUpdate = r), syncMergeState),
+      toggleInline("Add new", "Add only unmatched prompts and create any missing section path.", true,
+        (r) => (optAdd = r), syncMergeState),
     ]);
     applyBtn = el("button", { class: "btn btn-primary", html: icon("check") + " Merge into library", disabled: "disabled",
       onclick: apply });
@@ -144,6 +168,7 @@
         mergeNote,
       ]),
       opts,
+      el("div", { class: "merge-safety", text: "Blank imported fields never erase local content. Duplicate or ambiguous matches are skipped." }),
       el("div", { class: "btn-row" }, [ applyBtn ]),
     ]);
     const replaceDanger = el("details", { class: "danger-zone" }, [
@@ -159,16 +184,20 @@
     host.appendChild(previewBox);
     host.appendChild(mergeCard);
     host.appendChild(replaceDanger);
+    host.appendChild(openAiSettings());
     syncMergeState();
   }
 
-  function toggleInline(label, checked, ref, onChange) {
+  function toggleInline(label, description, checked, ref, onChange) {
     const input = el("input", { type: "checkbox" });
     input.checked = checked;
     if (ref) ref(input);
     if (onChange) input.addEventListener("change", onChange);
-    return el("label", { style: { display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--muted)" } },
-      [ wrapSwitch(input), label ]);
+    return el("label", { class: "merge-option" }, [
+      wrapSwitch(input),
+      el("span", {}, [el("span", { class: "merge-option-title", text: label }),
+        el("span", { class: "merge-option-desc", text: description })]),
+    ]);
   }
   function wrapSwitch(input) {
     return el("span", { class: "switch" }, [input, el("span", { class: "track" }), el("span", { class: "knob" })]);
@@ -176,18 +205,24 @@
 
   async function improveNow(e) {
     const btn = e.currentTarget;
+    if (!await persistOutlineInstructions(true)) return;
+    if (!await saveAiSettings(false)) return;
     const ai = PR.state.settings.ai || {};
     if (!ai.api_key) {
-      toast("Add an API key in Settings → AI first", { bad: true });
-      PR.app.showView("settings");
-      setTimeout(() => { const s = document.getElementById("aiKeyField"); if (s) s.focus(); }, 120);
+      const panel = document.getElementById("aiSettings");
+      if (panel) panel.open = true;
+      toast("Add your OpenAI API key below first", { bad: true });
+      setTimeout(() => {
+        if (panel) panel.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (aiKeyField) aiKeyField.focus();
+      }, 80);
       return;
     }
     const hint = document.getElementById("aiHint");
     btn.disabled = true;
     const orig = btn.innerHTML;
     btn.innerHTML = '<span class="spinner"></span> Improving…';
-    if (hint) hint.textContent = "Calling " + (ai.provider || "anthropic") + "…";
+    if (hint) hint.textContent = "Calling OpenAI · " + (ai.model || "gpt-5.6") + "…";
     try {
       const r = await PR.bridge.call("ai_improve", false);
       if (r && r.ok) {
@@ -216,10 +251,51 @@
     if (r && r.ok) toast("JSON copied (" + (r.chars || 0) + " chars)");
     else toast("Copy failed", { bad: true });
   }
-  async function copyOutlineExport() {
-    const r = await PR.bridge.call("copy_outline_export", true);
-    if (r && r.ok) toast("Outline library copied — paste into any LLM");
+  async function copyOutlineExport(includeInstructions) {
+    if (includeInstructions && !await persistOutlineInstructions(true)) return;
+    const r = await PR.bridge.call("copy_outline_export", !!includeInstructions);
+    if (r && r.ok) toast(includeInstructions
+      ? "Instructions + library copied — paste into any LLM"
+      : "Library outline copied");
     else toast((r && r.error) || "Copy failed", { bad: true });
+  }
+  async function copyInstructionsOnly() {
+    const text = String((instructionsArea && instructionsArea.value) || "").trim();
+    if (!text) { toast("Add instructions first", { bad: true }); return; }
+    const r = await PR.bridge.call("copy_text", text);
+    if (r && r.ok) toast("Instructions copied");
+    else toast((r && r.error) || "Copy failed", { bad: true });
+  }
+  async function persistOutlineInstructions(showToast) {
+    if (!instructionsArea) return true;
+    const value = instructionsArea.value.trim();
+    if (!value) {
+      if (showToast) toast("Improvement instructions cannot be blank", { bad: true });
+      return false;
+    }
+    const current = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.outline_prompt) || "";
+    if (value === current) {
+      if (showToast) toast("Instructions already saved");
+      return true;
+    }
+    const r = await PR.bridge.call("update_settings", { bulk_improve: { outline_prompt: value } });
+    if (!r || !r.ok) {
+      toast((r && r.error) || "Could not save instructions", { bad: true });
+      return false;
+    }
+    PR.state.settings = r.settings || PR.state.settings;
+    PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), outline_prompt: value };
+    if (showToast) toast("Improvement instructions saved");
+    return true;
+  }
+  async function resetOutlineInstructions() {
+    const r = await PR.bridge.call("bulk_prompt_defaults");
+    if (!r || !r.ok) {
+      toast((r && r.error) || "Could not load default instructions", { bad: true });
+      return;
+    }
+    instructionsArea.value = r.outline_prompt || "";
+    if (await persistOutlineInstructions(false)) toast("Default instructions restored");
   }
   function buildOutlineRequest(topic) {
     const clean = String(topic || "").trim();
@@ -316,6 +392,8 @@
   function renderPreview(pv) {
     previewBox.innerHTML = "";
     lastPreview = pv || null;
+    const duplicates = pv.duplicates || [];
+    const ambiguous = pv.ambiguous || [];
     const incomingTotal = Number.isFinite(Number(pv.incoming_total))
       ? Number(pv.incoming_total)
       : (pv.added.length + pv.updated.length + pv.unchanged_count);
@@ -325,16 +403,26 @@
       el("span", { class: "diff-pill upd", text: pv.updated.length + " updated" }),
       el("span", { class: "diff-pill same", text: pv.unchanged_count + " unchanged" }),
       pv.new_categories.length ? el("span", { class: "diff-pill", text: pv.new_categories.length + " new categories" }) : null,
+      duplicates.length ? el("span", { class: "diff-pill skip", text: duplicates.length + " duplicate skipped" }) : null,
+      ambiguous.length ? el("span", { class: "diff-pill warn", text: ambiguous.length + " ambiguous skipped" }) : null,
     ]);
     previewBox.appendChild(summary);
     if (pv.new_categories.length) previewBox.appendChild(newCategoryPreview(pv.new_categories));
+    if (duplicates.length || ambiguous.length) {
+      const parts = [];
+      if (duplicates.length) parts.push(duplicates.length + " repeated incoming " + (duplicates.length === 1 ? "prompt was" : "prompts were") + " ignored");
+      if (ambiguous.length) parts.push(ambiguous.length + " prompt " + (ambiguous.length === 1 ? "matched" : "matched") + " more than one local item and was skipped");
+      previewBox.appendChild(el("div", { class: "diff-warning", text: parts.join("; ") + "." }));
+    }
 
     const list = el("div", { class: "diff-list" });
     pv.updated.forEach((it) => list.appendChild(diffItem("upd", it)));
     pv.added.forEach((it) => list.appendChild(diffItem("add", it)));
     if (!pv.updated.length && !pv.added.length) {
       list.appendChild(el("div", { class: "txt-muted", style: { fontSize: "12.5px", padding: "8px 2px" },
-        text: "Nothing would change — the incoming library matches what you have." }));
+        text: duplicates.length || ambiguous.length
+          ? "No unambiguous changes are available to merge."
+          : "Nothing would change — the incoming library matches what you have." }));
     }
     previewBox.appendChild(list);
   }
@@ -400,7 +488,9 @@
     if (r && r.ok) {
       await PR.app.refreshState();
       const res = r.result || {};
-      toast(`Merged into library: ${res.updated || 0} updated, ${res.added || 0} added`);
+      const skipped = (res.duplicates_skipped || 0) + (res.ambiguous_skipped || 0);
+      toast(`Merged into library: ${res.updated || 0} updated, ${res.added || 0} added` +
+        (skipped ? `, ${skipped} safely skipped` : ""));
       pasteArea.value = "";
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;
@@ -447,30 +537,6 @@
     });
   }
 
-  function editOutlineInstructions() {
-    PR.state.suppressBlur = true;
-    const ta = el("textarea", { class: "textarea", style: { minHeight: "220px" } });
-    ta.value = (PR.state.settings.bulk_improve && PR.state.settings.bulk_improve.outline_prompt) || "";
-    const save = el("button", { class: "btn btn-primary", text: "Save instructions" });
-    const reset = el("button", { class: "btn btn-ghost", text: "Reset default" });
-    const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
-    const m = PR.ui.modal({ title: "Outline AI instructions", wide: true,
-      body: el("div", {}, [
-        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Used by <b>Copy outline library</b> and <b>Improve with AI now</b>. The app adds your outline library after this text." }),
-        ta ]),
-      footer: [reset, cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
-    reset.addEventListener("click", async () => {
-      const r = await PR.bridge.call("bulk_prompt_defaults");
-      if (r && r.ok) { ta.value = r.outline_prompt || ""; toast("Default outline instructions loaded"); }
-      else toast((r && r.error) || "Could not load default instructions", { bad: true });
-    });
-    save.addEventListener("click", async () => {
-      await PR.bridge.call("update_settings", { bulk_improve: { outline_prompt: ta.value } });
-      PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), outline_prompt: ta.value };
-      m.close(); toast("Outline instructions saved");
-    });
-  }
-
   function editJsonInstructions() {
     PR.state.suppressBlur = true;
     const ta = el("textarea", { class: "textarea", style: { minHeight: "200px" } });
@@ -480,7 +546,7 @@
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
     const m = PR.ui.modal({ title: "JSON AI instructions", wide: true,
       body: el("div", {}, [
-        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy for AI</b>. The simpler default loop uses <b>Copy outline library</b>." }),
+        el("p", { class: "hint", style: { marginBottom: "8px" }, html: "Prepended before your JSON when you click <b>Copy JSON request + library</b>. The simpler default uses the readable outline buttons above." }),
         ta ]),
       footer: [reset, cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
     reset.addEventListener("click", async () => {
@@ -493,6 +559,60 @@
       PR.state.settings.bulk_improve = { ...(PR.state.settings.bulk_improve || {}), meta_prompt: ta.value };
       m.close(); toast("JSON instructions saved");
     });
+  }
+
+  function openAiSettings() {
+    const ai = PR.state.settings.ai || {};
+    const currentModel = OPENAI_MODELS.some((m) => m.id === ai.model) ? ai.model : "gpt-5.6";
+    const details = el("details", { class: "ai-settings", id: "aiSettings" });
+    details.appendChild(el("summary", {}, [
+      el("span", { text: "OpenAI connection · optional" }),
+      el("span", { class: "ai-status", text: ai.api_key ? currentModel + " · key saved locally" : "not configured" }),
+    ]));
+
+    aiKeyField = el("input", { class: "input", type: "password", id: "aiKeyField",
+      value: ai.api_key || "", placeholder: "sk-…", autocomplete: "off", spellcheck: "false" });
+    aiModelField = el("select", { class: "input", id: "aiModelField", "aria-label": "OpenAI model" });
+    OPENAI_MODELS.forEach((model) => aiModelField.appendChild(el("option", { value: model.id, text: model.label })));
+    aiModelField.value = currentModel;
+
+    const saveButton = el("button", { class: "btn btn-primary btn-sm", type: "submit", text: "Save OpenAI settings" });
+    aiKeyField.addEventListener("change", () => saveAiSettings(false));
+    aiModelField.addEventListener("change", () => saveAiSettings(false));
+
+    details.appendChild(el("form", { class: "ai-settings-body", onsubmit: (event) => {
+      event.preventDefault();
+      saveAiSettings(true);
+    } }, [
+      el("p", { class: "hint", html: "Only needed for <b>Improve with AI now</b>. Manual copy/paste works without an account or key. Your key stays in Promptoire's local settings file and is sent only to OpenAI when you click the button." }),
+      el("div", { class: "field" }, [el("label", { for: "aiKeyField", text: "OpenAI API key" }), aiKeyField]),
+      el("div", { class: "field" }, [el("label", { for: "aiModelField", text: "Model" }), aiModelField]),
+      el("div", { class: "ai-model-note", text: "GPT-5.6 follows OpenAI's recommended alias; choose a fixed family member when you want stable cost/capability behavior." }),
+      el("div", { class: "btn-row" }, [saveButton]),
+    ]));
+    return details;
+  }
+
+  async function saveAiSettings(showToast) {
+    if (!aiKeyField || !aiModelField) return true;
+    const patch = { ai: {
+      provider: "openai",
+      api_key: aiKeyField.value.trim(),
+      model: aiModelField.value || "gpt-5.6",
+      base_url: "",
+    } };
+    const r = await PR.bridge.call("update_settings", patch);
+    if (!r || !r.ok) {
+      toast((r && r.error) || "Could not save OpenAI settings", { bad: true });
+      return false;
+    }
+    PR.state.settings = r.settings || { ...PR.state.settings, ai: patch.ai };
+    if (showToast) toast("OpenAI settings saved locally");
+    const status = document.querySelector("#aiSettings .ai-status");
+    if (status) status.textContent = patch.ai.api_key
+      ? patch.ai.model + " · key saved locally"
+      : "not configured";
+    return true;
   }
 
   PR.bulk = { render };

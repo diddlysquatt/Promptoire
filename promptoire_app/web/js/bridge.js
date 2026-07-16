@@ -89,7 +89,7 @@
       outline_prompt:"Improve this Promptoire outline. Return only the outline.",
       meta_prompt:"You are a senior prompt engineer..."
     },
-    ai:{provider:"anthropic",api_key:"",model:"",base_url:""},
+    ai:{provider:"openai",api_key:"",model:"gpt-5.6",base_url:""},
     links:{coffee:"",repo:"https://github.com/diddlysquatt/Promptoire"}
   };
   function walk(cats, path, color){ let out=[]; path=path||[]; for(const c of cats){ const eff=c.color||color||""; const here=path.concat([c.name]); for(const p of c.prompts){ out.push({p,c,path:here,color:eff}); } if(c.subcategories) out=out.concat(walk(c.subcategories, here, eff)); } return out; }
@@ -126,8 +126,8 @@
       outline_prompt:"Improve this Promptoire outline. Return only the outline.",
       meta_prompt:"You are a senior prompt engineer. Return only valid JSON." }),
     save_outline_file: () => ({ ok:true, path:"prompts-outline.txt" }),
-    merge_preview: () => ({ ok:true, preview:{added:[{id:"new_1",title:"Cinematic portrait",type:"image",category_name:"AI Art / Characters / Portraits"}], updated:[{id:"prm_x",title:"Refactor for clarity",type:"text",category_name:"Coding",changes:{prompt:{}}, before_title:"Refactor for clarity"}], unchanged_count:4, new_categories:["AI Art / Characters / Portraits"], incoming_total:6} }),
-    apply_merge: () => ({ ok:true, result:{updated:1,added:1,new_categories:0}, stats:stats(), categories:mockCats }),
+    merge_preview: () => ({ ok:true, preview:{added:[{id:"new_1",title:"Cinematic portrait",type:"image",category_name:"AI Art / Characters / Portraits"}], updated:[{id:"prm_x",title:"Refactor for clarity",type:"text",category_name:"Coding",changes:{prompt:{}}, before_title:"Refactor for clarity"}], unchanged_count:4, duplicates:[], ambiguous:[], new_categories:["AI Art / Characters", "AI Art / Characters / Portraits"], incoming_total:6} }),
+    apply_merge: () => ({ ok:true, result:{updated:1,added:1,new_categories:0,duplicates_skipped:0,ambiguous_skipped:0}, stats:stats(), categories:mockCats }),
     ai_improve: () => ({ ok:false, error:"(preview mode — connect the real app and set an API key to use this)" }),
     update_settings: (p) => ({ ok:true, settings: mergeSettings(mockSettings, p || {}) }),
     set_hotkey: (combo) => {

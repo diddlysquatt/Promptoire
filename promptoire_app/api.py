@@ -430,11 +430,17 @@ class Api:
         if not getattr(self._app, "selftest", False):
             return ok()
         import sys as _sys
-        print(f"[selftest] report via bridge: {data}", file=_sys.stderr, flush=True)
+        report = dict(data or {})
+        try:
+            report["native_hwnd"] = bool(self._app._resolve_hwnd())
+            report["minimum_window"] = [360, 420]
+        except Exception:
+            report["native_hwnd"] = False
+        print(f"[selftest] report via bridge: {report}", file=_sys.stderr, flush=True)
         try:
             from .core import paths
             with open(paths.data_dir() / "_selftest.json", "w", encoding="utf-8") as f:
-                json.dump(data or {}, f)
+                json.dump(report, f)
         except Exception as e:
             print(f"[selftest] write failed: {e!r}", file=_sys.stderr, flush=True)
         try:

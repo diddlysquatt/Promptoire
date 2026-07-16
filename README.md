@@ -43,13 +43,13 @@ Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 
 
 ## Why Promptoire
 
-Most prompt tools are cloud apps, browser extensions that die the moment you leave the tab, or generic clipboard managers that don't understand prompts. Promptoire is a small, gorgeous desktop launcher that sits quietly in your tray and does three things nobody else combines:
+Most prompt tools are cloud apps, browser extensions that disappear outside the browser, or generic clipboard managers that don't understand prompt libraries. Promptoire keeps a deliberately focused combination in one quiet Windows launcher:
 
 - **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library as a simple outline, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. Outline and JSON changes are shown in a **diff preview** before anything is written.
 - **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
-Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and a handful of themes.
+Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, a compact **+ New** action beside the filters, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and a handful of themes.
 
 ## ✨ Highlights
 
@@ -103,16 +103,16 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 ## 🔁 The bulk-improve loop
 
 1. Open **Improve library** (sparkle icon).
-2. **Copy outline library** puts an editable instruction + your whole library on your clipboard as a plain section/subsection outline. **Edit instructions** customizes that outline request, and **Save outline** writes the same simple library format to a `.txt` file. JSON export is still available under **JSON options**.
+2. Edit the visible **Improvement instructions** if needed. **Copy instructions + library** puts those instructions first and your complete plain-text outline directly below. **Copy library only**, **Copy instructions only**, and **Save library outline** do exactly what their names say. JSON compatibility tools live under **More options**.
 3. Paste into any LLM. It can return the plain outline format, or JSON if you use the compatibility tools.
 4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, `.md`, or `.csv`). Manual paste and file/clipboard loads auto-preview so you can see incoming, new, updated, and unchanged counts before anything is written. **Clear** resets the import box when you want to start over.
-5. **Merge** (matched by prompt id first, then by title inside the same section; your local prompts are never deleted). If the selected Add/Update mode would do nothing, Promptoire disables the merge until you choose an applicable action.
+5. **Merge**. **Update existing** matches a prompt id first, otherwise a unique normalized title in the exact section path; it never moves or deletes a local prompt. **Add new** adds only unmatched prompts and creates their missing path. Blank imported fields never erase nonblank local content, and repeated or ambiguous rows are shown and safely skipped. If the selected mode would do nothing, Promptoire disables the merge.
 
-The outline instruction is editable in that panel, with **Reset default** if you want the built-in instruction back. The older JSON instruction is still editable under **JSON options** for compatibility.
+The outline instruction stays visible in that panel, with **Save instructions** and **Reset default** beside it. The older JSON instruction remains available under **More options** for compatibility.
 
-For brand-new prompt batches without exporting your existing library, use **Copy outline request**. Add a topic or workflow, then it copies a ready instruction that asks an LLM to return sections, subsections, and prompt bullets you can paste straight back into Promptoire.
+For brand-new prompt batches without exporting your existing library, open **More options → Create prompts for a topic…**. Add a topic or workflow, then copy a ready instruction that asks an LLM for sections, subsections, and prompt rows you can paste straight back into Promptoire.
 
-**Prefer one click?** Add an API key in **Settings → AI** (Anthropic, or any OpenAI-compatible endpoint) and hit **Improve with AI now** — it sends the outline library, gets an importable reply back, and drops you straight into the diff preview. Optional; your key is stored locally only, and the copy/paste loop always works without it.
+**Prefer one click?** **Improve with AI now** sits near the top of the panel. Add your OpenAI API key in the optional **OpenAI connection** section at the bottom of the same panel and choose a current GPT-5.6 family model. Promptoire sends the visible instructions plus outline library to OpenAI, puts the reply in the import box, and opens the same diff preview. The key is stored locally only, and the copy/paste loop always works without it.
 
 <details>
 <summary><strong>Data format and supported LLM import shapes</strong></summary>
@@ -142,7 +142,7 @@ Everything lives in `prompts.json` next to the app — human-readable and easy t
 }
 ```
 
-For quick appends or no-JSON library passes, the import box also accepts a plain outline. **Copy outline library** exports your current prompts in this same format:
+For quick appends or no-JSON library passes, the import box also accepts a plain outline. **Copy library only** exports your current prompts in this same format:
 
 ```md
 Coding
@@ -183,7 +183,7 @@ For public forks and packaged releases, `prompts.json` is treated as local user 
 |---|---|
 | Summon launcher (global) | `Ctrl+Alt+Space` *(configurable)* |
 | Focus search | `Ctrl+F` or `Ctrl+K` |
-| Manage library | `Ctrl+E` |
+| Edit library | `Ctrl+E` |
 | Improve library | `Ctrl+I` |
 | Settings | `Ctrl+,` |
 | New prompt | `Ctrl+N` |

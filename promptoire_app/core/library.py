@@ -60,6 +60,12 @@ class PromptLibrary:
                 "version": schema.SCHEMA_VERSION,
                 "categories": [],
             }
+        repaired = schema.repair_duplicate_prompt_ids(self.data)
+        if repaired:
+            try:
+                self.save()
+            except Exception:
+                pass
         return self
 
     def save(self, *, backup: bool = True) -> None:
@@ -451,103 +457,164 @@ class PromptLibrary:
         walk(self.categories(), [])
         return ("\n".join(lines).strip() + "\n") if lines else ""
 
-    def merge_preview(self, incoming: Any) -> dict:
-        """Diff an incoming library against current state, matching by prompt id.
-
-        Returns a structured preview the UI shows before anything is written:
-          added:    prompts whose id is new (or absent) -> will be created
-          updated:  prompts whose id exists and content differs -> before/after
-          unchanged: same id, identical content
-          new_categories: category names that don't exist yet
-        Nothing is mutated here.
-        """
+    def _merge_plan(self, incoming: Any) -> dict:
+        """Resolve one immutable plan shared by preview and apply."""
         lib = normalize_library(incoming)
-        by_id: dict[str, tuple[dict, dict]] = {}
-        by_path_title: dict[tuple[str, str], tuple[dict, dict]] = {}
-        for p, cat, path in iter_prompts(self.data):
-            by_id[p["id"]] = (p, cat)
-            key = _path_title_key(path, p.get("title", ""))
-            if key and key not in by_path_title:
-                by_path_title[key] = (p, cat)
-        existing_cat_paths = {
-            " / ".join(part for part in path if part).lower()
-            for _, _, path in iter_categories(self.data)
+        by_id: dict[str, list[tuple[dict, dict]]] = {}
+        by_path_title: dict[tuple[tuple[str, ...], str], list[tuple[dict, dict]]] = {}
+        for prompt, category, path in iter_prompts(self.data):
+            by_id.setdefault(prompt.get("id", ""), []).append((prompt, category))
+            title_key = _path_title_key(path, prompt.get("title", ""))
+            if title_key:
+                by_path_title.setdefault(title_key, []).append((prompt, category))
+
+        actions: list[dict] = []
+        duplicates: list[dict] = []
+        ambiguous: list[dict] = []
+        seen_ids: set[str] = set()
+        seen_titles: set[tuple[tuple[str, ...], str]] = set()
+
+        for prompt, category, path in iter_prompts(lib):
+            category_name = " / ".join(part for part in path if part) or (
+                category.get("name", "") if category else ""
+            )
+            entry = {
+                "id": prompt.get("id", ""),
+                "type": prompt.get("type", "text"),
+                "title": prompt.get("title", ""),
+                "category_name": category_name,
+            }
+            prompt_id = prompt.get("id", "")
+            title_key = _path_title_key(path, prompt.get("title", ""))
+            repeated_id = bool(prompt_id and prompt_id in seen_ids)
+            repeated_title = bool(title_key and title_key in seen_titles)
+            if prompt_id:
+                seen_ids.add(prompt_id)
+            if title_key:
+                seen_titles.add(title_key)
+            if repeated_id:
+                duplicates.append({
+                    **entry,
+                    "reason": "repeated id",
+                })
+                continue
+
+            target: tuple[dict, dict] | None = None
+            matched_by = ""
+            ambiguity = ""
+            id_matches = by_id.get(prompt_id, []) if prompt_id else []
+            if len(id_matches) == 1:
+                target = id_matches[0]
+                matched_by = "id"
+            elif len(id_matches) > 1:
+                ambiguity = "more than one local prompt has this id"
+            elif repeated_title:
+                duplicates.append({
+                    **entry,
+                    "reason": "repeated title in the same section",
+                })
+                continue
+            elif title_key:
+                title_matches = by_path_title.get(title_key, [])
+                if len(title_matches) == 1:
+                    target = title_matches[0]
+                    matched_by = "title"
+                elif len(title_matches) > 1:
+                    ambiguity = "more than one local prompt has this title in the same section"
+
+            if ambiguity:
+                ambiguous.append({**entry, "reason": ambiguity})
+                continue
+            if target is None:
+                actions.append({"kind": "add", "prompt": prompt, "path": path, "entry": entry})
+                continue
+
+            current = target[0]
+            changes = _diff_prompt(current, prompt)
+            public = {
+                **entry,
+                "existing_id": current.get("id", ""),
+                "matched_by": matched_by,
+            }
+            if changes:
+                public.update(changes=changes, before_title=current.get("title", ""))
+                kind = "update"
+            else:
+                kind = "unchanged"
+            actions.append({
+                "kind": kind,
+                "prompt": prompt,
+                "path": path,
+                "target": current,
+                "changes": changes,
+                "entry": public,
+            })
+
+        return {
+            "library": lib,
+            "actions": actions,
+            "duplicates": duplicates,
+            "ambiguous": ambiguous,
         }
 
-        added, updated, unchanged = [], [], []
-        seen_new_cats: set[str] = set()
+    def merge_preview(self, incoming: Any) -> dict:
+        """Preview a non-destructive id-or-exact-path/title merge.
+
+        Duplicate incoming rows and ambiguous local fallbacks are reported and
+        skipped. Blank incoming fields do not erase nonblank local content.
+        Nothing is mutated here.
+        """
+        plan = self._merge_plan(incoming)
+        added = [a["entry"] for a in plan["actions"] if a["kind"] == "add"]
+        updated = [a["entry"] for a in plan["actions"] if a["kind"] == "update"]
+        unchanged = [a["entry"] for a in plan["actions"] if a["kind"] == "unchanged"]
+
+        existing_paths = {_canonical_path_key(path) for _, _, path in iter_categories(self.data)}
         new_categories: list[str] = []
-
-        for p, cat, path in iter_prompts(lib):
-            cname = cat.get("name", "") if cat else ""
-            cat_path = " / ".join(part for part in path if part) or cname
-            cat_key = cat_path.lower()
-            if cat_path and cat_key not in existing_cat_paths and cat_key not in seen_new_cats:
-                seen_new_cats.add(cat_key)
-                new_categories.append(cat_path)
-
-            matched_by = "id"
-            target = by_id.get(p["id"])
-            if target is None:
-                title_key = _path_title_key(path, p.get("title", ""))
-                target = by_path_title.get(title_key) if title_key else None
-                matched_by = "title" if target is not None else ""
-            entry = {
-                "id": p["id"],
-                "type": p.get("type", "text"),
-                "title": p.get("title", ""),
-                "category_name": cat_path,
-            }
-            if target is None:
-                added.append(entry)
-            else:
-                cur = target[0]
-                changes = _diff_prompt(cur, p)
-                if changes:
-                    updated.append({**entry, "changes": changes,
-                                    "before_title": cur.get("title", ""),
-                                    "existing_id": cur.get("id", ""),
-                                    "matched_by": matched_by})
-                else:
-                    unchanged.append({**entry, "existing_id": cur.get("id", ""),
-                                      "matched_by": matched_by})
+        for action in plan["actions"]:
+            if action["kind"] != "add":
+                continue
+            parts = [part for part in action["path"] if part] or ["Imported"]
+            for depth in range(1, len(parts) + 1):
+                prefix = parts[:depth]
+                key = _canonical_path_key(prefix)
+                if key not in existing_paths:
+                    existing_paths.add(key)
+                    new_categories.append(" / ".join(prefix))
 
         return {
             "added": added,
             "updated": updated,
             "unchanged_count": len(unchanged),
+            "duplicates": plan["duplicates"],
+            "ambiguous": plan["ambiguous"],
             "new_categories": new_categories,
-            "incoming_total": schema.count_prompts(lib),
+            "incoming_total": schema.count_prompts(plan["library"]),
         }
 
     def apply_merge(self, incoming: Any, *, update_existing: bool = True,
                     add_new: bool = True) -> dict:
-        """Apply a merge. Matches prompts by id. Never deletes local prompts.
+        """Apply the exact plan shown by :meth:`merge_preview`.
 
-        - Existing prompt (same id): fields overwritten from incoming (if update_existing).
-        - New prompt: appended to a category matching its incoming category name
-          (created if missing), if add_new.
+        ID matches win; otherwise a unique normalized title in the exact
+        section path can match. Updates never move or delete local prompts,
+        and blank incoming fields never erase nonblank local values. Adds only
+        create unmatched prompts and their missing category path.
         """
-        lib = normalize_library(incoming)
-        by_id: dict[str, dict] = {}
-        by_path_title: dict[tuple[str, str], dict] = {}
-        for p, _, path in iter_prompts(self.data):
-            by_id[p["id"]] = p
-            key = _path_title_key(path, p.get("title", ""))
-            if key and key not in by_path_title:
-                by_path_title[key] = p
+        plan = self._merge_plan(incoming)
         n_updated = n_added = n_cats = 0
 
         def category_for_path(path: list[str]) -> dict:
-            """Find/create the nested destination matching an incoming path."""
             nonlocal n_cats
-            parts = [p for p in path if p]
-            if not parts:
-                parts = ["Imported"]
+            parts = [part for part in path if part] or ["Imported"]
             siblings = self.categories()
             current = None
             for name in parts:
-                current = next((c for c in siblings if c.get("name", "").lower() == name.lower()), None)
+                name_key = _canonical_name(name)
+                current = next(
+                    (c for c in siblings if _canonical_name(c.get("name", "")) == name_key),
+                    None,
+                )
                 if current is None:
                     current = new_category(name)
                     siblings.append(current)
@@ -555,35 +622,30 @@ class PromptLibrary:
                 siblings = current.setdefault("subcategories", [])
             return current
 
-        for p, _, path in iter_prompts(lib):
-            cur = by_id.get(p["id"])
-            title_key = _path_title_key(path, p.get("title", ""))
-            if cur is None and title_key:
-                cur = by_path_title.get(title_key)
-            if cur is not None:
-                if update_existing:
-                    changes = _diff_prompt(cur, p)
-                    for k in _CONTENT_PROMPT_FIELDS:
-                        if k in p:
-                            cur[k] = p[k]
-                    if changes:
-                        cur["updated_at"] = now_iso()
-                        n_updated += 1
-                    by_id[p["id"]] = cur
-                    if title_key:
-                        by_path_title[title_key] = cur
-            elif add_new:
-                dest = category_for_path(path)
-                dest.setdefault("prompts", []).append(p)
-                by_id[p["id"]] = p
-                if title_key:
-                    by_path_title[title_key] = p
+        for action in plan["actions"]:
+            if action["kind"] == "update" and update_existing:
+                current = action["target"]
+                incoming_prompt = action["prompt"]
+                for field in action["changes"]:
+                    current[field] = incoming_prompt[field]
+                current["updated_at"] = now_iso()
+                n_updated += 1
+            elif action["kind"] == "add" and add_new:
+                destination = category_for_path(action["path"])
+                destination.setdefault("prompts", []).append(action["prompt"])
                 n_added += 1
 
-        return {"updated": n_updated, "added": n_added, "new_categories": n_cats}
+        return {
+            "updated": n_updated,
+            "added": n_added,
+            "new_categories": n_cats,
+            "duplicates_skipped": len(plan["duplicates"]),
+            "ambiguous_skipped": len(plan["ambiguous"]),
+        }
 
     def replace_all(self, incoming: Any) -> None:
         self.data = normalize_library(incoming)
+        schema.repair_duplicate_prompt_ids(self.data)
 
 
 # ---- scoring helpers --------------------------------------------------------
@@ -613,13 +675,20 @@ def _subsequence(needle: str, haystack: str) -> bool:
     return all(ch in it for ch in needle)
 
 
-def _path_title_key(path: list[str], title: str) -> tuple[str, str] | None:
+def _canonical_name(value: str) -> str:
+    return " ".join(str(value or "").strip().casefold().split())
+
+
+def _canonical_path_key(path: list[str]) -> tuple[str, ...]:
+    return tuple(_canonical_name(part) for part in path if _canonical_name(part))
+
+
+def _path_title_key(path: list[str], title: str) -> tuple[tuple[str, ...], str] | None:
     """Stable fallback match for non-JSON imports that do not carry ids."""
-    title_key = " ".join((title or "").strip().lower().split())
+    title_key = _canonical_name(title)
     if not title_key:
         return None
-    path_key = " / ".join(" ".join(part.strip().lower().split()) for part in path if part)
-    return (path_key, title_key)
+    return (_canonical_path_key(path), title_key)
 
 
 def _outline_one_line(value: Any) -> str:
@@ -632,12 +701,25 @@ def _outline_prompt_body(value: Any) -> str:
 
 
 def _diff_prompt(cur: dict, inc: dict) -> dict:
-    """Return {field: {before, after}} for content fields that differ."""
+    """Return safe, nonblank incoming fields that differ.
+
+    Bulk imports are intentionally additive: an LLM omitting tags, notes, or
+    image metadata must not silently erase useful local values. Intentional
+    clearing remains available through Edit Library or Replace Library.
+    """
     changes: dict[str, dict] = {}
     for k in _CONTENT_PROMPT_FIELDS:
         if k not in inc:
             continue
         a, b = cur.get(k), inc.get(k)
+        if isinstance(b, list):
+            if not b and a:
+                continue
+        elif isinstance(b, str):
+            if not b.strip() and a:
+                continue
+        elif b is None and a is not None:
+            continue
         if isinstance(a, list) or isinstance(b, list):
             if list(a or []) != list(b or []):
                 changes[k] = {"before": a, "after": b}

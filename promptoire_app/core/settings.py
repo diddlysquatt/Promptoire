@@ -40,6 +40,7 @@ DEFAULT_OUTLINE_PROMPT = (
 )
 
 DENSITY_OPTIONS = ("comfortable", "compact", "titles")
+OPENAI_MODEL_OPTIONS = ("gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")
 
 DEFAULTS: dict[str, Any] = {
     "version": 2,
@@ -72,12 +73,12 @@ DEFAULTS: dict[str, Any] = {
         "meta_prompt": DEFAULT_META_PROMPT,
     },
     "ai": {
-        # Optional: lets the "Improve with AI now" button call an API directly.
-        # Empty api_key = the button points to Settings; manual copy/paste always works.
-        "provider": "anthropic",          # "anthropic" | "openai"
+        # Optional: lets "Improve with AI now" call OpenAI directly. Manual
+        # copy/paste always works without an account or key.
+        "provider": "openai",
         "api_key": "",
-        "model": "",                       # blank = provider default
-        "base_url": "",                    # OpenAI-compatible endpoints only
+        "model": "gpt-5.6",
+        "base_url": "",
     },
     "links": {
         # Set this to your own Buy Me a Coffee / Ko-fi / GitHub Sponsors URL.
@@ -151,22 +152,63 @@ def _sanitize_density(data: dict) -> None:
         data["density"] = DEFAULTS["density"]
 
 
+def _official_openai_source(ai: dict) -> bool:
+    provider = str(ai.get("provider") or "").strip().lower()
+    base_url = str(ai.get("base_url") or "").strip()
+    if provider != "openai":
+        return False
+    if not base_url:
+        return True
+    try:
+        parsed = urlparse(base_url if "://" in base_url else "https://" + base_url)
+        return (parsed.hostname or "").lower() == "api.openai.com" and parsed.path.rstrip("/") in ("", "/v1")
+    except Exception:
+        return False
+
+
+def _sanitize_ai(data: dict, source_ai: dict | None = None) -> None:
+    ai = data.get("ai")
+    if not isinstance(ai, dict):
+        data["ai"] = copy.deepcopy(DEFAULTS["ai"])
+        return
+    source = source_ai if isinstance(source_ai, dict) else ai
+    api_key = str(ai.get("api_key") or "").strip()
+    # Never reinterpret an Anthropic, DeepSeek, OpenRouter, or local-server
+    # credential as an OpenAI key during the one-provider migration.
+    if api_key and not _official_openai_source(source):
+        api_key = ""
+    ai["provider"] = "openai"
+    ai["base_url"] = ""
+    ai["api_key"] = api_key
+    model = str(ai.get("model") or "").strip()
+    ai["model"] = model if model in OPENAI_MODEL_OPTIONS else DEFAULTS["ai"]["model"]
+
+
 class Settings:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.data: dict[str, Any] = copy.deepcopy(DEFAULTS)
 
     def load(self) -> "Settings":
+        source_ai = None
         try:
             if self.path.exists():
                 with open(self.path, "r", encoding="utf-8") as f:
                     saved = json.load(f)
                 if isinstance(saved, dict):
+                    source_ai = saved.get("ai") if isinstance(saved.get("ai"), dict) else None
                     self.data = _deep_merge(DEFAULTS, saved)
         except Exception:
             self.data = copy.deepcopy(DEFAULTS)
         _sanitize_links(self.data)
         _sanitize_density(self.data)
+        _sanitize_ai(self.data, source_ai)
+        if (isinstance(source_ai, dict) and source_ai.get("api_key")
+                and not _official_openai_source(source_ai)):
+            try:
+                self.save()
+            except Exception:
+                pass
         return self
 
     def save(self) -> None:
@@ -196,3 +238,4 @@ class Settings:
         self.data = _deep_merge(self.data, patch or {})
         _sanitize_links(self.data)
         _sanitize_density(self.data)
+        _sanitize_ai(self.data)

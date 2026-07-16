@@ -15,7 +15,7 @@ Promptoire is a fast, local-first Windows prompt library built around one job: g
 - Flexible outline, Markdown, CSV, and JSON imports with a safe diff preview.
 - Local-only storage, atomic saves, timestamped backups, and no telemetry.
 - Reliable Settings toggles, Windows startup registration, tray control, and hidden-window recovery through the normal shortcut.
-- Optional direct Anthropic or OpenAI-compatible improve action.
+- Optional direct OpenAI improve action with current GPT-5.6 model choices; manual any-LLM copy/paste remains the default portable workflow.
 
 ## Install
 

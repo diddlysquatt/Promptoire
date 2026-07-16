@@ -6,10 +6,8 @@ keyboard>=0.13.5; platform_system=="Windows"   # global hotkey (Windows)
 pynput>=1.7; platform_system!="Windows"          # global hotkey (macOS/Linux fallback)
 Pillow>=9.0           # tray icon rendering
 
-# Optional: one-click "Improve with AI now" via the Anthropic API.
-# Only needed if you use that button with the Anthropic provider
-# (OpenAI-compatible endpoints need no extra package).
-# anthropic>=0.40
+# "Improve with AI now" calls OpenAI over Python's standard library, so it
+# adds no optional SDK dependency. Manual copy/paste works without an API key.
 
 # Packaging (optional, for building a standalone app)
 pyinstaller>=6.7

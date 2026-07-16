@@ -4,6 +4,7 @@ Constructs the App against a temporary copy of the public sample library, but
 never starts the webview loop, then exercises every data-path API method.
 """
 import json
+import copy
 import os
 import shutil
 import sys
@@ -58,6 +59,30 @@ def _run_checks():
         sanitized_density = Settings(density_path).load().get("density")
     out["settings.invalid_density_fallback"] = sanitized_density
     assert sanitized_density == "compact", sanitized_density
+    assert SETTINGS_DEFAULTS["ai"]["provider"] == "openai", SETTINGS_DEFAULTS["ai"]
+    assert SETTINGS_DEFAULTS["ai"]["model"] == "gpt-5.6", SETTINGS_DEFAULTS["ai"]
+    with tempfile.TemporaryDirectory() as ai_dir:
+        ai_path = Path(ai_dir) / "promptoire.config.json"
+        ai_path.write_text(json.dumps({"ai": {
+            "provider": "anthropic", "api_key": "sk-ant-must-not-migrate",
+            "model": "claude-old", "base_url": "https://example.com/v1"
+        }}), encoding="utf-8")
+        migrated_ai = Settings(ai_path).load().get("ai")
+        migrated_key_removed_from_disk = json.loads(ai_path.read_text(encoding="utf-8"))["ai"]["api_key"] == ""
+    out["settings.ai_migrated"] = migrated_ai
+    assert migrated_ai["provider"] == "openai" and migrated_ai["model"] == "gpt-5.6", migrated_ai
+    assert migrated_ai["base_url"] == "", migrated_ai
+    assert migrated_ai["api_key"] == "", migrated_ai
+    assert migrated_key_removed_from_disk
+    with tempfile.TemporaryDirectory() as openai_dir:
+        openai_path = Path(openai_dir) / "promptoire.config.json"
+        openai_path.write_text(json.dumps({"ai": {
+            "provider": "openai", "api_key": "sk-openai-kept",
+            "model": "gpt-5.6-terra", "base_url": "https://api.openai.com/v1"
+        }}), encoding="utf-8")
+        official_ai = Settings(openai_path).load().get("ai")
+    assert official_ai["api_key"] == "sk-openai-kept", official_ai
+    assert official_ai["model"] == "gpt-5.6-terra" and official_ai["base_url"] == "", official_ai
     hotkey_normalization = {
         raw: GlobalHotkey().normalize(raw)
         for raw in ("F8", "F9", "~", "`", "grave", "backquote", "Alt C", "Control Z")
@@ -599,6 +624,115 @@ Question planner: Turn {notes} into prioritized interview questions.
         assert no_update["updated"] == 0 and no_update["added"] == 0, no_update
         assert schema.count_prompts(tmp_lib.data) == 1, tmp_lib.data
 
+    # Safe merge must preview and apply the same plan, skip repeated input,
+    # avoid arbitrary same-title matches, and preserve omitted local metadata.
+    with tempfile.TemporaryDirectory() as d:
+        merge_lib = PromptLibrary(Path(d) / "prompts.json")
+        duplicate_import = {
+            "version": 3,
+            "categories": [{
+                "name": "Workflows", "prompts": [], "subcategories": [{
+                    "name": "Research", "subcategories": [], "prompts": [
+                        {"id": "prm_incoming001", "title": "Evidence map", "prompt": "First body"},
+                        {"id": "prm_incoming002", "title": "Evidence map", "prompt": "Second body"},
+                    ],
+                }],
+            }],
+        }
+        preview_duplicate = merge_lib.merge_preview(duplicate_import)
+        applied_duplicate = merge_lib.apply_merge(copy.deepcopy(duplicate_import))
+        assert len(preview_duplicate["added"]) == 1, preview_duplicate
+        assert len(preview_duplicate["duplicates"]) == 1, preview_duplicate
+        assert applied_duplicate["added"] == 1 and applied_duplicate["updated"] == 0, applied_duplicate
+        assert applied_duplicate["duplicates_skipped"] == 1, applied_duplicate
+        assert schema.count_prompts(merge_lib.data) == 1, merge_lib.data
+        assert len(preview_duplicate["new_categories"]) == applied_duplicate["new_categories"] == 2
+
+        local = next(schema.iter_prompts(merge_lib.data))[0]
+        local["tags"] = ["keep-me"]
+        local["note"] = "Keep this note"
+        sparse_update = copy.deepcopy(duplicate_import)
+        sparse_update["categories"][0]["subcategories"][0]["prompts"] = [{
+            "id": local["id"], "title": "Evidence map", "prompt": "Improved body"
+        }]
+        sparse_result = merge_lib.apply_merge(sparse_update)
+        assert sparse_result["updated"] == 1, sparse_result
+        assert local["tags"] == ["keep-me"] and local["note"] == "Keep this note", local
+
+        local_category = merge_lib.categories()[0]["subcategories"][0]
+        second_local = schema.new_prompt("Evidence map", "Another local body")
+        local_category["prompts"].append(second_local)
+        ambiguous_import = copy.deepcopy(duplicate_import)
+        ambiguous_import["categories"][0]["subcategories"][0]["prompts"] = [{
+            "id": "prm_no_local_match", "title": "Evidence map", "prompt": "Unsafe fallback"
+        }]
+        ambiguous_preview = merge_lib.merge_preview(ambiguous_import)
+        ambiguous_result = merge_lib.apply_merge(ambiguous_import)
+        assert not ambiguous_preview["added"] and not ambiguous_preview["updated"], ambiguous_preview
+        assert len(ambiguous_preview["ambiguous"]) == 1, ambiguous_preview
+        assert ambiguous_result["ambiguous_skipped"] == 1, ambiguous_result
+
+        exact_import = copy.deepcopy(ambiguous_import)
+        exact_prompt = exact_import["categories"][0]["subcategories"][0]["prompts"][0]
+        exact_prompt["id"] = second_local["id"]
+        exact_prompt["prompt"] = "Exact id update"
+        exact_preview = merge_lib.merge_preview(exact_import)
+        assert len(exact_preview["updated"]) == 1 and exact_preview["updated"][0]["matched_by"] == "id", exact_preview
+
+        moved_path = {
+            "version": 3,
+            "categories": [{"name": "Entirely New", "subcategories": [], "prompts": [{
+                "id": second_local["id"], "title": "Evidence map", "prompt": "Still update in place"
+            }]}],
+        }
+        moved_preview = merge_lib.merge_preview(moved_path)
+        moved_result = merge_lib.apply_merge(moved_path)
+        assert moved_preview["new_categories"] == [], moved_preview
+        assert moved_result["new_categories"] == 0, moved_result
+        assert merge_lib.find_prompt(second_local["id"])[2] == ["Workflows", "Research"]
+
+    with tempfile.TemporaryDirectory() as d:
+        exact_lib = PromptLibrary(Path(d) / "prompts.json")
+        exact_category = schema.new_category("Same Section")
+        first_same = schema.new_prompt("Repeated title", "First local")
+        second_same = schema.new_prompt("Repeated title", "Second local")
+        exact_category["prompts"] = [first_same, second_same]
+        exact_lib.data = {"version": 3, "categories": [exact_category]}
+        exact_updates = {
+            "version": 3, "categories": [{
+                "id": exact_category["id"], "name": "Same Section", "subcategories": [], "prompts": [
+                    {"id": first_same["id"], "title": "Repeated title", "prompt": "First updated"},
+                    {"id": second_same["id"], "title": "Repeated title", "prompt": "Second updated"},
+                ],
+            }],
+        }
+        exact_updates_preview = exact_lib.merge_preview(exact_updates)
+        exact_updates_result = exact_lib.apply_merge(exact_updates)
+        assert len(exact_updates_preview["updated"]) == 2, exact_updates_preview
+        assert not exact_updates_preview["duplicates"], exact_updates_preview
+        assert exact_updates_result["updated"] == 2, exact_updates_result
+
+    same_a = schema.new_prompt("Same", "Same body")
+    same_b = schema.new_prompt("Same", "Same body")
+    assert same_a["id"] != same_b["id"], (same_a, same_b)
+    repair_data = {"version": 3, "categories": [{
+        "id": "cat_repair", "name": "Repair", "prompts": [same_a, {**same_b, "id": same_a["id"]}], "subcategories": []
+    }]}
+    assert schema.repair_duplicate_prompt_ids(repair_data) == 1, repair_data
+    assert len({p["id"] for p, _, _ in schema.iter_prompts(repair_data)}) == 2, repair_data
+    with tempfile.TemporaryDirectory() as d:
+        repair_path = Path(d) / "prompts.json"
+        repair_path.write_text(json.dumps(repair_data | {"categories": [{
+            "id": "cat_repair", "name": "Repair", "subcategories": [], "prompts": [
+                {**same_a, "id": "prm_legacyduplicate"},
+                {**same_b, "id": "prm_legacyduplicate"},
+            ],
+        }]}), encoding="utf-8")
+        persisted_lib = PromptLibrary(repair_path).load()
+        persisted_ids = [p["id"] for p, _, _ in schema.iter_prompts(persisted_lib.data)]
+        disk_ids = [p["id"] for p, _, _ in schema.iter_prompts(json.loads(repair_path.read_text(encoding="utf-8")))]
+        assert len(set(persisted_ids)) == 2 and disk_ids == persisted_ids, (persisted_ids, disk_ids)
+
     example = json.loads((Path(__file__).resolve().parents[1] / "prompts.example.json").read_text(encoding="utf-8"))
     example = schema.normalize_library(example)
     out["example.total"] = schema.count_prompts(example)
@@ -609,7 +743,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     required_ids = {
         "app", "brandCount", "btnPin", "btnImprove", "btnEditor", "btnSettings", "btnDensity",
         "btnCoffee", "btnClose", "viewLauncher", "search", "filters", "catrail",
-        "results", "btnAdd", "btnImprove2", "viewEditor", "btnAddCategory",
+        "results", "btnAdd", "viewEditor", "btnAddCategory",
         "viewBulk", "bulkBody", "viewSettings", "settingsBody", "toastHost", "modalHost",
     }
     missing_ids = sorted(required_ids - shell.ids)
@@ -634,21 +768,23 @@ Question planner: Turn {notes} into prioritized interview questions.
         "merge_action_guard": "Choose Add new or Update existing",
         "merge_state_sync": "syncMergeState",
         "title_match_badge": "matched by title",
-        "outline_library_button": "Copy outline library",
+        "outline_library_button": "Copy instructions + library",
         "outline_library_handler": "copyOutlineExport",
         "outline_request_modal": "Prompt batch request",
         "outline_request_topic": "Topic or workflow",
         "outline_request_builder": "buildOutlineRequest",
         "outline_request_blank": "Copy blank",
-        "outline_instructions_button": "Edit instructions",
-        "outline_instructions_modal": "Outline AI instructions",
+        "outline_instructions_inline": "outlineInstructions",
+        "outline_instructions_label": "Improvement instructions",
+        "outline_instructions_copy": "Copy instructions only",
         "instructions_reset_button": "Reset default",
         "instructions_default_bridge": "bulk_prompt_defaults",
-        "outline_default_loaded": "Default outline instructions loaded",
+        "outline_default_loaded": "Default instructions restored",
         "json_default_loaded": "Default JSON instructions loaded",
-        "save_outline_button": "Save outline",
+        "save_outline_button": "Save library outline",
         "save_outline_handler": "saveOutlineFile",
-        "json_options_disclosure": "JSON options",
+        "more_options_disclosure": "More options",
+        "topic_request_label": "Create prompts for a topic",
         "json_instructions_button": "Edit JSON instructions",
         "outline_example_button": "Use outline example",
         "outline_example_handler": "insertOutlineExample",
@@ -669,6 +805,14 @@ Question planner: Turn {notes} into prioritized interview questions.
         "import_error_csv": "CSV table",
         "new_category_preview": "newCategoryPreview",
         "new_section_label": "New sections",
+        "safe_duplicate_skip": "duplicates_skipped",
+        "safe_ambiguous_skip": "ambiguous_skipped",
+        "safe_blank_contract": "Blank imported fields never erase local content",
+        "openai_panel": "OpenAI connection · optional",
+        "openai_latest_models": "gpt-5.6-sol",
+        "openai_save_before_improve": "if (!await saveAiSettings(false)) return;",
+        "blank_instructions_feedback_improve": "if (!await persistOutlineInstructions(true)) return;",
+        "blank_instructions_feedback_copy": "includeInstructions && !await persistOutlineInstructions(true)",
         "numbered_prompt_blocks": "Prompt 1:",
         "yamlish_prompt_blocks": "- Title:",
         "nested_bullet_imports": "Nested bullet outlines",
@@ -679,8 +823,8 @@ Question planner: Turn {notes} into prioritized interview questions.
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
     assert not missing_bulk_tokens, missing_bulk_tokens
-    out["frontend.outline_first_export"] = bulk_js.index("Copy outline library") < bulk_js.index("Copy for AI")
-    assert out["frontend.outline_first_export"], "Copy outline library should stay ahead of JSON export"
+    out["frontend.outline_first_export"] = bulk_js.index("Copy instructions + library") < bulk_js.index("Copy JSON request + library")
+    assert out["frontend.outline_first_export"], "Readable outline export should stay ahead of JSON export"
     out["frontend.new_category_preview_css"] = "diff-cat-chip" in components_css
     assert out["frontend.new_category_preview_css"], "diff-cat-chip"
     out["frontend.mock_nested_preview"] = "AI Art / Characters / Portraits" in bridge_js
@@ -716,6 +860,15 @@ Question planner: Turn {notes} into prioritized interview questions.
         and 'class: "coffee"' not in settings_js
     )
     assert out["frontend.support_button_compact"], "topbar-only support button"
+    launcher_html = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8")
+    launcher_layout = {
+        "no_footer": "actionbar" not in launcher_html and "btnImprove2" not in launcher_html,
+        "new_in_filters": launcher_html.index('id="btnAdd"') < launcher_html.index('id="btnDensity"'),
+        "edit_library": "Edit&nbsp;Library" in launcher_html and 'title="Edit library"' in launcher_html,
+        "gear_settings": "M19.4 15" in launcher_html,
+    }
+    out["frontend.launcher_layout"] = launcher_layout
+    assert all(launcher_layout.values()), launcher_layout
     out["frontend.github_source_link"] = (
         "source-link" in settings_js
         and "configuredRepoUrl" in settings_js
@@ -841,8 +994,8 @@ Question planner: Turn {notes} into prioritized interview questions.
         "contributing_publish_check": "Check-GitHubPublish.ps1" in contributing_text,
         "privacy_local_first": "local-first" in privacy_text.lower(),
         "privacy_optional_ai": "Improve with AI now" in privacy_text,
-        "privacy_saved_outline_instructions": "saved outline improvement instructions" in privacy_text,
-        "privacy_outline_clipboard": "Copy outline library" in privacy_text,
+        "privacy_saved_outline_instructions": "visible outline improvement instructions" in privacy_text,
+        "privacy_outline_clipboard": "Copy instructions + library" in privacy_text,
         "privacy_paste_clipboard": "Paste from clipboard" in privacy_text,
         "security_sensitive_files": "prompts.json" in security_text and "promptoire.config.json" in security_text,
         "gitignore_private_prompt": "prompts.json" in gitignore_text,
@@ -855,12 +1008,19 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "prompts.json" in pr_template
             and "promptoire.config.json" in pr_template
         ),
-        "release_selftest": "--selftest" in release_checklist and '"mock": false' in release_checklist,
+        "release_selftest": (
+            "--selftest" in release_checklist
+            and '"mock": false' in release_checklist
+            and '"native_hwnd": true' in release_checklist
+            and '"minimum_window": [360, 420]' in release_checklist
+        ),
         "release_changelog_check": "CHANGELOG.md" in release_checklist,
         "release_ci_scope": "portable subset" in release_checklist and "local gate is" in release_checklist,
         "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
-        "release_batch_selftest_guard": "--selftest" in release_bat and "mock" in release_bat,
+        "release_batch_selftest_guard": (
+            "--selftest" in release_bat and "mock" in release_bat and "native_hwnd" in release_bat
+        ),
         "release_batch_fresh_selftest": 'del /q "_selftest.json"' in release_bat,
         "packaged_version_metadata": (
             "version='version_info.txt'" in spec_text
@@ -913,15 +1073,26 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "Create-PromptoireShortcut.ps1" in rename_script
         ),
         "outline_library_release_check": (
-            "Copy outline library" in release_checklist
+            "Copy instructions + library" in release_checklist
+            and "Copy library only" in release_checklist
+            and "Copy instructions only" in release_checklist
             and "optional topic/workflow" in release_checklist
-            and "Edit instructions" in release_checklist
-            and "Save outline" in release_checklist
-            and "JSON options" in release_checklist
+            and "Save library outline" in release_checklist
+            and "More options" in release_checklist
         ),
         "outline_instruction_release_check": (
-            "changes the outline prompt" in release_checklist
+            "Save instructions" in release_checklist
             and "Improve with AI now" in release_checklist
+        ),
+        "openai_panel_release_check": (
+            "OpenAI connection" in release_checklist
+            and "bottom of Improve Library" in release_checklist
+            and "GPT-5.6" in release_checklist
+        ),
+        "compact_launcher_release_check": (
+            "no bottom action footer" in release_checklist
+            and "360×420" in release_checklist
+            and "Edit Library" in release_checklist
         ),
         "instruction_reset_release_check": "Reset default" in release_checklist,
         "clipboard_paste_release_check": "Paste from clipboard" in release_checklist,
@@ -937,8 +1108,16 @@ Question planner: Turn {notes} into prioritized interview questions.
         "json_flat_path_release_check": "flat JSON prompt rows" in release_checklist,
         "json_image_alias_release_check": "negative_prompt" in release_checklist and "image_model" in release_checklist,
         "json_string_prompt_release_check": "plain JSON string prompts" in release_checklist,
-        "incoming_preview_release_check": "incoming/new/updated/unchanged counts" in release_checklist,
+        "incoming_preview_release_check": (
+            "incoming/new/updated/unchanged counts" in release_checklist
+            and "repeated/ambiguous skips" in release_checklist
+        ),
         "selected_changes_release_check": "no selected changes" in release_checklist.lower(),
+        "safe_merge_release_check": (
+            "never moves/deletes prompts" in release_checklist
+            and "never clears a nonblank local field" in release_checklist
+            and "preview/apply report the same result" in release_checklist
+        ),
     }
     out["release.docs_ready"] = release_tokens
     assert all(release_tokens.values()), release_tokens

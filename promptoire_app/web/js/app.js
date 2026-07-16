@@ -127,7 +127,6 @@
     const go = (v) => () => showView(PR.state.view === v ? "launcher" : v);
     document.getElementById("btnEditor").addEventListener("click", go("editor"));
     document.getElementById("btnImprove").addEventListener("click", go("bulk"));
-    document.getElementById("btnImprove2").addEventListener("click", () => showView("bulk"));
     document.getElementById("btnSettings").addEventListener("click", go("settings"));
     document.getElementById("btnCoffee").addEventListener("click", openCoffee);
     document.getElementById("btnAdd").addEventListener("click", () => PR.editor.newPrompt(null));
@@ -160,9 +159,13 @@
       handle.addEventListener("pointerdown", async (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
+        e.stopPropagation();
         PR.state.suppressBlur = true;
         try {
-          await PR.bridge.call("begin_window_resize", handle.dataset.resize);
+          const result = await PR.bridge.call("begin_window_resize", handle.dataset.resize);
+          if (result && result.ok && result.started === false) {
+            PR.ui.toast("Window resizing could not start", { bad: true });
+          }
         } finally {
           setTimeout(() => { PR.state.suppressBlur = false; }, 120);
         }

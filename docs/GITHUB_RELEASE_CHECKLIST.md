@@ -71,8 +71,11 @@ gh auth refresh --scopes workflow
 - Confirm Settings -> About opens the GitHub source link.
 - Set the final Buy Me a Coffee link in Settings or keep the blank default; links with or without `https://` are normalized, and blank/generic root links prompt the user to configure support instead of opening a generic page.
 - Confirm Settings -> System can open the local data folder for `prompts.json`, `promptoire.config.json`, and backups.
-- Confirm the Improve Library panel shows `Copy outline library` as the default export action, offers `Edit instructions` and `Save outline`, keeps `Copy outline request` beside it, lets `Copy outline request` include an optional topic/workflow, and tucks `Copy for AI` / JSON export under `JSON options`.
-- Confirm `Edit instructions` changes the outline prompt used by `Copy outline library` and `Improve with AI now`; `Reset default` restores the built-in instruction; JSON instructions stay under `JSON options`.
+- Confirm the launcher has no bottom action footer, **+ New** sits beside All/Text/Image/Favorites, the pencil opens **Edit Library**, and the recovered height belongs to prompt results.
+- Confirm every window edge/corner resizes in both axes, the result list expands with the window, and 360×420 remains the minimum size.
+- Confirm Improve Library shows `Improve with AI now` near the top, keeps the improvement instructions visible, and offers `Copy instructions + library`, `Copy library only`, `Copy instructions only`, and `Save library outline` with unambiguous labels.
+- Confirm `Save instructions` changes the prompt used by `Copy instructions + library` and `Improve with AI now`; `Reset default` restores the built-in instruction; `Create prompts for a topic` accepts an optional topic/workflow; JSON instructions and exports stay under `More options`.
+- Confirm the optional OpenAI connection is at the bottom of Improve Library (not Settings), only offers the current GPT-5.6 family, saves locally, and opens/focuses itself when direct improve is clicked without a key.
 - Confirm an empty library offers both `New prompt` and `Import prompts`, with `Import prompts` opening the Improve Library flow.
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge; manual paste into the import box should auto-preview too.
 - Confirm `Clear` empties the import box, preview, and safe-merge state.
@@ -86,14 +89,16 @@ gh auth refresh --scopes workflow
 - Confirm flat JSON prompt rows can use `path`, `section`, and `subsection` fields to choose their destination section.
 - Confirm JSON image prompt rows accept aliases such as `negative_prompt`, `image_model`, `parameters`, and `cfg_scale`.
 - Confirm plain JSON string prompts import as prompts with derived titles.
-- Confirm import preview shows incoming/new/updated/unchanged counts and that the safe-merge note changes when only Add or only Update is selected.
+- Confirm import preview shows incoming/new/updated/unchanged counts plus repeated/ambiguous skips, and that the safe-merge note changes when only Add or only Update is selected.
 - Confirm the merge button is disabled when the selected Add/Update mode has no selected changes to merge.
+- Confirm **Update existing** uses id first, otherwise a unique title in the exact section path, never moves/deletes prompts, and never clears a nonblank local field with a blank import value.
+- Confirm **Add new** adds only unmatched prompts, creates missing nested paths, and preview/apply report the same result for duplicate input.
 - Confirm normal imports use the safe merge card, and `Replace library` stays tucked in the danger section.
 - Build from source once with `setup.bat` and `Promptoire.bat`.
 - Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.
 - Confirm `Check-PromptoireShortcut.ps1` verifies that the desktop shortcut launches this checkout.
 - If the folder display name is still lowercase, close tools that are inside it and run `Rename-PromptoireFolder.ps1`.
-- Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false` and an empty `"error"`.
+- Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false`, `"native_hwnd": true`, `"minimum_window": [360, 420]`, and an empty `"error"`.
 
 ## Optional Build
 
