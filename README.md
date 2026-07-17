@@ -17,6 +17,7 @@
 
 <p align="center">
   <a href="https://github.com/diddlysquatt/Promptoire/releases/latest"><strong>Download for Windows</strong></a>
+  · <a href="https://diddlysquatt.github.io/Promptoire/">Website</a>
   · <a href="#how-it-works">How it works</a>
   · <a href="docs/PRIVACY.md">Privacy</a>
   · <a href="CONTRIBUTING.md">Contributing</a>
@@ -33,7 +34,7 @@ Promptoire is a portable Windows 10/11 app. It has no installer, account, cloud 
 3. Run `Promptoire.exe`.
 4. Set your preferred global hotkey under **Settings → Activation**.
 
-Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 and most Windows 10 systems. The release also includes a SHA-256 checksum. Because the executable is not code-signed, Windows SmartScreen may initially show **Unknown publisher**; verify the checksum and use **More info → Run anyway** if you trust the download.
+Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 and most Windows 10 systems. The release also includes a SHA-256 checksum. Because the executable is not code-signed, Windows SmartScreen may initially show **Unknown publisher**; verify the checksum and use **More info → Run anyway** if you trust the download. See the [Windows trust and signing guide](docs/SMARTSCREEN.md) for the reason and the project's signing path.
 
 ## How it works
 
@@ -209,7 +210,7 @@ Promptoire has no telemetry. It stores prompts and settings locally and only sen
 
 ## ❤️ Support
 
-Promptoire is free and open source. If it earns a spot in your workflow, you can use the support link in the titlebar or under **Settings → About**.
+Promptoire is free and open source. If it earns a spot in your workflow, you can use the quiet coffee link in the titlebar.
 
 ## 📄 License
 

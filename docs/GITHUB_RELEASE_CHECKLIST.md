@@ -69,7 +69,7 @@ gh auth refresh --scopes workflow
 - Confirm `CHANGELOG.md` lists the release version shown in Settings.
 - Confirm GitHub issue and pull request templates warn contributors not to paste private prompts, `prompts.json`, `promptoire.config.json`, or API keys.
 - Confirm Settings -> About opens the GitHub source link.
-- Set the final Buy Me a Coffee link in Settings or keep the blank default; links with or without `https://` are normalized, and blank/generic root links prompt the user to configure support instead of opening a generic page.
+- Confirm the local `links.coffee` value points to the finished Buy Me a Coffee profile; links with or without `https://` are normalized, and blank/generic root links prompt the user to configure support instead of opening a generic page.
 - Confirm Settings -> System can open the local data folder for `prompts.json`, `promptoire.config.json`, and backups.
 - Confirm the launcher has no bottom action footer, **+ New** sits beside All/Text/Image/Favorites, the pencil opens **Edit Library**, and the recovered height belongs to prompt results.
 - Confirm every window edge/corner resizes in both axes, the result list expands with the window, and 360×420 remains the minimum size.
@@ -99,6 +99,8 @@ gh auth refresh --scopes workflow
 - Confirm `Check-PromptoireShortcut.ps1` verifies that the desktop shortcut launches this checkout.
 - If the folder display name is still lowercase, close tools that are inside it and run `Rename-PromptoireFolder.ps1`.
 - Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false`, `"native_hwnd": true`, `"minimum_window": [360, 420]`, and an empty `"error"`.
+- Preview `docs/index.html`, `docs/privacy.html`, and `docs/smartscreen.html` at desktop and mobile widths; confirm all three current app screenshots render and contain only the clean starter library.
+- Keep `.github/workflows/pages.yml` manual-only while the repository is private. After making the repository public, select GitHub Actions under **Settings → Pages**, run **Publish documentation site**, and verify `https://diddlysquatt.github.io/Promptoire/` in a signed-out browser.
 
 ## Optional Build
 

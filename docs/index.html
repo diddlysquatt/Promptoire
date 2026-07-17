@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Promptoire — Your prompt library, one hotkey away</title>
+  <meta name="description" content="A fast, local-first Windows prompt library with nested organization, one-click copy, and a safe any-LLM improvement workflow.">
+  <meta name="theme-color" content="#0b0a17">
+  <meta property="og:title" content="Promptoire — Your prompt library, one hotkey away">
+  <meta property="og:description" content="Organize, summon, copy, improve, and safely re-import your prompts. Local-first, lightweight, and open source.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://diddlysquatt.github.io/Promptoire/">
+  <meta property="og:image" content="https://diddlysquatt.github.io/Promptoire/assets/promptoire-launcher.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top"><span class="brand-mark">P</span><span>Promptoire</span></a>
+    <nav aria-label="Primary navigation">
+      <a href="#workflow">Workflow</a><a href="#features">Features</a><a href="#trust">Trust</a>
+      <a href="https://github.com/diddlysquatt/Promptoire">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> Local-first · Windows 10/11 · MIT</div>
+        <h1>Your prompt library,<br><em>one hotkey away.</em></h1>
+        <p class="lede">Organize text and image prompts in a fast, quiet launcher. Find one, click once to copy, and get straight back to work.</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/diddlysquatt/Promptoire/releases/latest">Download for Windows <span>↓</span></a>
+          <a class="button secondary" href="https://github.com/diddlysquatt/Promptoire">View source <span>↗</span></a>
+        </div>
+        <div class="promises"><span>No account</span><span>No telemetry</span><span>Plain JSON data</span></div>
+      </div>
+      <div class="hero-visual">
+        <div class="glow"></div>
+        <img src="assets/promptoire-launcher.png" alt="Promptoire launcher showing a compact starter prompt library" width="442" height="520">
+        <div class="float-card hotkey"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Space</kbd></div>
+        <div class="float-card copied">Copied <b>✓</b></div>
+      </div>
+    </section>
+
+    <section class="proof-band" aria-label="Core capabilities">
+      <div><strong>⚡</strong><span><b>Instant access</b>Global hotkey at your cursor</span></div>
+      <div><strong>🌳</strong><span><b>Real organization</b>Categories and subcategories</span></div>
+      <div><strong>🔒</strong><span><b>Local ownership</b>Your library stays on your PC</span></div>
+      <div><strong>↔</strong><span><b>LLM round-trip</b>Readable export and safe merge</span></div>
+    </section>
+
+    <section id="workflow" class="section wrap">
+      <div class="section-heading">
+        <div class="eyebrow"><span></span> The whole workflow</div>
+        <h2>Fast when you need one prompt.<br>Powerful when you need all of them.</h2>
+      </div>
+      <div class="steps">
+        <article><span class="step-number">01</span><h3>Summon</h3><p>Press your hotkey anywhere. Promptoire opens near the cursor without pulling you into another heavyweight workspace.</p></article>
+        <article><span class="step-number">02</span><h3>Find and copy</h3><p>Search, browse nested sections, filter by type, or use favorites. Click a prompt and it is immediately on your clipboard.</p></article>
+        <article><span class="step-number">03</span><h3>Keep moving</h3><p>Pin the launcher open or let it vanish after copying. Adjustable density and resizing keep it as compact as you want.</p></article>
+      </div>
+    </section>
+
+    <section class="section wrap improve-grid">
+      <div class="app-shot"><img src="assets/promptoire-improve-library.png" alt="Promptoire Improve Library with visible instructions and a direct AI action" width="442" height="520"></div>
+      <div>
+        <div class="eyebrow"><span></span> Built for the LLM era</div>
+        <h2>Improve a whole library without surrendering control.</h2>
+        <p class="section-lede">Copy a clean, human-readable outline to any LLM, ask it to rewrite or expand your prompts, then paste the result back.</p>
+        <ul class="check-list">
+          <li><span>✓</span> Works with any LLM through copy and paste</li>
+          <li><span>✓</span> Optional direct OpenAI workflow using your own key</li>
+          <li><span>✓</span> Preview additions and updates before writing</li>
+          <li><span>✓</span> Ambiguous duplicates are skipped, never guessed</li>
+          <li><span>✓</span> Blank imports never erase local content</li>
+        </ul>
+        <div class="outline-sample"><code><i>Coding</i><br>&nbsp;&nbsp;Debugging<br>&nbsp;&nbsp;&nbsp;&nbsp;<b>Bug sweep:</b> Review this code for edge cases...<br><br><i>Path:</i> AI Art &gt; Portraits<br><b>Title:</b> Cinematic portrait</code></div>
+      </div>
+    </section>
+
+    <section id="features" class="section wrap">
+      <div class="section-heading narrow">
+        <div class="eyebrow"><span></span> Focused by design</div>
+        <h2>One job, done extremely well.</h2>
+        <p>Promptoire is not a chat client, team platform, or subscription service. It is the fastest path between you and the prompt you need.</p>
+      </div>
+      <div class="feature-grid">
+        <article><i>⌨</i><h3>Configurable hotkey</h3><p>Use a chord, a function key, or tilde. Open at your cursor from almost anywhere.</p></article>
+        <article><i>↕</i><h3>Three density modes</h3><p>Roomy previews, compact rows, or titles only—plus a fully resizable window.</p></article>
+        <article><i>✦</i><h3>Text and image prompts</h3><p>Store ordinary prompts beside negative prompts, models, parameters, CFG, and more.</p></article>
+        <article><i>⠿</i><h3>Drag-and-drop library</h3><p>Reorder sections and move prompts between categories and nested subcategories.</p></article>
+        <article><i>{ }</i><h3>Quick placeholders</h3><p>Fill values such as {topic}, {tone}, or {code} immediately before copying.</p></article>
+        <article><i>⎘</i><h3>Portable and backed up</h3><p>Plain local files, atomic saves, timestamped backups, and no installer required.</p></article>
+      </div>
+    </section>
+
+    <section class="section wrap settings-showcase">
+      <div>
+        <div class="eyebrow"><span></span> Yours to tune</div>
+        <h2>Compact by default.<br>Personal when you want it.</h2>
+        <p class="section-lede">Choose how Promptoire appears, behaves after a copy, starts with Windows, and fits alongside the rest of your workflow.</p>
+        <div class="theme-pills"><span>Aurora</span><span>Matrix</span><span>Ember</span><span>Paper</span><span>+ 4</span></div>
+      </div>
+      <div class="app-shot"><img src="assets/promptoire-settings.png" alt="Promptoire Settings showing hotkey and lightweight behavior controls" width="442" height="520"></div>
+    </section>
+
+    <section id="trust" class="section wrap trust-section">
+      <div class="trust-card">
+        <div class="lock-mark">⌾</div>
+        <div><div class="eyebrow"><span></span> Local-first means local</div><h2>Your prompts are not our product.</h2>
+          <p>Promptoire has no account, telemetry, analytics, advertising, or cloud database. Your real library and settings stay beside the app. Data leaves only when you explicitly copy it or invoke the optional OpenAI action.</p>
+          <div class="text-links"><a href="privacy.html">Privacy details →</a><a href="https://github.com/diddlysquatt/Promptoire/blob/main/SECURITY.md">Security policy →</a></div>
+        </div>
+      </div>
+      <div class="download-card">
+        <span class="version">Promptoire 2.3.0</span><h2>Ready when you are.</h2>
+        <p>Download the portable Windows ZIP, extract it somewhere permanent, and run <code>Promptoire.exe</code>.</p>
+        <a class="button primary wide" href="https://github.com/diddlysquatt/Promptoire/releases/latest">Download latest release <span>↓</span></a>
+        <p class="fine-print">Early unsigned releases may show a Windows SmartScreen warning. Verify the published SHA-256 checksum and source before choosing “Run anyway.” <a href="smartscreen.html">Why this happens</a>.</p>
+      </div>
+    </section>
+
+    <section class="section wrap docs-grid">
+      <div class="section-heading narrow"><div class="eyebrow"><span></span> Documentation</div><h2>Everything you need, nothing hidden.</h2></div>
+      <div class="doc-links">
+        <a href="https://github.com/diddlysquatt/Promptoire#download"><b>Install and use</b><span>Downloads, shortcuts, data format, and workflows ↗</span></a>
+        <a href="privacy.html"><b>Privacy</b><span>Exactly what stays local and when data can leave ↗</span></a>
+        <a href="smartscreen.html"><b>Windows trust</b><span>SmartScreen, checksums, signing, and Store options ↗</span></a>
+        <a href="https://github.com/diddlysquatt/Promptoire/blob/main/CHANGELOG.md"><b>Changelog</b><span>What changed in every public version ↗</span></a>
+        <a href="https://github.com/diddlysquatt/Promptoire/issues"><b>Issues and ideas</b><span>Report a bug or suggest a focused improvement ↗</span></a>
+        <a href="https://github.com/diddlysquatt/Promptoire/blob/main/CONTRIBUTING.md"><b>Contributing</b><span>Build, test, and submit changes safely ↗</span></a>
+      </div>
+    </section>
+
+    <section class="final-cta wrap"><div><span class="brand-mark large">P</span><h2>Stop hunting for prompts.<br>Start using them.</h2><p>Free, open source, local-first, and built to stay out of your way.</p>
+      <div class="actions centered"><a class="button primary" href="https://github.com/diddlysquatt/Promptoire/releases/latest">Download Promptoire <span>↓</span></a><a class="button secondary" href="https://github.com/diddlysquatt/Promptoire">Star on GitHub <span>☆</span></a></div>
+    </div></section>
+  </main>
+
+  <footer><a class="brand" href="#top"><span class="brand-mark small">P</span><span>Promptoire</span></a><p>Local-first prompt organization for Windows.</p>
+    <div><a href="https://github.com/diddlysquatt/Promptoire">GitHub</a><a href="https://buymeacoffee.com/promptoire">Buy me a coffee</a><a href="https://github.com/diddlysquatt/Promptoire/blob/main/LICENSE">MIT License</a></div>
+  </footer>
+</body>
+</html>

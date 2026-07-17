@@ -971,6 +971,13 @@ Question planner: Turn {notes} into prioritized interview questions.
     issue_config = (root / ".github" / "ISSUE_TEMPLATE" / "config.yml").read_text(encoding="utf-8")
     pr_template = (root / ".github" / "PULL_REQUEST_TEMPLATE.md").read_text(encoding="utf-8")
     ci_workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    pages_workflow = (root / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
+    site_html = (root / "docs" / "index.html").read_text(encoding="utf-8")
+    site_css = (root / "docs" / "styles.css").read_text(encoding="utf-8")
+    site_privacy = (root / "docs" / "privacy.html").read_text(encoding="utf-8")
+    site_smartscreen = (root / "docs" / "smartscreen.html").read_text(encoding="utf-8")
+    smartscreen_text = (root / "docs" / "SMARTSCREEN.md").read_text(encoding="utf-8")
+    launch_checklist = (root / "docs" / "LAUNCH_CHECKLIST.md").read_text(encoding="utf-8")
     release_checklist = (root / "docs" / "GITHUB_RELEASE_CHECKLIST.md").read_text(encoding="utf-8")
     launcher_bat = (root / "Promptoire.bat").read_text(encoding="utf-8")
     setup_bat = (root / "setup.bat").read_text(encoding="utf-8")
@@ -987,6 +994,8 @@ Question planner: Turn {notes} into prioritized interview questions.
         "readme_contributing_link": "[Contributing](CONTRIBUTING.md)" in readme_text,
         "readme_changelog_link": "[Changelog](CHANGELOG.md)" in readme_text,
         "readme_outline_first": "Export your *entire* library as a simple outline" in readme_text,
+        "readme_pages_site": "https://diddlysquatt.github.io/Promptoire/" in readme_text,
+        "readme_smartscreen_guide": "docs/SMARTSCREEN.md" in readme_text,
         "changelog_current_version": f"## {__version__} -" in changelog_text and "Outline-first bulk workflow" in changelog_text,
         "contributing_local_first": "local-first" in contributing_text.lower(),
         "contributing_private_data": "prompts.json" in contributing_text and "promptoire.config.json" in contributing_text,
@@ -1040,6 +1049,25 @@ Question planner: Turn {notes} into prioritized interview questions.
             ))
         ),
         "workflow_scope_note": "gh auth refresh --scopes workflow" in release_checklist,
+        "pages_site_complete": all(token in site_html for token in (
+            "promptoire-launcher.png", "promptoire-improve-library.png",
+            "promptoire-settings.png", "privacy.html", "smartscreen.html",
+            "buymeacoffee.com/promptoire",
+        )) and "@media(max-width:660px)" in site_css,
+        "pages_docs_complete": (
+            "No hidden collection" in site_privacy
+            and "The realistic paths" in site_smartscreen
+            and "Microsoft Artifact Signing" in smartscreen_text
+            and "SignPath Foundation" in smartscreen_text
+        ),
+        "pages_manual_deploy": (
+            "workflow_dispatch:" in pages_workflow
+            and "push:" not in pages_workflow
+            and "actions/configure-pages@v5" in pages_workflow
+            and "actions/upload-pages-artifact@v4" in pages_workflow
+            and "actions/deploy-pages@v4" in pages_workflow
+            and "Publish documentation site" in launch_checklist
+        ),
         "generic_support_release_check": "blank/generic root links" in release_checklist,
         "github_source_release_check": "GitHub source link" in release_checklist,
         "data_folder_release_check": "local data folder" in release_checklist and "prompts.json" in release_checklist,

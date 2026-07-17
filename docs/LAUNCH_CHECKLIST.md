@@ -16,6 +16,7 @@ it cannot merge, publish a release, or change repository visibility.
 - Create or update the draft release and confirm both the ZIP and SHA-256 file are attached.
 - Test the ZIP once from a clean temporary folder.
 - Read the README from top to bottom in GitHub's rendered view.
+- Confirm the GitHub Pages workflow is present but has not been run while the repository is private.
 - Confirm the top coffee icon opens the finished Promptoire support profile.
 
 ## Publish order
@@ -26,12 +27,15 @@ Do these manually. The heartbeat never performs them.
 2. Confirm CI is green on `main`.
 3. Publish the prepared GitHub release.
 4. Change repository visibility from **Private** to **Public**.
-5. Open the public repository in a signed-out browser and verify:
+5. In **Settings → Pages**, select **GitHub Actions**, then manually run the
+   **Publish documentation site** workflow. Confirm
+   `https://diddlysquatt.github.io/Promptoire/` loads.
+6. Open the public repository in a signed-out browser and verify:
    - README images render.
    - Latest Release download works.
    - License, Privacy, Security, and Contributing links work.
    - No personal `prompts.json`, configuration, backups, or API keys are present.
-6. Post the launch message at **9:00 AM Central** and stay available for replies.
+7. Post the launch message at **9:00 AM Central** and stay available for replies.
 
 ## Suggested launch copy
 
