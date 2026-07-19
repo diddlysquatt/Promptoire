@@ -51,3 +51,10 @@ def web_dir() -> Path:
 
 def assets_dir() -> Path:
     return web_dir() / "assets"
+
+
+def app_icon() -> Path:
+    name = "replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico"
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "icons" / name  # type: ignore[attr-defined]
+    return app_root() / "icons" / name

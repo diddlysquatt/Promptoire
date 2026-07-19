@@ -24,7 +24,7 @@ if not exist "_selftest.json" (
   echo Self-test report was not written.
   exit /b 1
 )
-call :run "%PY%" -c "import json, sys; d=json.load(open('_selftest.json', encoding='utf-8')); sys.exit(0 if d.get('mock') is False and d.get('native_hwnd') is True and d.get('minimum_window') == [360, 420] and not d.get('error') else 1)" || exit /b 1
+call :run "%PY%" -c "import json, sys; d=json.load(open('_selftest.json', encoding='utf-8')); sys.exit(0 if d.get('mock') is False and d.get('native_hwnd') is True and d.get('window_icon') is True and d.get('minimum_window') == [360, 420] and not d.get('error') else 1)" || exit /b 1
 
 for %%F in (prompts.json promptoire.config.json _selftest.json) do (
   git ls-files --error-unmatch "%%F" >nul 2>nul && (

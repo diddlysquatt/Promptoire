@@ -10,6 +10,7 @@ import ctypes
 import sys
 import time
 from ctypes import wintypes
+from pathlib import Path
 
 # DWM window attributes (dwmapi.h).
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
@@ -39,6 +40,8 @@ RESIZE_HIT_TESTS = {
     "bottom-left": 16,   # HTBOTTOMLEFT
     "bottom-right": 17,  # HTBOTTOMRIGHT
 }
+
+_ICON_HANDLES: list[int] = []
 
 
 def _is_windows() -> bool:
@@ -70,6 +73,52 @@ def apply_polish(hwnd: int, *, dark: bool = True, rounded: bool = True,
     if acrylic:
         # Only meaningful on Win11 22H2+ and when the surface has transparency.
         _set_attr(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_TRANSIENTWINDOW)
+
+
+def set_window_icon(hwnd: int, icon_path: str | Path) -> bool:
+    """Apply the Promptoire icon to the native window and taskbar entry."""
+    if not _is_windows() or not hwnd:
+        return False
+    try:
+        path = Path(icon_path)
+        if not path.is_file():
+            return False
+        user32 = ctypes.windll.user32
+        IMAGE_ICON = 1
+        LR_LOADFROMFILE = 0x0010
+        LR_DEFAULTSIZE = 0x0040
+        WM_SETICON = 0x0080
+        ICON_SMALL = 0
+        ICON_BIG = 1
+        user32.LoadImageW.restype = wintypes.HANDLE
+        handle = user32.LoadImageW(
+            None, str(path), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE
+        )
+        if not handle:
+            return False
+        user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, ICON_BIG, handle)
+        user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, ICON_SMALL, handle)
+        _ICON_HANDLES.append(int(handle))  # Keep alive for the window lifetime.
+        return True
+    except Exception:
+        return False
+
+
+def has_window_icon(hwnd: int) -> bool:
+    """Return whether the native window exposes a small or large icon."""
+    if not _is_windows() or not hwnd:
+        return False
+    try:
+        user32 = ctypes.windll.user32
+        WM_GETICON = 0x007F
+        ICON_SMALL = 0
+        ICON_BIG = 1
+        return bool(
+            user32.SendMessageW(wintypes.HWND(hwnd), WM_GETICON, ICON_BIG, 0)
+            or user32.SendMessageW(wintypes.HWND(hwnd), WM_GETICON, ICON_SMALL, 0)
+        )
+    except Exception:
+        return False
 
 
 def find_hwnd_for_title(title: str) -> int:

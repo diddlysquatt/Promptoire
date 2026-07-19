@@ -47,7 +47,7 @@ Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 
 Most prompt tools are cloud apps, browser extensions that disappear outside the browser, or generic clipboard managers that don't understand prompt libraries. Promptoire keeps a deliberately focused combination in one quiet Windows launcher:
 
 - **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library as a simple outline, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. Outline and JSON changes are shown in a **diff preview** before anything is written.
-- **✎ + ▦ Text *and* image prompts, first-class.** Keep your LLM prompts next to your Midjourney / Stable Diffusion / Flux prompts. Image prompts carry their own fields — negative prompt, model, parameters (`--ar`, `--stylize`, steps, CFG…).
+- **✎ + ▦ Text *and* image prompts, first-class.** Keep LLM prompts beside Midjourney / Stable Diffusion / Flux prompts. Copyable flags such as `--ar` and `--stylize` live directly at the end of the main prompt; optional model metadata stays tucked inside a collapsed details panel.
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
 Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, a compact **+ New** action beside the filters, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and a handful of themes.
@@ -105,7 +105,7 @@ build.bat            :: → dist\Promptoire\Promptoire.exe
 
 1. Open **Improve library** (sparkle icon).
 2. Edit the visible **Improvement instructions** if needed. **Copy instructions + library** puts those instructions first and your complete plain-text outline directly below. **Copy library only**, **Copy instructions only**, and **Save library outline** do exactly what their names say. JSON compatibility tools live under **More options**.
-3. Paste into any LLM. It can return the plain outline format, or JSON if you use the compatibility tools.
+3. Paste into any LLM. The supplied instruction asks for one strict `Path` / `Title` / `Type` / `Prompt` record format with no chat commentary. JSON remains available under the compatibility tools.
 4. Paste that back, click **Paste from clipboard**, or **Load from file** (`.json`, `.txt`, `.md`, or `.csv`). Manual paste and file/clipboard loads auto-preview so you can see incoming, new, updated, and unchanged counts before anything is written. **Clear** resets the import box when you want to start over.
 5. **Merge**. **Update existing** matches a prompt id first, otherwise a unique normalized title in the exact section path; it never moves or deletes a local prompt. **Add new** adds only unmatched prompts and creates their missing path. Blank imported fields never erase nonblank local content, and repeated or ambiguous rows are shown and safely skipped. If the selected mode would do nothing, Promptoire disables the merge.
 
@@ -153,10 +153,7 @@ Coding
 Path: AI Art > Characters > Portraits
 Title: Cinematic portrait
 Type: image
-Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.
-Negative prompt: blurry, watermark, extra fingers
-Image model: Midjourney v6
-Parameters: --ar 4:5 --stylize 250
+Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field --ar 4:5 --stylize 250
 
 Subsection: Environments
 Dreamy landscape: A vast {place} at golden hour, painterly atmosphere, cinematic light.
@@ -172,7 +169,7 @@ Prompts:
     Tags: editing, clarity
 ```
 
-Headings, `Path: Section > Subsection > Nested subsection`, `Section:` / `Subsection:` labels, indented plain text, nested bullet trees, YAML-style `- Title:` blocks, and Markdown/CSV tables with `Title` + `Prompt` columns become categories and subcategories. Deeper Markdown headings such as `### Prompt title` can also become prompt titles when followed by prompt body text. JSON compatibility imports accept `categories`/`sections`, `subcategories`/`subsections`, and `prompts`/`items`/`entries` aliases; flat JSON prompt rows can include `path`, `section`, and `subsection` fields; plain JSON string prompts become text prompts with derived titles. JSON image fields can use aliases like `negative_prompt`, `image_model`, `parameters`, and `cfg_scale`. For deeper labels, use `Sub-subsection:` or `Nested subsection:`. Repeated unindented `Subsection:` labels stay under the latest `Section:`. Prompt rows become prompts, and numbered blocks like `Prompt 1:` also work for multi-line prompts. Image labels like `Negative prompt:`, `Image model:`, `Parameters:`, and `CFG scale:` map to the normal image fields. If an LLM wraps the outline in a Markdown code fence, Promptoire reads the fenced outline instead of importing the fence text. Merging an outline adds to matching sections and does not replace the existing library; if a prompt title already exists in that section, Promptoire updates it instead of creating a duplicate.
+The recommended format is deliberately strict: repeat `Path:`, `Title:`, `Type:`, `Prompt:`, and optional `Tags:` for each record. Promptoire still accepts headings, indented outlines, nested bullet trees, YAML-style blocks, Markdown/CSV tables, JSON aliases, and older image metadata fields for compatibility. Copied chat/request prose before the first real record is ignored, and headings or lists inside an explicit `Prompt:` body stay part of that prompt instead of becoming categories. Merging adds to matching sections and updates a unique same-title prompt in the exact path; duplicate clicks, repeated incoming rows, and ambiguous local matches are safely blocked.
 
 For public forks and packaged releases, `prompts.json` is treated as local user data and ignored by git. Fresh installs seed a small starter library automatically; `prompts.example.json` is included only as a clean reference file.
 

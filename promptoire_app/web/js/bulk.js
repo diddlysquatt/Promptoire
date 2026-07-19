@@ -12,38 +12,26 @@
   ];
 
   const OUTLINE_REQUEST =
-    "Create a batch of prompts for my Promptoire library using this simple import outline format.\n\n" +
-    "Rules:\n" +
-    "- Return only the outline. Do not wrap it in a code fence.\n" +
-    "- Use # headings, Path: Section > Subsection > Nested subsection, Section/Subsection labels, or indentation for nested sections.\n" +
-    "- Nested bullet outlines are fine: - Section, - Subsection, - Prompt title: prompt body.\n" +
-    "- Markdown prompt headings are fine: ### Prompt title followed by the prompt body.\n" +
-    "- For deeper labels, use Sub-subsection: or Nested subsection:.\n" +
-    "- Use prompt rows like: Title: Prompt body\n" +
-    "- Numbered blocks like Prompt 1: are fine when a prompt needs multiple lines.\n" +
-    "- YAML-style lists like - Title: ... with indented Prompt:/Tags: fields are fine.\n" +
-    "- Markdown tables and CSV tables are fine if they include Title and Prompt columns.\n" +
-    "- For image prompts, use fields like Type: image, Negative prompt, Image model, Parameters, and CFG scale.\n" +
-    "- Keep each prompt clear, specific, reusable, and easy to scan.\n" +
-    "- Use {placeholders} where the user should fill in a value.\n" +
-    "- Make sections and subsections organized enough that I can merge them into an existing library.\n\n" +
-    "Example format:\n\n" +
-    "Coding\n" +
-    "  Debugging\n" +
-    "    Bug sweep: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n\n" +
-    "Section: Writing\n" +
-    "Subsection: Editing\n" +
-    "Prompt 1:\n" +
-    "Rewrite {text} to be clearer and more direct while preserving the original voice.\n\n" +
-    "Subsection: Drafting\n" +
-    "First draft: Draft a first pass about {topic} in a clear, useful structure.\n\n" +
+    "Create a batch of prompts for my Promptoire library.\n\n" +
+    "STRICT OUTPUT CONTRACT:\n" +
+    "- Return records only. No introduction, analysis, code fence, Rules section, or closing note.\n" +
+    "- The first nonblank line must be Path:.\n" +
+    "- Repeat one canonical block per prompt using only Path, Title, Type, Prompt, and optional Tags.\n" +
+    "- Keep each prompt clear, specific, reusable, and easy to scan. Use {placeholders} for user input.\n" +
+    "- Never turn labels or headings inside Prompt text into category paths.\n" +
+    "- For image prompts, put all copyable model flags at the very end of Prompt. Do not add separate " +
+    "Negative prompt, Image model, Parameters, CFG, sampler, or seed fields unless explicitly requested.\n\n" +
+    "Exact format:\n\n" +
+    "Path: Coding > Debugging\n" +
+    "Title: Bug sweep\n" +
+    "Type: text\n" +
+    "Prompt: Review {code} for edge cases, broken assumptions, and missing tests. Return prioritized findings with minimal fixes.\n" +
+    "Tags: debugging, code review\n\n" +
     "Path: AI Art > Characters > Portraits\n" +
     "Title: Cinematic portrait\n" +
     "Type: image\n" +
-    "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.\n" +
-    "Negative prompt: blurry, watermark, extra fingers\n" +
-    "Image model: Midjourney v6\n" +
-    "Parameters: --ar 4:5 --stylize 250\n\n" +
+    "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field --ar 4:5 --stylize 250\n" +
+    "Tags: portrait, cinematic\n\n" +
     "Now create prompts for this topic or workflow:\n\n";
 
   const EXAMPLE_OUTLINE =
@@ -59,10 +47,8 @@
     "Path: AI Art > Characters > Portraits\n" +
     "Title: Cinematic portrait\n" +
     "Type: image\n" +
-    "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field.\n" +
-    "Negative prompt: blurry, watermark, extra fingers\n" +
-    "Image model: Midjourney v6\n" +
-    "Parameters: --ar 4:5 --stylize 250\n";
+    "Prompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field --ar 4:5 --stylize 250\n" +
+    "Tags: portrait, cinematic\n";
 
   let pasteArea, previewBox, applyBtn, optUpdate, optAdd, mergeNote, lastPreview;
   let instructionsArea, aiKeyField, aiModelField;
@@ -484,19 +470,26 @@
         return;
       }
     }
-    const r = await PR.bridge.call("apply_merge", text, upd, add);
-    if (r && r.ok) {
-      await PR.app.refreshState();
-      const res = r.result || {};
-      const skipped = (res.duplicates_skipped || 0) + (res.ambiguous_skipped || 0);
-      toast(`Merged into library: ${res.updated || 0} updated, ${res.added || 0} added` +
-        (skipped ? `, ${skipped} safely skipped` : ""));
-      pasteArea.value = "";
-      previewBox.innerHTML = "";
-      delete previewBox.dataset.ready;
-      lastPreview = null;
+    const original = applyBtn.innerHTML;
+    applyBtn.disabled = true;
+    applyBtn.innerHTML = '<span class="spinner"></span> Merging…';
+    try {
+      const r = await PR.bridge.call("apply_merge", text, upd, add);
+      if (r && r.ok) {
+        await PR.app.refreshState();
+        const res = r.result || {};
+        const skipped = (res.duplicates_skipped || 0) + (res.ambiguous_skipped || 0);
+        toast(`Merged into library: ${res.updated || 0} updated, ${res.added || 0} added` +
+          (skipped ? `, ${skipped} safely skipped` : ""));
+        pasteArea.value = "";
+        previewBox.innerHTML = "";
+        delete previewBox.dataset.ready;
+        lastPreview = null;
+      } else toast((r && r.error) || "Merge failed", { bad: true });
+    } finally {
+      applyBtn.innerHTML = original;
       syncMergeState();
-    } else toast((r && r.error) || "Merge failed", { bad: true });
+    }
   }
 
   function selectedChangeCount(updateSelected, addSelected) {

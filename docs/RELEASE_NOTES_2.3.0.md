@@ -10,7 +10,7 @@ Promptoire is a fast, local-first Windows prompt library built around one job: g
 - Fast search, favorites, tags, nested categories, and collapsible groups.
 - Drag prompts between categories and reorder prompts or categories.
 - One-click copy with optional placeholder filling and copy-then-hide behavior.
-- Text and image prompts, including negative prompts, model, parameters, and CFG fields.
+- Text and image prompts, with copyable model flags in the main prompt and optional advanced image metadata folded out of the way.
 - Outline-first export for improving or generating prompt libraries with any LLM.
 - Flexible outline, Markdown, CSV, and JSON imports with a safe diff preview.
 - Local-only storage, atomic saves, timestamped backups, and no telemetry.

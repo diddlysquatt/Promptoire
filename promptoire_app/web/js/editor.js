@@ -329,13 +329,19 @@
     const neg = el("input", { class: "input", value: p.negative || "", placeholder: "things to avoid" });
     const model = el("input", { class: "input", value: p.model || "", placeholder: "e.g. Midjourney v7, SDXL, Flux.1" });
     const params = el("input", { class: "input", value: p.params || "", placeholder: "--ar 16:9 --stylize 250 / Steps, CFG…" });
-    const imageBlock = el("div", { class: "image-fields" }, [
-      el("div", { class: "field" }, [el("label", { text: "Negative prompt" }), neg]),
-      el("div", { class: "field-row" }, [
-        el("div", { class: "field" }, [el("label", { text: "Model" }), model]),
-        el("div", { class: "field" }, [el("label", { text: "Parameters" }), params]),
+    const imageBlock = el("details", { class: "image-fields image-details" }, [
+      el("summary", { text: "Optional image details" }),
+      el("div", { class: "image-details-body" }, [
+        el("div", { class: "image-copy-hint", text:
+          "Put Midjourney flags and other copyable suffixes directly at the end of the Prompt above. These fields are optional metadata." }),
+        el("div", { class: "field" }, [el("label", { text: "Negative prompt" }), neg]),
+        el("div", { class: "field-row" }, [
+          el("div", { class: "field" }, [el("label", { text: "Model" }), model]),
+          el("div", { class: "field" }, [el("label", { text: "Parameters" }), params]),
+        ]),
       ]),
     ]);
+    imageBlock.open = !!(p.negative || p.model || p.params);
     imageBlock.style.display = type === "image" ? "block" : "none";
 
     const seg = el("div", { class: "segmented" }, [

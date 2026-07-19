@@ -13,13 +13,14 @@ import os
 import re
 import subprocess
 import sys
+import threading
 import traceback
 import webbrowser
 from typing import Any
 
 from .core import paths, schema
 from .core.settings import DEFAULT_META_PROMPT, DEFAULT_OUTLINE_PROMPT
-from .platform import clipboard
+from .platform import clipboard, window_fx
 
 
 def ok(**kw) -> dict:
@@ -33,6 +34,7 @@ def err(message: str, **kw) -> dict:
 class Api:
     def __init__(self, app):
         self._app = app  # the App controller (window, tray, hotkey, lib, settings)
+        self._mutation_lock = threading.RLock()
 
     # ---- bootstrap ----------------------------------------------------------
 
@@ -321,27 +323,29 @@ class Api:
 
     def apply_merge(self, text: str, update_existing: bool = True, add_new: bool = True) -> dict:
         try:
-            data = _parse_import_text(text)
-            if data is None:
-                return err("Could not read that import.")
-            result = self._app.library.apply_merge(
-                data, update_existing=update_existing, add_new=add_new
-            )
-            self._app.save_library()
-            return ok(result=result, stats=self._app.library.stats(),
-                      categories=self._app.library.categories())
+            with self._mutation_lock:
+                data = _parse_import_text(text)
+                if data is None:
+                    return err("Could not read that import.")
+                result = self._app.library.apply_merge(
+                    data, update_existing=update_existing, add_new=add_new
+                )
+                self._app.save_library()
+                return ok(result=result, stats=self._app.library.stats(),
+                          categories=self._app.library.categories())
         except Exception as e:
             return err(str(e))
 
     def replace_all(self, text: str) -> dict:
         try:
-            data = _parse_import_text(text)
-            if data is None:
-                return err("Could not read that import.")
-            self._app.library.replace_all(data)
-            self._app.save_library()
-            return ok(stats=self._app.library.stats(),
-                      categories=self._app.library.categories())
+            with self._mutation_lock:
+                data = _parse_import_text(text)
+                if data is None:
+                    return err("Could not read that import.")
+                self._app.library.replace_all(data)
+                self._app.save_library()
+                return ok(stats=self._app.library.stats(),
+                          categories=self._app.library.categories())
         except Exception as e:
             return err(str(e))
 
@@ -432,10 +436,13 @@ class Api:
         import sys as _sys
         report = dict(data or {})
         try:
-            report["native_hwnd"] = bool(self._app._resolve_hwnd())
+            hwnd = self._app._resolve_hwnd()
+            report["native_hwnd"] = bool(hwnd)
+            report["window_icon"] = window_fx.has_window_icon(hwnd)
             report["minimum_window"] = [360, 420]
         except Exception:
             report["native_hwnd"] = False
+            report["window_icon"] = False
         print(f"[selftest] report via bridge: {report}", file=_sys.stderr, flush=True)
         try:
             from .core import paths
@@ -511,10 +518,49 @@ def _outline_candidates(text: str | None) -> list[str]:
         return []
     candidates: list[str] = []
     fenced = _first_code_fence(text)
-    if fenced:
-        candidates.append(fenced)
-    candidates.append(text)
+    for candidate in (fenced, text):
+        if not candidate:
+            continue
+        structured = _structured_outline_tail(candidate)
+        if structured and structured.strip() != candidate.strip():
+            candidates.append(structured)
+        candidates.append(candidate)
     return candidates
+
+
+_EXPLICIT_OUTLINE_START_RE = re.compile(
+    r"^\s*(?:path|section|category|folder|group|folder[\s_-]+path|category[\s_-]+path)\s*:\s*\S+",
+    re.IGNORECASE,
+)
+_OUTLINE_PREAMBLE_MARKERS = (
+    "improve this promptoire outline",
+    "create a batch of prompts for my promptoire",
+    "return only the outline",
+    "pasted text(",
+    "worked for ",
+    "every prompt ends with",
+    "here is the improved library",
+    "here's the improved library",
+)
+
+
+def _structured_outline_tail(text: str) -> str | None:
+    """Trim copied chat/request prose before a canonical outline.
+
+    People often select an entire LLM conversation instead of only its answer.
+    Only trim when the prefix clearly looks like Promptoire/LLM scaffolding;
+    otherwise a relaxed outline that legitimately mixes plain headings with a
+    later ``Section:`` block must remain intact.
+    """
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    for idx, raw in enumerate(lines):
+        if not _EXPLICIT_OUTLINE_START_RE.match(raw):
+            continue
+        prefix = "\n".join(lines[:idx]).strip().lower()
+        if prefix and any(marker in prefix for marker in _OUTLINE_PREAMBLE_MARKERS):
+            return "\n".join(lines[idx:]).strip()
+        break
+    return None
 
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
@@ -638,6 +684,7 @@ def _parse_outline(text: str) -> dict | None:
             "image": {},
             "started": False,
             "explicit_prompt": False,
+            "sealed": False,
             "cat": cat,
         }
 
@@ -669,15 +716,20 @@ def _parse_outline(text: str) -> dict | None:
                 block = ensure_block()
             block["prompt_lines"].append(value)
             block["explicit_prompt"] = True
+            block["sealed"] = False
             block["started"] = True
         elif key == "tags":
             block["tags"] = _split_tags(value)
+            block["sealed"] = block["explicit_prompt"]
         elif key == "type":
             block["type"] = value.lower()
+            block["sealed"] = block["explicit_prompt"]
         elif key == "note":
             block["note"] = value
+            block["sealed"] = block["explicit_prompt"]
         else:
             block["image"][key] = value
+            block["sealed"] = block["explicit_prompt"]
 
     def finish_prompt() -> None:
         nonlocal current, current_cat
@@ -696,11 +748,69 @@ def _parse_outline(text: str) -> dict | None:
     for idx, raw in enumerate(lines):
         line = raw.strip()
         if not line:
+            if current is not None and current.get("explicit_prompt"):
+                # Prompt bodies may contain paragraphs, headings, lists,
+                # rubrics, and legal/coding labels. Keep those inside Prompt.
+                current["prompt_lines"].append("")
             previous_blank = True
             continue
 
-        if previous_blank and current is not None and current.get("started") and not raw.startswith((" ", "\t")):
+        if (previous_blank and current is not None and current.get("started")
+                and not current.get("explicit_prompt") and not raw.startswith((" ", "\t"))):
             finish_prompt()
+
+        # After an explicit Prompt: field, ordinary text stays inside that
+        # prompt even when it resembles a heading. Only reserved outline fields
+        # can end or enrich the record.
+        if current is not None and current.get("explicit_prompt"):
+            if previous_blank and current.get("sealed") and _HEADING_RE.match(line):
+                finish_prompt()
+            else:
+                path_field = _PATH_FIELD_RE.match(line)
+                if path_field:
+                    if add_path_field(path_field.group(1), path_field.group(2), raw):
+                        last_was_heading = True
+                    previous_blank = False
+                    continue
+                field = _FIELD_RE.match(line)
+                if field:
+                    key = _normalize_outline_field(field.group(1))
+                    apply_field(
+                        field.group(1), field.group(2), previous_blank,
+                        force_new=key == "title",
+                    )
+                    previous_blank = False
+                    last_was_heading = False
+                    continue
+                bullet = _BULLET_RE.match(raw)
+                if bullet:
+                    bullet_value = bullet.group(1).strip()
+                    bullet_path = _PATH_FIELD_RE.match(bullet_value)
+                    if bullet_path:
+                        if add_path_field(bullet_path.group(1), bullet_path.group(2), raw):
+                            last_was_heading = True
+                        previous_blank = False
+                        continue
+                    bullet_field = _FIELD_RE.match(bullet_value)
+                    if bullet_field:
+                        key = _normalize_outline_field(bullet_field.group(1))
+                        apply_field(
+                            bullet_field.group(1), bullet_field.group(2), previous_blank,
+                            force_new=key == "title",
+                        )
+                        previous_blank = False
+                        last_was_heading = False
+                        continue
+                if bullet and current.get("sealed"):
+                    # A new unlabeled bullet after record metadata starts the
+                    # next prompt in relaxed/YAML-ish outlines.
+                    finish_prompt()
+                else:
+                    current["prompt_lines"].append(raw.rstrip())
+                    current["started"] = True
+                    previous_blank = False
+                    last_was_heading = False
+                    continue
 
         heading = _HEADING_RE.match(line)
         if heading:
@@ -805,7 +915,8 @@ def _parse_outline(text: str) -> dict | None:
             last_was_heading = False
             continue
 
-        if previous_blank and current is not None and current.get("started") and not raw.startswith((" ", "\t")):
+        if (previous_blank and current is not None and current.get("started")
+                and not current.get("explicit_prompt") and not raw.startswith((" ", "\t"))):
             finish_prompt()
 
         block = ensure_block()

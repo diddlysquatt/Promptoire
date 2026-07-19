@@ -414,6 +414,18 @@ html[data-density="titles"] .card-meta { display: none; }
 .export-more[open] summary { margin-bottom: 8px; color: var(--muted); }
 .export-more .btn-row { padding-left: 2px; }
 
+.image-details {
+  margin: 2px 0 10px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--surface); color: var(--muted);
+}
+.image-details summary {
+  padding: 9px 11px; cursor: pointer; user-select: none; font-size: 12px;
+  font-weight: 650; color: var(--muted);
+}
+.image-details[open] summary { border-bottom: 1px solid var(--border); color: var(--fg); }
+.image-details-body { padding: 10px 11px 2px; }
+.image-copy-hint { margin-bottom: 9px; color: var(--faint); font-size: 11.5px; line-height: 1.45; }
+
 /* direct "improve with AI now" */
 .ai-direct { margin: 2px 0 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--border);
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -449,7 +461,7 @@ html[data-density="titles"] .card-meta { display: none; }
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border)); }
 .newcat-label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
 .diff-cat-chip { max-width: 100%; overflow-wrap: anywhere; font-size: 11px; font-weight: 650;
-  color: var(--text); padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.06);
+  color: var(--fg); padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.08); }
 .diff-cat-chip.more { color: var(--muted); }
 .diff-list { max-height: 220px; overflow-y: auto; margin-top: 6px;

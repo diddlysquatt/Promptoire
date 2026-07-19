@@ -113,6 +113,7 @@ class App:
         try:
             hwnd = self._resolve_hwnd()
             window_fx.apply_polish(hwnd, dark=True, rounded=True, acrylic=False)
+            window_fx.set_window_icon(hwnd, paths.app_icon())
         except Exception:
             pass
 

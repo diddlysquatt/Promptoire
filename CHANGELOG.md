@@ -25,6 +25,15 @@
 - Stop continuously animating the decorative background aura so the open app stays quiet at idle.
 - Silence the standalone browser-preview favicon request and ignore local visual-QA artifacts.
 
+### Fixed
+
+- Ignore copied LLM conversation/request prose before the first canonical `Path:` record instead of importing it as `Imported` or `Rules` prompts.
+- Preserve headings, bullets, rubrics, and multi-paragraph content inside explicit `Prompt:` bodies instead of turning phrases such as `CONSTRAINTS` or `DECISION DATE` into categories.
+- Serialize merge mutations and disable the merge action while it is running so a rapid double activation cannot add duplicate prompts.
+- Make category-rail clicks navigate directly to the selected category.
+- Apply the native Promptoire icon to the source-run window and taskbar entry.
+- Keep optional image metadata collapsed while directing copyable model suffixes to the end of the main prompt.
+
 ## 2.3.0 - 2026-07-06
 
 ### Added

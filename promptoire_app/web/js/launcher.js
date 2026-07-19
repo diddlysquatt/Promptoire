@@ -54,9 +54,7 @@
       const chip = e.target.closest(".railchip");
       if (!chip) return;
       const id = chip.dataset.id;
-      PR.state.catFilter = PR.state.catFilter === id ? null : id;
-      runSearch();
-      focusSearch();
+      jumpToCategory(id);
     });
 
     resultsEl.addEventListener("mousemove", (e) => {
@@ -121,6 +119,16 @@
     document.querySelectorAll("#filters .chip").forEach((c) =>
       c.classList.toggle("is-active", c.dataset.filter === f));
     runSearch();
+  }
+
+  function jumpToCategory(id) {
+    const next = PR.state.catFilter === id ? null : id;
+    PR.state.catFilter = next;
+    PR.state.query = "";
+    searchEl.value = "";
+    if (next) collapsed.delete(next);
+    saveCollapsed();
+    runSearch(false);
   }
 
   /* ---- category helpers --------------------------------------------------- */
@@ -241,6 +249,7 @@
     const isCollapsed = !forceOpen && collapsed.has(cat.id);
     const group = el("section", {
       class: "group" + (isCollapsed ? " collapsed" : "") + (depth ? " nested" : ""),
+      dataset: { id: cat.id },
       style: color ? { "--group-accent": color } : {},
     });
 

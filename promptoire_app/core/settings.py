@@ -28,15 +28,21 @@ DEFAULT_META_PROMPT = (
 )
 
 DEFAULT_OUTLINE_PROMPT = (
-    "Improve this Promptoire outline. Keep existing section paths and prompt "
-    "titles stable when updating existing prompts so Promptoire can merge by "
-    "title. Add new prompts only where they fit.\n\n"
-    "Rules:\n"
-    "- Return only the outline, with no code fence or extra commentary.\n"
-    "- Keep the section/subsection structure easy to scan.\n"
-    "- Use prompt rows like: Title: Prompt body.\n"
-    "- Use Path: Section > Subsection > Nested subsection when a prompt belongs deep in the library.\n"
-    "- For image prompts, keep fields like Type, Negative prompt, Image model, Parameters, and CFG scale.\n"
+    "Improve the Promptoire records below. Preserve every existing Path and "
+    "Title exactly so updates merge safely. Add new prompts only when requested "
+    "and place each one in a useful existing or clearly named new path.\n\n"
+    "STRICT OUTPUT CONTRACT:\n"
+    "- Return records only: no introduction, analysis, code fence, Rules section, or closing note.\n"
+    "- The first nonblank line must be Path:. Repeat this exact block for every prompt:\n"
+    "  Path: Category > Subcategory\n"
+    "  Title: Short stable title\n"
+    "  Type: text or image\n"
+    "  Prompt: Complete prompt text\n"
+    "  Tags: optional, comma-separated\n"
+    "- Never turn headings, labels, bullets, or paragraphs inside Prompt text into categories.\n"
+    "- For image prompts, put every copyable model flag or suffix directly at the very end of Prompt "
+    "(for example: --ar 16:9 --stylize 1000). Do not create separate Negative prompt, Image model, "
+    "Parameters, CFG, sampler, or seed fields unless I explicitly ask for them.\n"
 )
 
 DENSITY_OPTIONS = ("comfortable", "compact", "titles")

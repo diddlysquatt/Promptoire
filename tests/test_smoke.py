@@ -202,6 +202,66 @@ Prompt: Rewrite {text} clearly.
     assert fenced_prompt["title"] == "Tight rewrite", fenced_prompt
     assert fenced_path == ["Writing", "Editing"], fenced_path
 
+    copied_chat_outline = """Pasted text(3).txt
+hey could you get this all back to me with the exact suffix
+Worked for 5m 18s
+Every prompt ends with your exact string:
+--ar 16:9 --stylize 1000 --hd --preview --profile ro69unw
+
+Library
+Improve this Promptoire outline. Keep existing paths stable.
+
+Rules:
+- Return only the outline, with no code fence or extra commentary.
+- Use Path: Category > Subcategory.
+
+Path: AI Art > Dream Logic
+Title: Moon orchard
+Type: image
+Prompt: A nocturnal orchard growing miniature moons --ar 16:9 --stylize 1000 --hd --preview --profile ro69unw
+Tags: moon, surreal
+"""
+    copied_chat = _parse_import_text(copied_chat_outline)
+    assert copied_chat is not None, copied_chat_outline
+    copied_chat_prompts = list(schema.iter_prompts(copied_chat))
+    out["outline.copied_chat.total"] = len(copied_chat_prompts)
+    out["outline.copied_chat.categories"] = [c["name"] for c in copied_chat["categories"]]
+    assert out["outline.copied_chat.total"] == 1, copied_chat_prompts
+    assert out["outline.copied_chat.categories"] == ["AI Art"], copied_chat
+    assert copied_chat_prompts[0][0]["prompt"].endswith(
+        "--ar 16:9 --stylize 1000 --hd --preview --profile ro69unw"
+    ), copied_chat_prompts[0][0]
+
+    heading_body_outline = """Path: Law > Review
+Title: Opinion audit
+Type: text
+Prompt: Audit the opinion carefully.
+
+CONSTRAINTS
+- Do not invent actors.
+
+DECISION DATE
+Use the date on the filed opinion.
+
+FULL PANEL
+List every judge.
+Tags: legal, audit
+
+Path: Coding > Debugging
+Title: Failure map
+Type: text
+Prompt: Trace the failure and return the smallest safe fix.
+"""
+    heading_body = _parse_import_text(heading_body_outline)
+    assert heading_body is not None, heading_body_outline
+    heading_body_prompts = list(schema.iter_prompts(heading_body))
+    out["outline.prompt_headings_stay_body"] = len(heading_body_prompts) == 2
+    out["outline.prompt_headings_categories"] = [c["name"] for c in heading_body["categories"]]
+    opinion = next(p for p, _, _ in heading_body_prompts if p["title"] == "Opinion audit")
+    assert out["outline.prompt_headings_stay_body"], heading_body_prompts
+    assert out["outline.prompt_headings_categories"] == ["Law", "Coding"], heading_body
+    assert "CONSTRAINTS" in opinion["prompt"] and "FULL PANEL" in opinion["prompt"], opinion
+
     rich_outline = """# AI Art > Characters
 Title: Portrait Builder
 Type: image
@@ -759,6 +819,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     bridge_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bridge.js").read_text(encoding="utf-8")
     app_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "app.js").read_text(encoding="utf-8")
     launcher_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "launcher.js").read_text(encoding="utf-8")
+    editor_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "editor.js").read_text(encoding="utf-8")
     settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     base_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "base.css").read_text(encoding="utf-8")
@@ -814,11 +875,12 @@ Question planner: Turn {notes} into prioritized interview questions.
         "blank_instructions_feedback_improve": "if (!await persistOutlineInstructions(true)) return;",
         "blank_instructions_feedback_copy": "includeInstructions && !await persistOutlineInstructions(true)",
         "numbered_prompt_blocks": "Prompt 1:",
-        "yamlish_prompt_blocks": "- Title:",
-        "nested_bullet_imports": "Nested bullet outlines",
-        "markdown_prompt_heading_imports": "Markdown prompt headings",
-        "table_imports": "Markdown tables",
-        "csv_table_imports": "CSV tables",
+        "strict_output_contract": "STRICT OUTPUT CONTRACT",
+        "canonical_record_path": "The first nonblank line must be Path:",
+        "canonical_record_fields": "using only Path, Title, Type, Prompt, and optional Tags",
+        "image_suffix_in_prompt": "put all copyable model flags at the very end of Prompt",
+        "no_default_image_metadata": "Do not add separate",
+        "merge_busy_guard": "Merging…",
     }
     missing_bulk_tokens = [name for name, token in bulk_tokens.items() if token not in bulk_js]
     out["frontend.bulk_contract_missing"] = missing_bulk_tokens
@@ -853,6 +915,20 @@ Question planner: Turn {notes} into prioritized interview questions.
         and "empty-actions" in components_css
     )
     assert out["frontend.empty_import_shortcut"], "empty import shortcut"
+    out["frontend.category_rail_jump"] = (
+        "jumpToCategory" in launcher_js
+        and 'dataset: { id: cat.id }' in launcher_js
+        and "const next = PR.state.catFilter === id ? null : id;" in launcher_js
+        and "PR.state.catFilter = next;" in launcher_js
+        and 'searchEl.value = "";' in launcher_js
+    )
+    assert out["frontend.category_rail_jump"], "category rail should navigate to the selected group"
+    out["frontend.optional_image_details"] = (
+        "Optional image details" in editor_js
+        and "copyable suffixes directly at the end" in editor_js
+        and ".image-details" in components_css
+    )
+    assert out["frontend.optional_image_details"], "optional image details disclosure"
     out["frontend.support_button_compact"] = (
         'id="btnCoffee"' in (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8")
         and "Buy Me a Coffee" not in settings_js
@@ -910,7 +986,10 @@ Question planner: Turn {notes} into prioritized interview questions.
     }
     out["frontend.compact_resize_contract"] = density_contract
     assert all(density_contract.values()), density_contract
-    out["settings.outline_prompt_default"] = "Return only the outline" in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
+    out["settings.outline_prompt_default"] = all(
+        token in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
+        for token in ("STRICT OUTPUT CONTRACT", "first nonblank line must be Path:", "copyable model flag")
+    )
     assert out["settings.outline_prompt_default"], SETTINGS_DEFAULTS["bulk_improve"]
     out["settings.default_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == "https://github.com/diddlysquatt/Promptoire"
     assert out["settings.default_repo_link"], SETTINGS_DEFAULTS["links"]
@@ -1021,6 +1100,7 @@ Question planner: Turn {notes} into prioritized interview questions.
             "--selftest" in release_checklist
             and '"mock": false' in release_checklist
             and '"native_hwnd": true' in release_checklist
+            and '"window_icon": true' in release_checklist
             and '"minimum_window": [360, 420]' in release_checklist
         ),
         "release_changelog_check": "CHANGELOG.md" in release_checklist,
@@ -1028,7 +1108,8 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_documented": "check-release.bat" in readme_text and "check-release.bat" in release_checklist,
         "release_batch_private_guard": "git ls-files --error-unmatch" in release_bat and "prompts.json" in release_bat,
         "release_batch_selftest_guard": (
-            "--selftest" in release_bat and "mock" in release_bat and "native_hwnd" in release_bat
+            "--selftest" in release_bat and "mock" in release_bat
+            and "native_hwnd" in release_bat and "window_icon" in release_bat
         ),
         "release_batch_fresh_selftest": 'del /q "_selftest.json"' in release_bat,
         "packaged_version_metadata": (
@@ -1038,6 +1119,11 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "lightweight_image_plugins": (
             "PIL.AvifImagePlugin" in spec_text and "PIL.WebPImagePlugin" in spec_text
+        ),
+        "native_window_icon": (
+            "set_window_icon" in (root / "promptoire_app" / "main.py").read_text(encoding="utf-8")
+            and "def set_window_icon" in (root / "promptoire_app" / "platform" / "window_fx.py").read_text(encoding="utf-8")
+            and "replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico" in spec_text
         ),
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "all_frontend_js_checked": (
@@ -1156,7 +1242,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     coe = api.copy_outline_export(True)
     out["copy_outline_export.ok"] = coe.get("ok")
     defaults = api.bulk_prompt_defaults()
-    out["bulk_prompt_defaults.ok"] = defaults.get("ok") and "Return only the outline" in defaults.get("outline_prompt", "")
+    out["bulk_prompt_defaults.ok"] = defaults.get("ok") and "STRICT OUTPUT CONTRACT" in defaults.get("outline_prompt", "")
     assert out["bulk_prompt_defaults.ok"], defaults
     sof = api.save_outline_file()
     out["save_outline_file.shape"] = "ok" in sof and (sof.get("ok") is False or sof.get("cancelled") or "path" in sof)
