@@ -11,9 +11,11 @@ import sys
 import tempfile
 from html.parser import HTMLParser
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import promptoire_app.api as api_module
 from promptoire_app.api import _parse_import_text
 from promptoire_app import __version__
 from promptoire_app.core import schema
@@ -50,6 +52,42 @@ def _run_checks():
     out["state.hotkey_available"] = st["hotkey_available"]
     out["state.version"] = st["version"]
     assert out["state.version"] == __version__, out["state.version"]
+
+    opened_links = []
+    original_webbrowser_open = api_module.webbrowser.open
+    api_module.webbrowser.open = lambda value: opened_links.append(value) or True
+    try:
+        secure_link = api.open_external("https://github.com/diddlysquatt/Promptoire")
+        blocked_links = [
+            api.open_external("http://example.com"),
+            api.open_external("file:///C:/Windows/System32/calc.exe"),
+            api.open_external("javascript:alert(1)"),
+            api.open_external("not a URL"),
+        ]
+    finally:
+        api_module.webbrowser.open = original_webbrowser_open
+    out["external_links.https_only"] = (
+        secure_link.get("ok") is True
+        and all(result.get("ok") is False for result in blocked_links)
+        and opened_links == ["https://github.com/diddlysquatt/Promptoire"]
+    )
+    assert out["external_links.https_only"], (secure_link, blocked_links, opened_links)
+
+    with (
+        patch.object(clipboard, "_HAVE_PYPERCLIP", False),
+        patch.object(sys, "platform", "win32"),
+        patch("subprocess.Popen") as popen,
+    ):
+        popen.return_value.communicate.return_value = (b"", b"")
+        popen.return_value.returncode = 0
+        clipboard_fallback = clipboard.copy("safe clipboard fallback")
+    popen_args, popen_kwargs = popen.call_args
+    out["clipboard.shell_free_fallback"] = (
+        clipboard_fallback is True
+        and popen_args == (["clip.exe"],)
+        and popen_kwargs == {"stdin": api_module.subprocess.PIPE}
+    )
+    assert out["clipboard.shell_free_fallback"], (popen.call_args, clipboard_fallback)
 
     out["settings.default_density"] = SETTINGS_DEFAULTS["density"]
     assert out["settings.default_density"] == "compact", SETTINGS_DEFAULTS["density"]

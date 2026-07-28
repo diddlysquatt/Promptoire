@@ -17,6 +17,7 @@ import threading
 import traceback
 import webbrowser
 from typing import Any
+from urllib.parse import urlparse
 
 from .core import paths, schema
 from .core.settings import DEFAULT_META_PROMPT, DEFAULT_OUTLINE_PROMPT
@@ -427,7 +428,11 @@ class Api:
 
     def open_external(self, url: str) -> dict:
         try:
-            webbrowser.open(url)
+            target = (url or "").strip()
+            parsed = urlparse(target)
+            if parsed.scheme.lower() != "https" or not parsed.hostname:
+                return err("Only secure web links can be opened.")
+            webbrowser.open(target)
             return ok()
         except Exception as e:
             return err(str(e))

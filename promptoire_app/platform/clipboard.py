@@ -23,7 +23,7 @@ def copy(text: str) -> bool:
     if sys.platform.startswith("win"):
         try:
             import subprocess
-            p = subprocess.Popen("clip", stdin=subprocess.PIPE, shell=True)
+            p = subprocess.Popen(["clip.exe"], stdin=subprocess.PIPE)
             p.communicate(input=text.encode("utf-16-le"))
             return p.returncode == 0
         except Exception:
