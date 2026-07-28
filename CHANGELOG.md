@@ -24,15 +24,24 @@
 - Validate drag-and-drop destinations before removing prompts from their current category.
 - Stop continuously animating the decorative background aura so the open app stays quiet at idle.
 - Silence the standalone browser-preview favicon request and ignore local visual-QA artifacts.
+- Keep every launcher filter, **+ New**, and density control on one row at the minimum window width, and compact the five import actions into two rows.
+- Make the top pin the single visible copy/blur auto-hide override and remove the redundant **Copy then vanish** Settings row.
+- Ship the finished Promptoire Buy Me a Coffee profile as the built-in support link so the toolbar button also works on a fresh install.
 
 ### Fixed
 
+- Keep the sticky **Edit Library** filter toolbar fully opaque while categories and prompts scroll beneath it.
 - Ignore copied LLM conversation/request prose before the first canonical `Path:` record instead of importing it as `Imported` or `Rules` prompts.
 - Preserve headings, bullets, rubrics, and multi-paragraph content inside explicit `Prompt:` bodies instead of turning phrases such as `CONSTRAINTS` or `DECISION DATE` into categories.
 - Serialize merge mutations and disable the merge action while it is running so a rapid double activation cannot add duplicate prompts.
 - Make category-rail clicks navigate directly to the selected category.
 - Apply the native Promptoire icon to the source-run window and taskbar entry.
 - Keep optional image metadata collapsed while directing copyable model suffixes to the end of the main prompt.
+- Keep pinned copies open through the native bridge, make selected categories unmistakable, and make category clicks less likely to be mistaken for a horizontal drag.
+
+### Added
+
+- Credit **Stoned Ape** in the in-app About section.
 
 ## 2.3.0 - 2026-07-06
 

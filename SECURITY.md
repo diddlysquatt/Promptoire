@@ -18,6 +18,19 @@ These files and folders can contain private data and should stay out of commits:
 
 The repository includes `.gitignore` rules for these paths, and CI runs smoke checks against `prompts.example.json` rather than a real local library.
 
+Before changing repository visibility, run `Check-GitHubPublish.ps1`. It checks both the current tree and reachable git history because deleting a private file in a later commit does not remove it from earlier commits.
+
+## Local Security Model
+
+- The app renders bundled local HTML/CSS/JavaScript and does not load third-party scripts.
+- Prompt and category text is rendered as text; search highlighting escapes prompt content before adding markup.
+- The optional direct AI action uses the fixed official OpenAI HTTPS endpoint. Manual copy/paste works without a network call or API key.
+- The optional API key is stored as plain text in the local config file, not in an OS credential vault. See [Privacy](docs/PRIVACY.md) for the exact boundary.
+- Portable releases are initially unsigned. Verify the published SHA-256 checksum before running a download.
+
 ## Supported Versions
 
 Security fixes are handled on the active `main` branch once the project is published.
+
+The latest pre-release repository audit is
+[Security Review — 2026-07-28](docs/SECURITY_REVIEW_2026-07-28.md).

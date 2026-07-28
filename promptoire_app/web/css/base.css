@@ -245,11 +245,12 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 /* ---- filter chips ------------------------------------------------------- */
-.filters { display: flex; gap: 6px; padding: 0 14px 10px; flex-wrap: wrap; }
+.filters { display: flex; align-items: center; gap: 6px; padding: 0 14px 10px; flex-wrap: nowrap; }
 .chip {
   font-size: 12px; font-weight: 550; color: var(--muted);
   padding: 6px 11px; border-radius: 99px;
   background: var(--surface); border: 1px solid var(--border);
+  white-space: nowrap;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
               background var(--dur-1) var(--ease);
@@ -315,10 +316,11 @@ button { cursor: pointer; border: none; background: none; }
   border-color: color-mix(in srgb, var(--rail-accent, var(--accent)) 45%, transparent);
 }
 .railchip.is-active {
-  color: var(--fg);
-  background: color-mix(in srgb, var(--rail-accent, var(--accent)) 16%, transparent);
-  border-color: color-mix(in srgb, var(--rail-accent, var(--accent)) 55%, transparent);
-  box-shadow: 0 0 10px -4px var(--rail-accent, var(--accent));
+  color: #fff;
+  background: color-mix(in srgb, var(--rail-accent, var(--accent)) 32%, var(--surface));
+  border-color: color-mix(in srgb, var(--rail-accent, var(--accent)) 82%, #fff 8%);
+  box-shadow: inset 3px 0 0 var(--rail-accent, var(--accent)),
+              0 0 12px -3px var(--rail-accent, var(--accent));
 }
 .railicon { font-size: 12px; line-height: 1; }
 .railcount {
@@ -326,6 +328,13 @@ button { cursor: pointer; border: none; background: none; }
   padding: 1px 5px; border-radius: 99px; background: var(--surface-2);
 }
 .railchip.is-active .railcount { color: var(--rail-accent, var(--accent)); }
+
+@media (max-width: 420px) {
+  .filters { gap: 4px; padding-left: 8px; padding-right: 8px; }
+  .chip { padding: 4px 6px; font-size: 10.5px; }
+  .filter-new { height: 27px; padding: 0 6px; font-size: 10.5px; }
+  .density-toggle { width: 27px; height: 27px; }
+}
 
 /* ---- results region ----------------------------------------------------- */
 .results {

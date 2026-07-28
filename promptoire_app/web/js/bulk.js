@@ -108,7 +108,7 @@
 
     // STEP 2 — import
     pasteArea = el("textarea", { class: "textarea", style: { minHeight: "150px" },
-      placeholder: "Paste an improved outline, or JSON:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nPath: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}...\nNegative prompt: blurry, watermark\nParameters: --ar 4:5" });
+      placeholder: "Paste an improved outline, or JSON:\n\nCoding\n  Debugging\n    Bug sweep: Review this code for edge cases, broken assumptions, and missing tests.\n\nPath: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}, rim lighting --ar 4:5 --stylize 250\nTags: portrait, cinematic" });
     pasteArea.addEventListener("input", () => {
       previewBox.innerHTML = "";
       delete previewBox.dataset.ready;
@@ -128,12 +128,15 @@
           el("div", { class: "d", text: "Paste an outline or JSON, preview it, then merge into what you already have." }) ]),
       ]),
       pasteArea,
-      el("div", { class: "btn-row", style: { marginTop: "10px" } }, [
-        el("button", { class: "btn", html: icon("copy") + " Paste from clipboard", onclick: pasteClipboard }),
-        el("button", { class: "btn", text: "Load from file…", onclick: loadFile }),
-        el("button", { class: "btn", text: "Use outline example", onclick: insertOutlineExample }),
-        el("button", { class: "btn btn-ghost", text: "Clear", onclick: clearImport }),
-        el("button", { class: "btn btn-primary", html: icon("check") + " Preview changes", onclick: preview }),
+      el("div", { class: "btn-row import-actions", style: { marginTop: "10px" } }, [
+        el("button", { class: "btn btn-sm", html: icon("copy") + " Paste clipboard",
+          "aria-label": "Paste from clipboard", title: "Paste from clipboard", onclick: pasteClipboard }),
+        el("button", { class: "btn btn-sm", text: "Load file…",
+          "aria-label": "Load from file", title: "Load from file", onclick: loadFile }),
+        el("button", { class: "btn btn-sm", text: "Outline example",
+          "aria-label": "Use outline example", title: "Use outline example", onclick: insertOutlineExample }),
+        el("button", { class: "btn btn-sm btn-ghost", text: "Clear", onclick: clearImport }),
+        el("button", { class: "btn btn-sm btn-primary", html: icon("check") + " Preview changes", onclick: preview }),
       ]),
     ]);
 

@@ -20,7 +20,7 @@ from promptoire_app.core import schema
 from promptoire_app.core.library import PromptLibrary
 from promptoire_app.core.settings import DEFAULTS as SETTINGS_DEFAULTS, Settings
 from promptoire_app.main import App
-from promptoire_app.platform import startup, window_fx
+from promptoire_app.platform import clipboard, startup, window_fx
 from promptoire_app.platform.hotkey import GlobalHotkey
 
 
@@ -100,6 +100,32 @@ def _run_checks():
     }, hotkey_normalization
     out["settings.startup_command"] = startup._launch_command()
     assert "Promptoire.bat" in out["settings.startup_command"], out["settings.startup_command"]
+    original_startup_set_enabled = startup.set_enabled
+    initial_startup = bool(app.settings.get("behavior", "launch_at_startup", default=False))
+    startup_calls = []
+    startup.set_enabled = lambda enabled: startup_calls.append(bool(enabled)) or True
+    try:
+        target_startup = not initial_startup
+        startup_effects = app.apply_settings({"behavior": {"launch_at_startup": target_startup}})
+        startup.set_enabled = lambda enabled: False
+        startup_failed_safely = False
+        try:
+            app.apply_settings({"behavior": {"launch_at_startup": initial_startup}})
+        except RuntimeError:
+            startup_failed_safely = (
+                app.settings.get("behavior", "launch_at_startup") == target_startup
+            )
+    finally:
+        startup.set_enabled = original_startup_set_enabled
+        app.settings.update({"behavior": {"launch_at_startup": initial_startup}})
+        app.settings.save()
+    out["settings.startup_apply_contract"] = {
+        "effects": startup_effects,
+        "calls": startup_calls,
+        "failure_rolled_back": startup_failed_safely,
+    }
+    assert startup_effects.get("startup") is True, startup_effects
+    assert startup_calls == [target_startup] and startup_failed_safely, out["settings.startup_apply_contract"]
     resize_codes = {
         edge: window_fx.resize_hit_test(edge)
         for edge in ("left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right")
@@ -128,6 +154,34 @@ def _run_checks():
     s2 = api.search("", "image")
     out["search.image.count"] = s2["count"]
     assert s2["count"] >= 1, s2
+
+    # The launcher pin must override the native copy-then-hide path, not just
+    # the browser blur handler. Use a resolved missing prompt so this check
+    # does not change library usage counts.
+    copied_text = []
+    hide_calls = []
+    original_clipboard_copy = clipboard.copy
+    original_hide_window = app.hide_window
+    original_copy_then_hide = app.settings.data.setdefault("behavior", {}).get("copy_then_hide")
+    clipboard.copy = lambda text: copied_text.append(text) or True
+    app.hide_window = lambda: hide_calls.append("hide")
+    app.settings.data["behavior"]["copy_then_hide"] = True
+    try:
+        pinned_copy = api.copy_prompt("prm_missing", "Pinned copy", keep_open=True)
+        normal_copy = api.copy_prompt("prm_missing", "Normal copy", keep_open=False)
+    finally:
+        clipboard.copy = original_clipboard_copy
+        app.hide_window = original_hide_window
+        app.settings.data["behavior"]["copy_then_hide"] = original_copy_then_hide
+    out["copy.pin_override"] = {
+        "pinned_spring": pinned_copy.get("spring"),
+        "normal_spring": normal_copy.get("spring"),
+        "hide_calls": len(hide_calls),
+        "copied": copied_text,
+    }
+    assert pinned_copy.get("ok") and pinned_copy.get("spring") is False, pinned_copy
+    assert normal_copy.get("ok") and normal_copy.get("spring") is True, normal_copy
+    assert hide_calls == ["hide"] and copied_text == ["Pinned copy", "Normal copy"], out["copy.pin_override"]
 
     exp = api.get_export(False)
     assert exp["ok"], exp
@@ -921,6 +975,8 @@ Question planner: Turn {notes} into prioritized interview questions.
         and "const next = PR.state.catFilter === id ? null : id;" in launcher_js
         and "PR.state.catFilter = next;" in launcher_js
         and 'searchEl.value = "";' in launcher_js
+        and '"aria-pressed": String(PR.state.catFilter === c.id)' in launcher_js
+        and "RAIL_DRAG_THRESHOLD = 10" in launcher_js
     )
     assert out["frontend.category_rail_jump"], "category rail should navigate to the selected group"
     out["frontend.optional_image_details"] = (
@@ -936,6 +992,15 @@ Question planner: Turn {notes} into prioritized interview questions.
         and 'class: "coffee"' not in settings_js
     )
     assert out["frontend.support_button_compact"], "topbar-only support button"
+    out["frontend.pin_is_single_autohide_control"] = (
+        "Copy then vanish" not in settings_js
+        and 'PR.bridge.call("copy_prompt", id, text, PR.state.pinned)' in launcher_js
+        and "Pinned — auto-hide disabled" in app_js
+        and "keep_open: bool = False" in (
+            Path(__file__).resolve().parents[1] / "promptoire_app" / "api.py"
+        ).read_text(encoding="utf-8")
+    )
+    assert out["frontend.pin_is_single_autohide_control"], "top pin should override every auto-hide path"
     launcher_html = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8")
     launcher_layout = {
         "no_footer": "actionbar" not in launcher_html and "btnImprove2" not in launcher_html,
@@ -952,6 +1017,17 @@ Question planner: Turn {notes} into prioritized interview questions.
         and "source-link" in components_css
     )
     assert out["frontend.github_source_link"], "source-link"
+    out["frontend.about_creator_credit"] = (
+        "Brought to you by Stoned Ape" in settings_js
+        and ".about .creator-credit" in components_css
+    )
+    assert out["frontend.about_creator_credit"], "About should credit Stoned Ape"
+    out["frontend.editor_toolbar_opaque"] = (
+        ".editor-toolbar {" in components_css
+        and "background: var(--bg);" in components_css
+        and "position: sticky; top: 0; z-index: 2;" in components_css
+    )
+    assert out["frontend.editor_toolbar_opaque"], "Edit Library filter must be opaque while sticky"
     out["frontend.generic_coffee_guard"] = (
         "isGenericCoffeeUrl" in app_js
         and "normalizeUrl" in app_js
@@ -979,6 +1055,11 @@ Question planner: Turn {notes} into prioritized interview questions.
         "saved_setting": 'update_settings", { density: next }' in app_js and "densityPicker" in settings_js,
         "compact_cards": 'data-density="compact"' in components_css and "-webkit-line-clamp: 1" in components_css,
         "titles_only": 'data-density="titles"' in components_css and ".card-preview" in components_css,
+        "toolbar_one_row": (
+            ".filters { display: flex; align-items: center;" in base_css
+            and "flex-wrap: nowrap" in base_css
+            and "@media (max-width: 420px)" in base_css
+        ),
         "rail_pointer_drag": all(token in launcher_js for token in ("setPointerCapture", "is-dragging", "startScroll", "suppressRailClick")),
         "rail_wheel_scroll": 'addEventListener("wheel"' in launcher_js and "scrollLeft += e.deltaY" in launcher_js,
         "resize_handles": "data-resize" in (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8") and "resize-handle" in base_css,
@@ -986,6 +1067,14 @@ Question planner: Turn {notes} into prioritized interview questions.
     }
     out["frontend.compact_resize_contract"] = density_contract
     assert all(density_contract.values()), density_contract
+    out["frontend.import_actions_two_rows"] = (
+        'class: "btn-row import-actions"' in bulk_js
+        and "grid-template-columns: repeat(6" in components_css
+        and ".import-actions > .btn:nth-child(5) { grid-column: span 4; }" in components_css
+        and "Negative prompt:" not in bulk_js
+        and "Parameters:" not in bulk_js
+    )
+    assert out["frontend.import_actions_two_rows"], "compact two-row canonical import actions"
     out["settings.outline_prompt_default"] = all(
         token in SETTINGS_DEFAULTS["bulk_improve"]["outline_prompt"]
         for token in ("STRICT OUTPUT CONTRACT", "first nonblank line must be Path:", "copyable model flag")
@@ -993,6 +1082,11 @@ Question planner: Turn {notes} into prioritized interview questions.
     assert out["settings.outline_prompt_default"], SETTINGS_DEFAULTS["bulk_improve"]
     out["settings.default_repo_link"] = SETTINGS_DEFAULTS["links"]["repo"] == "https://github.com/diddlysquatt/Promptoire"
     assert out["settings.default_repo_link"], SETTINGS_DEFAULTS["links"]
+    out["settings.default_coffee_link"] = (
+        SETTINGS_DEFAULTS["links"]["coffee"] == "https://buymeacoffee.com/promptoire"
+        and 'coffee:"https://buymeacoffee.com/promptoire"' in bridge_js
+    )
+    assert out["settings.default_coffee_link"], SETTINGS_DEFAULTS["links"]
     sanitized_cases = []
     for coffee_url in ("https://www.buymeacoffee.com/", "https://buymeacoffee.com"):
         with tempfile.TemporaryDirectory() as settings_dir:
@@ -1140,6 +1234,14 @@ Question planner: Turn {notes} into prioritized interview questions.
             "promptoire-settings.png", "privacy.html", "smartscreen.html",
             "buymeacoffee.com/promptoire",
         )) and "@media(max-width:660px)" in site_css,
+        "readme_editor_screenshot": (
+            "promptoire-edit-library.png" in readme_text
+            and (root / "docs" / "assets" / "promptoire-edit-library.png").exists()
+        ),
+        "creator_credit_documented": (
+            "Brought to you by Stoned Ape" in readme_text
+            and "Brought to you by Stoned Ape" in site_html
+        ),
         "pages_docs_complete": (
             "No hidden collection" in site_privacy
             and "The realistic paths" in site_smartscreen
@@ -1169,6 +1271,9 @@ Question planner: Turn {notes} into prioritized interview questions.
             and "Next steps:" in publish_check_script
             and "gh auth refresh -h github.com -s workflow" in publish_check_script
             and "[WARN]" in publish_check_script
+            and "Private runtime paths occur in reachable git history" in publish_check_script
+            and '"log",' in publish_check_script
+            and '"--all",' in publish_check_script
         ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "outline_file_dialogs": "*.txt;*.md;*.csv" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
@@ -1250,6 +1355,26 @@ Question planner: Turn {notes} into prioritized interview questions.
     clip = api.get_clipboard_text()
     out["get_clipboard_text.shape"] = "ok" in clip and (clip.get("ok") is False or "text" in clip)
     assert out["get_clipboard_text.shape"], clip
+    backups_before = set((Path(os.environ["PROMPTOIRE_DATA_DIR"]) / "backups").glob("prompts-*.json"))
+    backup_result = api.backup_now()
+    backups_after = set((Path(os.environ["PROMPTOIRE_DATA_DIR"]) / "backups").glob("prompts-*.json"))
+    out["backup_now.created"] = backup_result.get("ok") is True and bool(backups_after - backups_before)
+    assert out["backup_now.created"], backup_result
+    if hasattr(os, "startfile"):
+        original_startfile = os.startfile
+        opened_folders = []
+        os.startfile = lambda value: opened_folders.append(str(value))
+        try:
+            open_folder_result = api.open_data_folder()
+        finally:
+            os.startfile = original_startfile
+        expected_data_folder = str(Path(os.environ["PROMPTOIRE_DATA_DIR"]))
+        out["open_data_folder.target"] = (
+            open_folder_result.get("ok") is True
+            and open_folder_result.get("path") == expected_data_folder
+            and opened_folders == [expected_data_folder]
+        )
+        assert out["open_data_folder.target"], (open_folder_result, opened_folders)
 
     # add/update/delete cycle (against a temp clone — we won't save)
     add = api.add_prompt(st["categories"][0]["id"], {"title": "ZZ smoke", "prompt": "hello {name}", "tags": ["smoke"]})

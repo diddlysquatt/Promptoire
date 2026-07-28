@@ -64,8 +64,18 @@ class Api:
 
     # ---- the copy action (the whole point) ----------------------------------
 
-    def copy_prompt(self, prompt_id: str, resolved_text: str | None = None) -> dict:
-        """Copy a prompt. `resolved_text` lets the UI pass placeholder-filled text."""
+    def copy_prompt(
+        self,
+        prompt_id: str,
+        resolved_text: str | None = None,
+        keep_open: bool = False,
+    ) -> dict:
+        """Copy a prompt, optionally bypassing spring-loaded auto-hide.
+
+        `resolved_text` lets the UI pass placeholder-filled text. `keep_open`
+        is the launcher's pin override, so one visible control governs both
+        blur hiding and the native copy path.
+        """
         try:
             p, _, _ = self._app.library.find_prompt(prompt_id)
             if p is None and resolved_text is None:
@@ -79,7 +89,7 @@ class Api:
             behavior = self._app.settings.get("behavior", default={})
             if behavior.get("paste_after_copy"):
                 self._app.after_copy_paste()
-            spring = bool(behavior.get("copy_then_hide", True))
+            spring = bool(behavior.get("copy_then_hide", True)) and not bool(keep_open)
             if spring:
                 self._app.hide_window()
             return ok(spring=spring, title=(p or {}).get("title", "Prompt"))

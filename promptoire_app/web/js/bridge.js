@@ -90,7 +90,7 @@
       meta_prompt:"You are a senior prompt engineer..."
     },
     ai:{provider:"openai",api_key:"",model:"gpt-5.6",base_url:""},
-    links:{coffee:"",repo:"https://github.com/diddlysquatt/Promptoire"}
+    links:{coffee:"https://buymeacoffee.com/promptoire",repo:"https://github.com/diddlysquatt/Promptoire"}
   };
   function walk(cats, path, color){ let out=[]; path=path||[]; for(const c of cats){ const eff=c.color||color||""; const here=path.concat([c.name]); for(const p of c.prompts){ out.push({p,c,path:here,color:eff}); } if(c.subcategories) out=out.concat(walk(c.subcategories, here, eff)); } return out; }
 
@@ -115,9 +115,9 @@
       res.sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0));
       return { ok:true, results:res, count:res.length };
     },
-    copy_prompt: (id, resolved) => ({ ok:true, spring:true, title:"Prompt" }),
+    copy_prompt: (id, resolved, keepOpen) => ({ ok:true, spring:!keepOpen, title:"Prompt" }),
     copy_text: () => ({ ok:true }),
-    get_clipboard_text: () => ({ ok:true, text:"Path: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}.\nNegative prompt: blurry, watermark" }),
+    get_clipboard_text: () => ({ ok:true, text:"Path: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field --ar 4:5 --stylize 250\nTags: portrait, cinematic" }),
     toggle_favorite: (id) => { for(const {p} of walk(mockCats)){ if(p.id===id){ p.favorite=!p.favorite; return {ok:true,favorite:p.favorite}; } } return {ok:false}; },
     get_export: () => ({ ok:true, json: JSON.stringify({version:3,categories:mockCats},null,2) }),
     copy_export: () => ({ ok:true, chars: 1234 }),

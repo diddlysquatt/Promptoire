@@ -1,15 +1,17 @@
 # Promptoire Launch Checklist
 
-Target launch window: **Tuesday, July 21, 2026 at 9:00 AM Central**
+Target launch window: **Wednesday, July 29, 2026 at 9:00 AM Central**
 (10:00 AM Eastern / 7:00 AM Pacific).
 
-The local heartbeat is scheduled for **8:30 AM Central**. It is notification-only:
-it cannot merge, publish a release, or change repository visibility.
+This is the GitHub/X launch window, not an automatic publication. If Product
+Hunt is part of the launch, schedule that listing separately for **12:01 AM
+Pacific** so it receives a full Product Hunt day.
 
 ## Thirty minutes before
 
 - Confirm the repository is still **Private**.
 - Confirm PR #1 is still a **Draft**.
+- Confirm `Check-GitHubPublish.ps1` reports no private runtime paths anywhere in reachable git history.
 - Confirm GitHub Actions is green on the latest commit.
 - Run `git status --short` and confirm the branch is clean.
 - Run `check-release.bat` if anything changed after the final packaged build.
@@ -39,21 +41,15 @@ Do these manually. The heartbeat never performs them.
 
 ## Suggested launch copy
 
-> I built Promptoire: a fast, local-first Windows prompt library.
->
-> Hit a global hotkey, find the prompt you need, click once to copy, and get
-> straight back to work. It supports nested categories, compact layouts,
-> drag-and-drop organization, placeholders, image prompts, and an outline-first
-> workflow for improving or generating whole prompt libraries with any LLM.
->
-> No account, no telemetry, no cloud lock-in. Free and open source:
-> https://github.com/diddlysquatt/Promptoire
+Use the channel-specific copy in [LAUNCH_POSTS.md](LAUNCH_POSTS.md).
 
 ## Launch channels
 
 - GitHub release and repository first.
 - X at 9:00 AM Central.
-- LinkedIn between 10:00 AM and noon Central.
+- Pin Promptoire on the maintainer's GitHub profile after it becomes public.
+- LinkedIn between 10:00 AM and noon Central if it fits the audience.
+- A carefully written Show HN after the public download and documentation have been verified.
 - Relevant communities only where self-promotion is permitted; tailor the post
   to each community instead of dropping the same link everywhere.
 - If using Product Hunt, schedule it separately for the start of its Pacific

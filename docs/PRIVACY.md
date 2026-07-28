@@ -20,7 +20,9 @@ Promptoire only sends prompt data out when you choose to do it:
 
 ## API Keys
 
-The optional OpenAI API key is stored locally in `promptoire.config.json`. Do not commit or share that file. For public releases, keep `promptoire.config.json`, `.env`, backups, caches, and `prompts.json` out of git.
+The optional OpenAI API key is stored as plain text in the local `promptoire.config.json`; it is not uploaded anywhere except as the authorization header for the OpenAI request you explicitly start. Protect that file with the same Windows account and disk protections you use for other local credentials, and do not commit, share, or include it in screenshots. The normal copy/paste workflow works without any API key.
+
+For public releases, keep `promptoire.config.json`, `.env`, backups, caches, and `prompts.json` out of both the current tree and all reachable git history.
 
 ## Public Example Data
 

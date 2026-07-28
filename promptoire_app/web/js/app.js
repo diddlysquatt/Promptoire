@@ -139,7 +139,11 @@
       PR.state.pinned = !PR.state.pinned;
       pin.classList.toggle("is-on", PR.state.pinned);
       pin.setAttribute("aria-pressed", String(PR.state.pinned));
-      PR.ui.toast(PR.state.pinned ? "Pinned — won't auto-hide" : "Unpinned");
+      pin.title = PR.state.pinned
+        ? "Pinned open (enable auto-hide)"
+        : "Keep open (disable auto-hide)";
+      pin.setAttribute("aria-label", pin.title);
+      PR.ui.toast(PR.state.pinned ? "Pinned — auto-hide disabled" : "Auto-hide enabled");
     });
 
     document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => showView("launcher")));

@@ -6,6 +6,8 @@
 
 *Hit a hotkey → find a prompt → click to copy → keep moving. Then hand any part of your library to an LLM and safely bring the improved version back.*
 
+<sub>Brought to you by Stoned Ape.</sub>
+
 [![CI](https://github.com/diddlysquatt/Promptoire/actions/workflows/ci.yml/badge.svg)](https://github.com/diddlysquatt/Promptoire/actions/workflows/ci.yml) ![platform](https://img.shields.io/badge/Windows-10%20%7C%2011-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![local-first](https://img.shields.io/badge/local--first-no%20account-7c5cff)
 
 </div>
@@ -14,6 +16,15 @@
   <img src="docs/assets/promptoire-launcher.png" width="46%" alt="Promptoire compact prompt launcher with categories and one-line prompt previews">
   <img src="docs/assets/promptoire-improve-library.png" width="46%" alt="Promptoire outline-first LLM export and safe import workflow">
 </p>
+
+<details>
+<summary><strong>More screenshots</strong></summary>
+<br>
+<p align="center">
+  <img src="docs/assets/promptoire-edit-library.png" width="46%" alt="Promptoire Edit Library with an opaque sticky filter above the draggable prompt tree">
+  <img src="docs/assets/promptoire-settings.png" width="46%" alt="Promptoire settings with global hotkey, startup, backup, and local data controls">
+</p>
+</details>
 
 <p align="center">
   <a href="https://github.com/diddlysquatt/Promptoire/releases/latest"><strong>Download for Windows</strong></a>
@@ -41,6 +52,13 @@ Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 
 1. **Summon it anywhere.** Press your configurable hotkey and Promptoire opens near the cursor.
 2. **Find and copy fast.** Search, browse nested categories, or use favorites. Clicking a prompt copies it, and Promptoire can disappear immediately.
 3. **Improve the whole system.** Export an outline to any LLM, ask it to rewrite or expand your prompts, then preview and safely merge the result back.
+
+### Everyday controls
+
+- Use **All / Text / Image / Favorites** and the category rail to narrow the launcher. The density button beside **+ New** cycles Comfortable, Compact, and Titles-only without leaving the main view.
+- The **pin** at the top is the single auto-hide control. Pinned means the window stays open after copying and when focus changes; unpinned restores normal copy-and-hide behavior.
+- Open **Edit Library** to create, edit, reorder, or move prompts and nested categories. Its sticky filter searches prompt titles, tags, and category names.
+- Open **Settings → System** to make a timestamped backup, open the local data folder, control the tray icon, and enable Windows startup.
 
 ## Why Promptoire
 
@@ -199,6 +217,7 @@ For public forks and packaged releases, `prompts.json` is treated as local user 
 
 - Run `check-release.bat` for the complete local release gate.
 - Run `Check-GitHubPublish.ps1` immediately before changing the repository from private to public.
+- That publish check inspects reachable history as well as the current tree; a deleted private file still exists in older commits until history is cleaned.
 - Read [Contributing](CONTRIBUTING.md) before opening a pull request.
 - See the [Changelog](CHANGELOG.md), [Privacy](docs/PRIVACY.md), and [Security](SECURITY.md) documents.
 - Maintainers can use the detailed [GitHub release checklist](docs/GITHUB_RELEASE_CHECKLIST.md).
@@ -207,7 +226,7 @@ Promptoire has no telemetry. It stores prompts and settings locally and only sen
 
 ## ❤️ Support
 
-Promptoire is free and open source. If it earns a spot in your workflow, you can use the quiet coffee link in the titlebar.
+Promptoire is free and open source, brought to you by **Stoned Ape**. If it earns a spot in your workflow, you can use the quiet coffee link in the titlebar.
 
 ## 📄 License
 

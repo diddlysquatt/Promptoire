@@ -87,8 +87,7 @@ DEFAULTS: dict[str, Any] = {
         "base_url": "",
     },
     "links": {
-        # Set this to your own Buy Me a Coffee / Ko-fi / GitHub Sponsors URL.
-        "coffee": "",
+        "coffee": "https://buymeacoffee.com/promptoire",
         "repo": "https://github.com/diddlysquatt/Promptoire",
     },
     "onboarded": False,

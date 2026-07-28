@@ -11,6 +11,7 @@
   const { el, escapeHtml, highlight, icon, toast, modal, findPlaceholders, fillPlaceholders } = PR.ui;
 
   const COLLAPSE_KEY = "promptoire.launcher.collapsed";
+  const RAIL_DRAG_THRESHOLD = 10;
 
   let resultsEl, searchEl, railEl, debounceTimer, staggerNext = true;
   let railDrag = null, suppressRailClick = false;
@@ -80,6 +81,7 @@
         pointerId: e.pointerId,
         startX: e.clientX,
         startScroll: railEl.scrollLeft,
+        chipId: (e.target.closest(".railchip") || {}).dataset?.id || null,
         moved: false,
       };
       try { railEl.setPointerCapture(e.pointerId); } catch (err) {}
@@ -87,24 +89,28 @@
     railEl.addEventListener("pointermove", (e) => {
       if (!railDrag || railDrag.pointerId !== e.pointerId) return;
       const dx = e.clientX - railDrag.startX;
-      if (!railDrag.moved && Math.abs(dx) < 4) return;
+      if (!railDrag.moved && Math.abs(dx) < RAIL_DRAG_THRESHOLD) return;
       railDrag.moved = true;
       railEl.classList.add("is-dragging");
       railEl.scrollLeft = railDrag.startScroll - dx;
       e.preventDefault();
     });
-    const finish = (e) => {
+    const finish = (e, cancelled = false) => {
       if (!railDrag || railDrag.pointerId !== e.pointerId) return;
-      if (railDrag.moved) {
-        suppressRailClick = true;
-        setTimeout(() => { suppressRailClick = false; }, 150);
-      }
+      const selectedId = !cancelled && !railDrag.moved ? railDrag.chipId : null;
+      // Pointer selection happens here so tiny movements or pointer capture
+      // cannot swallow the first click. Suppress only the synthetic click
+      // that follows this pointer sequence; keyboard clicks still use the
+      // delegated click handler above.
+      suppressRailClick = true;
+      setTimeout(() => { suppressRailClick = false; }, 150);
       try { railEl.releasePointerCapture(e.pointerId); } catch (err) {}
       railEl.classList.remove("is-dragging");
       railDrag = null;
+      if (selectedId) jumpToCategory(selectedId);
     };
     railEl.addEventListener("pointerup", finish);
-    railEl.addEventListener("pointercancel", finish);
+    railEl.addEventListener("pointercancel", (e) => finish(e, true));
     railEl.addEventListener("wheel", (e) => {
       if (railEl.scrollWidth <= railEl.clientWidth) return;
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
@@ -193,6 +199,7 @@
         dataset: { id: c.id },
         style: c.color ? { "--rail-accent": c.color } : {},
         title: c.name + " — " + n + " prompt" + (n === 1 ? "" : "s"),
+        "aria-pressed": String(PR.state.catFilter === c.id),
       }, [
         c.icon ? el("span", { class: "railicon", text: c.icon }) : null,
         el("span", { class: "railname", text: c.name }),
@@ -424,7 +431,7 @@
   }
 
   async function doCopy(id, text, node, title) {
-    const r = await PR.bridge.call("copy_prompt", id, text);
+    const r = await PR.bridge.call("copy_prompt", id, text, PR.state.pinned);
     if (r && r.ok) {
       if (node) { node.classList.add("flash"); setTimeout(() => node && node.classList.remove("flash"), 520); }
       toast("Copied “" + (title || "prompt") + "”");

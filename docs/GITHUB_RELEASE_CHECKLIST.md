@@ -6,6 +6,7 @@ Use this before the first public push.
 
 - Keep your real `prompts.json` on your machine.
 - Do not publish API keys, `promptoire.config.json`, backups, caches, or virtual environments.
+- Confirm those paths never occur in any reachable branch or tag; deleting them in a later commit is not enough.
 - Use `prompts.example.json` as the public reference data file.
 - If `prompts.json` is still tracked, run:
 
@@ -65,19 +66,26 @@ gh auth refresh --scopes workflow
 - Commit on a clean branch.
 - Confirm GitHub Actions CI is green after the first push.
 - Confirm `.gitignore` excludes local runtime data.
+- Confirm `Check-GitHubPublish.ps1` reports no private runtime paths in reachable git history before changing visibility.
 - Confirm `docs/PRIVACY.md` and `SECURITY.md` accurately describe current local data, optional AI calls, and sensitive files.
 - Confirm `CHANGELOG.md` lists the release version shown in Settings.
 - Confirm GitHub issue and pull request templates warn contributors not to paste private prompts, `prompts.json`, `promptoire.config.json`, or API keys.
 - Confirm Settings -> About opens the GitHub source link.
-- Confirm the local `links.coffee` value points to the finished Buy Me a Coffee profile; links with or without `https://` are normalized, and blank/generic root links prompt the user to configure support instead of opening a generic page.
+- Confirm Settings -> About displays **Brought to you by Stoned Ape**.
+- Confirm the built-in `links.coffee` default points to the finished Promptoire Buy Me a Coffee profile; links with or without `https://` are normalized, and blank/generic root links never open a generic page.
 - Confirm Settings -> System can open the local data folder for `prompts.json`, `promptoire.config.json`, and backups.
 - Confirm the launcher has no bottom action footer, **+ New** sits beside All/Text/Image/Favorites, the pencil opens **Edit Library**, and the recovered height belongs to prompt results.
+- Confirm All/Text/Image/Favorites, **+ New**, and the density button stay on one row at the 360px minimum width in every density mode.
+- Confirm the top pin prevents both blur hiding and copy-then-hide, unpinning restores auto-hide, and Settings has no duplicate **Copy then vanish** control.
+- Confirm category rail buttons select on the first click, clearly show their selected state, and can still be dragged horizontally.
+- Confirm the sticky Edit Library filter is fully opaque while categories and prompts scroll beneath it.
 - Confirm every window edge/corner resizes in both axes, the result list expands with the window, and 360×420 remains the minimum size.
 - Confirm Improve Library shows `Improve with AI now` near the top, keeps the improvement instructions visible, and offers `Copy instructions + library`, `Copy library only`, `Copy instructions only`, and `Save library outline` with unambiguous labels.
 - Confirm `Save instructions` changes the prompt used by `Copy instructions + library` and `Improve with AI now`; `Reset default` restores the built-in instruction; `Create prompts for a topic` accepts an optional topic/workflow; JSON instructions and exports stay under `More options`.
 - Confirm the optional OpenAI connection is at the bottom of Improve Library (not Settings), only offers the current GPT-5.6 family, saves locally, and opens/focuses itself when direct improve is clicked without a key.
 - Confirm an empty library offers both `New prompt` and `Import prompts`, with `Import prompts` opening the Improve Library flow.
 - Confirm `Paste from clipboard` fills the import box and previews the pasted outline or JSON before merge; manual paste into the import box should auto-preview too.
+- Confirm the five import actions remain compact and occupy exactly two rows at the default and minimum window widths.
 - Confirm `Clear` empties the import box, preview, and safe-merge state.
 - Confirm `Load from file` accepts outline `.txt` / `.md`, CSV `.csv`, and `.json` files.
 - Confirm nested bullet outlines and `Sub-subsection:` / `Nested subsection:` labels import as nested sections.
@@ -99,7 +107,7 @@ gh auth refresh --scopes workflow
 - Confirm `Check-PromptoireShortcut.ps1` verifies that the desktop shortcut launches this checkout.
 - If the folder display name is still lowercase, close tools that are inside it and run `Rename-PromptoireFolder.ps1`.
 - Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false`, `"native_hwnd": true`, `"window_icon": true`, `"minimum_window": [360, 420]`, and an empty `"error"`.
-- Preview `docs/index.html`, `docs/privacy.html`, and `docs/smartscreen.html` at desktop and mobile widths; confirm all three current app screenshots render and contain only the clean starter library.
+- Preview `docs/index.html`, `docs/privacy.html`, and `docs/smartscreen.html` at desktop and mobile widths; confirm all four current app screenshots render and contain only the clean starter library.
 - Keep `.github/workflows/pages.yml` manual-only while the repository is private. After making the repository public, select GitHub Actions under **Settings → Pages**, run **Publish documentation site**, and verify `https://diddlysquatt.github.io/Promptoire/` in a signed-out browser.
 
 ## Optional Build

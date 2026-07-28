@@ -148,6 +148,31 @@ foreach ($file in @("prompts.json", "promptoire.config.json", "_selftest.json"))
   }
 }
 
+$privateHistoryPaths = @(
+  "prompts.json",
+  "promptoire.config.json",
+  "_selftest.json",
+  "backups",
+  ".env",
+  ".env.local"
+)
+$privateHistory = Run-Git @(
+  "log",
+  "--all",
+  "--format=%H",
+  "--",
+  $privateHistoryPaths
+)
+if ($privateHistory.ExitCode -ne 0) {
+  Fail "Could not inspect reachable git history for private runtime files."
+} elseif ($privateHistory.Text) {
+  $historyCount = @($privateHistory.Text -split "\r?\n" | Where-Object { $_ }).Count
+  Fail "Private runtime paths occur in reachable git history ($historyCount commit(s)). Making the repository public would expose them."
+  NextStep "Git history: remove private runtime files from every reachable branch/tag, force-update only the still-private remote, then rerun this check."
+} else {
+  Pass "No private runtime paths occur in reachable git history."
+}
+
 $configPath = Join-Path $root "promptoire.config.json"
 if (Test-Path -LiteralPath $configPath) {
   try {

@@ -28,7 +28,6 @@
         : "⚠ Global hotkey needs the 'keyboard' module / permission. Tray still works.",
         hotkeyCapture(s.hotkey || "ctrl+alt+space")),
       toggleRow("Open at cursor", "Pop up where your mouse is.", b.open_at_cursor, (v) => save({ behavior: { open_at_cursor: v } })),
-      toggleRow("Copy then vanish", "Hide automatically right after you copy a prompt.", b.copy_then_hide, (v) => save({ behavior: { copy_then_hide: v } })),
       toggleRow("Hide when it loses focus", "Close as soon as you click away.", b.hide_on_blur, (v) => save({ behavior: { hide_on_blur: v } })),
       toggleRow("Paste after copy", "Send Ctrl+V to the window you were in (best-effort).", b.paste_after_copy, (v) => save({ behavior: { paste_after_copy: v } })),
     ])));
@@ -215,6 +214,7 @@
       el("div", { class: "logo-big", text: "P" }),
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
       el("div", { class: "ver", text: "v" + (PR.state.version || "2.3.0") + " · local-first · open source" }),
+      el("div", { class: "creator-credit", text: "Brought to you by Stoned Ape" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("div", { class: "about-actions" }, [
         currentRepo ? el("button", { class: "source-link", text: "GitHub",
