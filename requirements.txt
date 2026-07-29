@@ -1,13 +1,13 @@
 # Promptoire (pywebview rebuild) — runtime dependencies
-pywebview>=5.0        # system WebView (WebView2 on Windows, WKWebView on macOS)
-pyperclip>=1.8.2      # clipboard copy
+pywebview>=6.2.1      # system WebView (WebView2 on Windows, WKWebView on macOS)
+pyperclip>=1.11.0     # clipboard copy
 pystray>=0.19.5       # system tray icon
 keyboard>=0.13.5; platform_system=="Windows"   # global hotkey (Windows)
-pynput>=1.7; platform_system!="Windows"          # global hotkey (macOS/Linux fallback)
+pynput>=1.8.2; platform_system!="Windows"        # global hotkey (macOS/Linux fallback)
 Pillow>=12.3.0        # tray icon rendering; 12.3.0 includes current security fixes
 
 # "Improve with AI now" calls OpenAI over Python's standard library, so it
 # adds no optional SDK dependency. Manual copy/paste works without an API key.
 
 # Packaging (optional, for building a standalone app)
-pyinstaller>=6.7
+pyinstaller>=6.21.0
