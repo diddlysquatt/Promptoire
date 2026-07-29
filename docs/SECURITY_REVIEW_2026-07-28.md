@@ -8,11 +8,16 @@ scripts, escapes prompt content before search highlighting, fixes the optional
 AI call to the official OpenAI HTTPS endpoint, uses atomic local writes, and
 keeps GitHub workflow permissions scoped to their jobs.
 
-The repository is **not ready to become public yet**. One reachable historical
-commit contains a 40-prompt legacy `prompts.json`, and the current build
-environment contains a Pillow version with known advisories. GitHub still
-reports the repository as private, PR #1 is draft, no release exists, and Pages
-is inactive, so these findings are contained.
+The security release gate is **passed**. The private prompt library was removed
+from every reachable local and private-remote ref, the old blob was pruned, and
+a fresh mirror of the private GitHub repository independently passed the
+reachable-history scan. Pillow was upgraded to 12.3.0, all installed direct
+dependencies returned zero OSV advisories, and the two defense-in-depth code
+findings were fixed with smoke coverage.
+
+GitHub remains private, PR #1 remains the release vehicle, and Pages remains
+inactive until the scheduled launch. An offline private recovery bundle was
+created before the rewrite and must never be published.
 
 ## Scope and Method
 
@@ -33,6 +38,8 @@ No critical findings.
 
 ### SEC-001 — Private prompt library remains in reachable git history
 
+**Status: Resolved 2026-07-28.**
+
 **Evidence:** Commit `cdc9ac2a` contains a 40-prompt legacy `prompts.json`.
 Commit `96584e68` removes the current path, but deletion does not remove the
 older blob. The commit is an ancestor of the current branch and is reachable
@@ -51,9 +58,16 @@ one in the removed data.
 **Guard added:** `Check-GitHubPublish.ps1:151-173` now fails when sensitive
 runtime paths occur anywhere in reachable history.
 
+**Verification:** The rewritten object database no longer contains the old
+private blob. The guarded scan passes locally, the intended private PR branch
+was updated with an exact force-with-lease, and a new mirror clone from GitHub
+contains no reachable private runtime path.
+
 ## Medium Severity
 
 ### SEC-002 — Current packaging environment contains vulnerable Pillow 12.2.0
+
+**Status: Resolved 2026-07-28.**
 
 **Evidence:** The active `.venv` has `Pillow==12.2.0`. A version-specific OSV
 query returned 26 advisories for 12.2.0, including
@@ -75,9 +89,17 @@ with known fixes available is not an acceptable release baseline.
 runtime requirements in the build step, rebuild in a clean environment, and
 rerun a version-specific dependency audit before packaging.
 
+**Verification:** `requirements.txt` now requires Pillow 12.3.0 or newer,
+`build.bat` upgrades the complete requirements set before packaging, the active
+build environment contains Pillow 12.3.0, and version-specific OSV queries
+returned zero advisories for Pillow, pywebview, pyperclip, pystray, keyboard,
+and PyInstaller. Dependabot now checks Python dependencies weekly.
+
 ## Low Severity
 
 ### SEC-003 — External-link bridge does not enforce an HTTP(S) scheme
+
+**Status: Resolved 2026-07-28.**
 
 **Evidence:** `promptoire_app/api.py:428-433` passes the received value directly
 to `webbrowser.open`. Frontend and settings normalization reduce accidental
@@ -91,7 +113,13 @@ unlikely.
 **Recommended remediation:** Parse the URL again in Python and allow only
 `https` (or explicitly `http` and `https`) before opening it.
 
+**Verification:** The Python bridge now requires an HTTPS URL with a hostname.
+Smoke coverage confirms that valid GitHub HTTPS links open while HTTP, `file:`,
+`javascript:`, and non-URL values are rejected without invoking the browser.
+
 ### SEC-004 — Windows clipboard fallback unnecessarily invokes a shell
+
+**Status: Resolved 2026-07-28.**
 
 **Evidence:** `promptoire_app/platform/clipboard.py:26` launches the constant
 command `clip` with `shell=True`.
@@ -102,6 +130,9 @@ still safer and easier to reason about.
 
 **Recommended remediation:** Invoke `clip.exe` as an argument list with
 `shell=False`.
+
+**Verification:** The fallback now launches `["clip.exe"]` directly and the
+smoke test asserts both the argument list and absence of a shell invocation.
 
 ## Informational / Accepted Local Tradeoffs
 
@@ -133,7 +164,8 @@ Credential Manager integration would improve local credential protection.
 
 ## Release Decision
 
-**Blocked.** Resolve SEC-001 and SEC-002, then rerun the full release gate,
-dependency query, history scan, native WebView self-test, clean-package test,
-and signed-out GitHub review. SEC-003 and SEC-004 are defense-in-depth items
-that should be addressed before or immediately after the first public release.
+**Security-approved for the scheduled release.** The full source release gate,
+native WebView self-test, dependency query, and local/remote history scans pass.
+The remaining operational gate is to build and test the clean portable package,
+verify its checksum and draft release, and perform the signed-out GitHub/Pages
+review before changing repository visibility.

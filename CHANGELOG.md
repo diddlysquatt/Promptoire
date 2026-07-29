@@ -27,6 +27,7 @@
 - Keep every launcher filter, **+ New**, and density control on one row at the minimum window width, and compact the five import actions into two rows.
 - Make the top pin the single visible copy/blur auto-hide override and remove the redundant **Copy then vanish** Settings row.
 - Ship the finished Promptoire Buy Me a Coffee profile as the built-in support link so the toolbar button also works on a fresh install.
+- Require Pillow 12.3.0 or newer, refresh the complete dependency set before packaging, and add weekly Dependabot checks.
 
 ### Fixed
 
@@ -38,6 +39,7 @@
 - Apply the native Promptoire icon to the source-run window and taskbar entry.
 - Keep optional image metadata collapsed while directing copyable model suffixes to the end of the main prompt.
 - Keep pinned copies open through the native bridge, make selected categories unmistakable, and make category clicks less likely to be mistaken for a horizontal drag.
+- Restrict external links at the Python bridge to valid HTTPS destinations and invoke the Windows clipboard fallback without a shell.
 
 ### Added
 
