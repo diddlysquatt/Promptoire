@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "theme": "matrix",
+  "accent": "",
+  "density": "compact",
+  "hotkey": "f24",
+  "behavior": {
+    "copy_then_hide": true,
+    "hide_on_blur": false,
+    "open_at_cursor": false,
+    "paste_after_copy": false,
+    "launch_at_startup": false,
+    "show_tray": false,
+    "single_instance": false
+  },
+  "window": {
+    "width": 460,
+    "height": 560,
+    "opacity": 1.0,
+    "remember_position": true,
+    "x": 80,
+    "y": 80
+  },
+  "links": {
+    "coffee": "https://buymeacoffee.com/promptoire",
+    "repo": "https://github.com/diddlysquatt/Promptoire"
+  },
+  "onboarded": true
+}

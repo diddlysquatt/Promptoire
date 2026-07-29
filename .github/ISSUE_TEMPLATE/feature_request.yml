@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a small, focused improvement for Promptoire.
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Promptoire is meant to stay simple, local-first, and prompt-focused. Suggestions that improve organization, import/export, search, safety, or everyday usability are the best fit.
+
+        Please do not include private prompts, `prompts.json`, `promptoire.config.json`, API keys, or personal data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested approach
+      description: Keep it practical and small if possible.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Prompt organization
+        - Import/export
+        - AI improve flow
+        - Search/copy workflow
+        - Settings/customization
+        - GitHub/release readiness
+        - Other
+  - type: checkboxes
+    id: fit
+    attributes:
+      label: Fit check
+      options:
+        - label: This keeps Promptoire simple and local-first.
+          required: true
+        - label: I removed private prompts, API keys, config files, and personal data.
+          required: true

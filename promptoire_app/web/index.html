@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="matrix" data-density="compact">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Promptoire</title>
+  <!-- The packaged WebView uses the native executable icon. Suppress the
+       browser preview's otherwise-noisy /favicon.ico request. -->
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <!-- ambient backdrop glow -->
+  <div class="bg-aura" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <div id="app" class="app">
+    <!-- ───────────────────────── title bar ───────────────────────── -->
+    <header class="titlebar">
+      <div class="titlebar-drag pywebview-drag-region">
+        <div class="brand">
+          <span class="brand-mark">P</span>
+          <span class="brand-name">Promptoire</span>
+          <span class="brand-count" id="brandCount"></span>
+        </div>
+      </div>
+      <div class="titlebar-actions">
+        <button class="tbtn" id="btnPin" title="Keep open (disable auto-hide)" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M16 3l5 5-4 1-3 3-1 5-2-2-4 4-1-1 4-4-2-2 5-1 3-3 1-4z"/></svg>
+        </button>
+        <button class="tbtn" id="btnImprove" title="Improve library with AI">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M12 2l2.2 5.2L20 9l-4.5 3.6L17 18l-5-3-5 3 1.5-5.4L4 9l5.8-1.8z"/></svg>
+        </button>
+        <button class="tbtn" id="btnEditor" title="Edit library">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M4 20h4l11-11-4-4L4 16v4zM13.5 6.5l4 4"/></svg>
+        </button>
+        <button class="tbtn" id="btnSettings" title="Settings">
+          <svg viewBox="0 0 24 24" class="ic"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/></svg>
+        </button>
+        <button class="tbtn tbtn-coffee" id="btnCoffee" title="Buy Me a Coffee">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M5 8h10v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8zM15 10h2a2 2 0 0 1 0 4h-2M6 5h9M8 2v2M12 2v2"/></svg>
+        </button>
+        <button class="tbtn tbtn-close" id="btnClose" title="Hide (your hotkey reopens it)">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ───────────────────────── launcher view ───────────────────────── -->
+    <main class="view view-launcher" id="viewLauncher">
+      <div class="searchwrap">
+        <svg viewBox="0 0 24 24" class="search-ic"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="search" class="search" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Search your prompts…" />
+        <kbd class="search-hint" id="searchHint">↑↓ ↵</kbd>
+      </div>
+
+      <div class="filters" id="filters">
+        <button class="chip is-active" data-filter="all">All</button>
+        <button class="chip" data-filter="text">✎ Text</button>
+        <button class="chip" data-filter="image">▦ Image</button>
+        <button class="chip" data-filter="favorites">★ Favorites</button>
+        <button class="filter-new" id="btnAdd" title="New prompt (Ctrl+N)" aria-label="New prompt">
+          <svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New</span>
+        </button>
+        <button class="density-toggle" id="btnDensity" title="Prompt density: Compact"
+                aria-label="Change prompt density">
+          <svg viewBox="0 0 24 24" class="ic" aria-hidden="true">
+            <path d="M5 7h14M5 12h14M5 17h14"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="catrail" id="catrail"></div>
+
+      <div class="results" id="results" tabindex="-1"></div>
+
+    </main>
+
+    <!-- ───────────────────────── editor / manage view ───────────────────────── -->
+    <section class="view view-panel hidden" id="viewEditor">
+      <div class="panel-head">
+        <button class="btn btn-ghost btn-back" data-back>‹ Back</button>
+        <h2>Edit&nbsp;Library</h2>
+        <button class="btn btn-ghost" id="btnAddCategory">+ Category</button>
+      </div>
+      <div class="editor-body" id="editorBody"></div>
+    </section>
+
+    <!-- ───────────────────────── bulk-improve view ───────────────────────── -->
+    <section class="view view-panel hidden" id="viewBulk">
+      <div class="panel-head">
+        <button class="btn btn-ghost btn-back" data-back>‹ Back</button>
+        <h2>Improve&nbsp;Library</h2>
+        <span></span>
+      </div>
+      <div class="bulk-body" id="bulkBody"></div>
+    </section>
+
+    <!-- ───────────────────────── settings view ───────────────────────── -->
+    <section class="view view-panel hidden" id="viewSettings">
+      <div class="panel-head">
+        <button class="btn btn-ghost btn-back" data-back>‹ Back</button>
+        <h2>Settings</h2>
+        <span></span>
+      </div>
+      <div class="settings-body" id="settingsBody"></div>
+    </section>
+  </div>
+
+  <!-- toast + modal hosts -->
+  <div class="toast-host" id="toastHost"></div>
+  <div class="modal-host hidden" id="modalHost"></div>
+
+  <!-- Frameless WebView windows need explicit native resize hit areas. -->
+  <div class="resize-handles" aria-hidden="true">
+    <div class="resize-handle resize-n" data-resize="top"></div>
+    <div class="resize-handle resize-e" data-resize="right"></div>
+    <div class="resize-handle resize-s" data-resize="bottom"></div>
+    <div class="resize-handle resize-w" data-resize="left"></div>
+    <div class="resize-handle resize-ne" data-resize="top-right"></div>
+    <div class="resize-handle resize-se" data-resize="bottom-right"></div>
+    <div class="resize-handle resize-sw" data-resize="bottom-left"></div>
+    <div class="resize-handle resize-nw" data-resize="top-left"></div>
+  </div>
+
+  <script src="js/bridge.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/launcher.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/bulk.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# PyInstaller artifacts
+build/
+dist/
+# (Promptoire.spec IS tracked — it's the build recipe)
+
+# Logs
+logs/
+
+# Node / Web
+node_modules/
+*.log
+
+# OS
+Thumbs.db
+Desktop.ini
+nul
+
+# IDE
+.vscode/
+.idea/
+
+# Debug / temp files
+__diag*.py
+__tmp*.py
+.playwright-cli/
+output/playwright/
+.launch/
+
+# User data (generated at runtime)
+state.json
+data/prompt_history.json
+cache/
+backups/
+
+# Promptoire (new app) runtime files
+prompts.json
+promptoire.config.json
+_selftest.json
+.webcache/
+
+# Archived legacy app (kept locally, not published)
+archive/
+
+# Environment / secrets
+*.env
+*.env.local
+.claude/

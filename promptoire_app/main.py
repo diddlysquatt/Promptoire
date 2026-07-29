@@ -1,0 +1,553 @@
+"""Promptoire app controller — window, tray, global hotkey, lifecycle.
+
+Run:  python -m promptoire_app
+"""
+
+from __future__ import annotations
+
+import sys
+import threading
+import time
+from pathlib import Path
+
+import webview  # pywebview
+
+from . import __app_name__, __version__
+from .api import Api
+from .core import paths
+from .core.library import PromptLibrary
+from .core.settings import Settings
+from .platform import window_fx
+from .platform.hotkey import GlobalHotkey
+from .platform.tray import Tray
+
+
+class App:
+    def __init__(self, *, debug: bool = False, selftest: bool = False):
+        self.debug = debug
+        self.selftest = selftest
+        self.version = __version__
+        self.settings = Settings(paths.settings_file()).load()
+        if sys.platform.startswith("win"):
+            try:
+                from .platform import startup
+                startup_enabled = startup.is_enabled()
+                if self.settings.get("behavior", "launch_at_startup", default=False) != startup_enabled:
+                    self.settings.update({"behavior": {"launch_at_startup": startup_enabled}})
+                    self.settings.save()
+            except Exception:
+                pass
+        self.library = PromptLibrary(paths.prompts_file()).load()
+
+        self.window = None
+        self.tray = Tray(__app_name__)
+        self.hotkey = GlobalHotkey()
+        self.api = Api(self)
+
+        self._visible = True
+        self._quitting = False
+        self._save_timer: threading.Timer | None = None
+        self._hwnd = 0
+
+    # ---- platform helpers ---------------------------------------------------
+
+    def platform_name(self) -> str:
+        if sys.platform.startswith("win"):
+            return "windows"
+        if sys.platform == "darwin":
+            return "macos"
+        return "linux"
+
+    # ---- run ----------------------------------------------------------------
+
+    def run(self):
+        if self.settings.get("behavior", "single_instance", default=True):
+            if not _acquire_single_instance_lock():
+                # A hidden launcher must not make the desktop shortcut appear
+                # broken. Reveal the existing window instead of silently exiting.
+                shown = window_fx.show_existing_window(__app_name__)
+                print("Promptoire is already running." + (" Existing window shown." if shown else ""))
+                return
+
+        w = int(self.settings.get("window", "width", default=460))
+        h = int(self.settings.get("window", "height", default=560))
+        on_top = True
+
+        index = paths.web_dir() / "index.html"
+        self.window = webview.create_window(
+            __app_name__,
+            url=str(index),
+            js_api=self.api,
+            width=w,
+            height=h,
+            min_size=(360, 420),
+            resizable=True,
+            frameless=True,
+            easy_drag=False,
+            on_top=on_top,
+            background_color="#0b0b13",
+            text_select=True,
+            zoomable=False,
+        )
+        self.window.events.closing += self._on_closing
+
+        # Load via file:// (we use classic scripts, not ES modules, so no HTTP
+        # server is needed). This is the most reliable pywebview path and keeps
+        # the JS<->Python bridge working on the WinForms/EdgeChromium backend.
+        webview.start(
+            self._on_started,
+            gui="edgechromium" if self.platform_name() == "windows" else None,
+            debug=self.debug,
+        )
+
+    def _on_started(self):
+        # webview.start invokes this worker before the WinForms window is
+        # guaranteed to exist. Wait for the first native show so handle lookup
+        # cannot permanently cache 0 and silently disable resizing/focus.
+        try:
+            self.window.events.shown.wait(timeout=5.0)
+        except Exception:
+            pass
+
+        # Native polish once the OS window exists.
+        try:
+            hwnd = self._resolve_hwnd()
+            window_fx.apply_polish(hwnd, dark=True, rounded=True, acrylic=False)
+            window_fx.set_window_icon(hwnd, paths.app_icon())
+        except Exception:
+            pass
+
+        # Restore last position if remembered.
+        try:
+            if self.settings.get("window", "remember_position", default=True):
+                x = self.settings.get("window", "x")
+                y = self.settings.get("window", "y")
+                if isinstance(x, int) and isinstance(y, int):
+                    self.window.move(x, y)
+        except Exception:
+            pass
+
+        # Global hotkey.
+        self.set_hotkey(self.settings.get("hotkey", default="ctrl+alt+space"))
+
+        # Tray.
+        if self.settings.get("behavior", "show_tray", default=True) and not self.selftest:
+            self.tray.start(
+                on_show=self.show_window,
+                on_settings=self._tray_settings,
+                on_quit=self.quit,
+                icon_image=_load_tray_icon(),
+            )
+
+        if self.selftest:
+            # Watchdog: the JS reports via api.selftest_report (real bridge
+            # round-trip). If it never does, force-quit so we don't hang.
+            threading.Thread(target=self._selftest_watchdog, daemon=True).start()
+
+    def _selftest_watchdog(self):
+        # Probe the page from the Python side too, so a silent JS failure
+        # still leaves a diagnosis in stderr before the forced quit.
+        for delay in (4, 5):
+            time.sleep(delay)
+            try:
+                probe = self.window.evaluate_js(
+                    "JSON.stringify({pywebview: !!window.pywebview,"
+                    " api: !!(window.pywebview && window.pywebview.api),"
+                    " api_n: (window.pywebview && window.pywebview.api) ? Object.keys(window.pywebview.api).length : 0,"
+                    " promptoire: !!window.PROMPTOIRE,"
+                    " cards: document.querySelectorAll('.card').length,"
+                    " groups: document.querySelectorAll('.group').length})"
+                )
+                print(f"[selftest] probe: {probe}", file=sys.stderr, flush=True)
+            except Exception as e:
+                print(f"[selftest] probe failed: {e!r}", file=sys.stderr, flush=True)
+        time.sleep(5)
+        self.quit()
+
+    # ---- window control -----------------------------------------------------
+
+    def toggle_window(self):
+        # Proper launcher toggle: hide only if we're already the focused window;
+        # if visible-but-behind-something, bring forward instead.
+        if self._visible and self._is_foreground():
+            self.hide_window()
+        else:
+            self.show_window()
+
+    def _is_foreground(self) -> bool:
+        if not sys.platform.startswith("win"):
+            return True
+        try:
+            import ctypes
+            hwnd = self._resolve_hwnd()
+            return not hwnd or ctypes.windll.user32.GetForegroundWindow() == hwnd
+        except Exception:
+            return True
+
+    def show_window(self, at_cursor: bool | None = None):
+        if self.window is None:
+            return
+        try:
+            if at_cursor is None:
+                at_cursor = bool(self.settings.get("behavior", "open_at_cursor", default=True))
+            if at_cursor:
+                self._move_near_cursor()
+            self.window.show()
+            self._visible = True
+            # Pull to front + focus the search box.
+            try:
+                self.window.evaluate_js("window.PROMPTOIRE && PROMPTOIRE.onShown && PROMPTOIRE.onShown()")
+            except Exception:
+                pass
+            self._raise_to_front()
+        except Exception:
+            pass
+
+    def hide_window(self):
+        if self.window is None or self._quitting:
+            return
+        try:
+            self._remember_geometry()
+            self.window.hide()
+            self._visible = False
+        except Exception:
+            pass
+
+    def on_window_blur(self):
+        # Primary hide-on-blur logic lives in JS (it knows the UI mode). This is
+        # a backend no-op kept for API symmetry.
+        pass
+
+    def resize(self, width: int, height: int):
+        if self.window is not None:
+            width = max(360, int(width))
+            height = max(420, int(height))
+            self.window.resize(width, height)
+            self.settings.update({"window": {"width": width, "height": height}})
+            self.settings.save()
+
+    def begin_window_resize(self, direction: str) -> bool:
+        resized = window_fx.begin_resize(self._resolve_hwnd(), direction)
+        if resized:
+            # The native helper returns when the user releases the mouse.
+            self._remember_geometry()
+        return resized
+
+    def _move_near_cursor(self):
+        try:
+            cx, cy = _cursor_pos()
+            sw, sh = _screen_size()
+            w = int(self.settings.get("window", "width", default=460))
+            h = int(self.settings.get("window", "height", default=560))
+            x = min(max(cx - 40, 8), max(8, sw - w - 8))
+            y = min(max(cy - 30, 8), max(8, sh - h - 8))
+            self.window.move(int(x), int(y))
+        except Exception:
+            pass
+
+    def _raise_to_front(self):
+        """Reliably steal focus even from a background (hotkey) thread by
+        briefly attaching to the current foreground thread's input queue —
+        the standard workaround for Windows' SetForegroundWindow lock."""
+        if not sys.platform.startswith("win"):
+            return
+        try:
+            import ctypes
+            u = ctypes.windll.user32
+            k = ctypes.windll.kernel32
+            HWND_TOPMOST = -1
+            SWP = 0x0001 | 0x0002 | 0x0040  # NOSIZE | NOMOVE | SHOWWINDOW
+            hwnd = self._resolve_hwnd()
+            if not hwnd:
+                return
+
+            fg = u.GetForegroundWindow()
+            cur_tid = k.GetCurrentThreadId()
+            fg_tid = u.GetWindowThreadProcessId(fg, None) if fg else 0
+
+            u.AllowSetForegroundWindow(-1)  # ASFW_ANY
+            attached = False
+            if fg_tid and fg_tid != cur_tid:
+                attached = bool(u.AttachThreadInput(fg_tid, cur_tid, True))
+            u.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP)
+            u.BringWindowToTop(hwnd)
+            u.SetForegroundWindow(hwnd)
+            u.SetActiveWindow(hwnd)
+            if attached:
+                u.AttachThreadInput(fg_tid, cur_tid, False)
+        except Exception:
+            pass
+
+    def _resolve_hwnd(self) -> int:
+        """Return a live native handle, recovering from startup races."""
+        if not sys.platform.startswith("win") or self.window is None:
+            return 0
+        try:
+            import ctypes
+            if self._hwnd and ctypes.windll.user32.IsWindow(self._hwnd):
+                return self._hwnd
+        except Exception:
+            self._hwnd = 0
+
+        try:
+            native = getattr(self.window, "native", None) if self.window is not None else None
+            handle = getattr(native, "Handle", None)
+            candidate = int(handle.ToInt64()) if hasattr(handle, "ToInt64") else int(handle or 0)
+            if candidate:
+                self._hwnd = candidate
+                return candidate
+        except Exception:
+            pass
+
+        candidate = window_fx.find_hwnd_for_title(__app_name__)
+        if candidate:
+            self._hwnd = candidate
+        return candidate
+
+    def _remember_geometry(self):
+        try:
+            if self.window is None:
+                return
+            patch = {}
+            width, height = self.window.width, self.window.height
+            if isinstance(width, int) and isinstance(height, int):
+                patch.update(width=max(360, width), height=max(420, height))
+            if self.settings.get("window", "remember_position", default=True):
+                x, y = self.window.x, self.window.y
+                if isinstance(x, int) and isinstance(y, int):
+                    patch.update(x=x, y=y)
+            if patch and any(self.settings.get("window", k) != v for k, v in patch.items()):
+                self.settings.update({"window": patch})
+                self.settings.save()
+        except Exception:
+            pass
+
+    # ---- hotkey -------------------------------------------------------------
+
+    def set_hotkey(self, combo: str) -> bool:
+        combo = self.hotkey.normalize(combo)
+        previous = self.settings.get("hotkey", default="")
+        applied = self.hotkey.register(combo, self._hotkey_fired)
+        if applied:
+            self.settings.update({"hotkey": combo})
+            self.settings.save()
+        elif previous and previous != combo:
+            self.hotkey.register(previous, self._hotkey_fired)
+        return applied
+
+    def _hotkey_fired(self):
+        # Runs on the keyboard listener thread; pywebview window ops are safe.
+        self.toggle_window()
+
+    # ---- settings application ----------------------------------------------
+
+    def apply_settings(self, patch: dict) -> dict:
+        prev_hotkey = self.settings.get("hotkey")
+        prev_tray = self.settings.get("behavior", "show_tray", default=True)
+        prev_startup = self.settings.get("behavior", "launch_at_startup", default=False)
+        self.settings.update(patch)
+        self.settings.save()
+        effects = {}
+
+        new_startup = self.settings.get("behavior", "launch_at_startup", default=False)
+        if new_startup != prev_startup:
+            from .platform import startup
+            startup_ok = startup.set_enabled(new_startup)
+            effects["startup"] = startup_ok
+            if not startup_ok:
+                self.settings.update({"behavior": {"launch_at_startup": prev_startup}})
+                self.settings.save()
+                raise RuntimeError("Windows startup setting could not be changed.")
+
+        new_hotkey = self.settings.get("hotkey")
+        if new_hotkey != prev_hotkey:
+            normalized_hotkey = self.hotkey.normalize(new_hotkey)
+            hotkey_ok = self.hotkey.register(normalized_hotkey, self._hotkey_fired)
+            effects["hotkey"] = hotkey_ok
+            if not hotkey_ok:
+                self.settings.update({"hotkey": prev_hotkey})
+                self.settings.save()
+                if prev_hotkey:
+                    self.hotkey.register(prev_hotkey, self._hotkey_fired)
+                raise RuntimeError("That global hotkey could not be registered.")
+            self.settings.update({"hotkey": normalized_hotkey})
+            self.settings.save()
+
+        new_tray = self.settings.get("behavior", "show_tray", default=True)
+        if new_tray != prev_tray:
+            if new_tray:
+                tray_ok = self.tray.start(
+                    on_show=self.show_window,
+                    on_settings=self._tray_settings,
+                    on_quit=self.quit,
+                    icon_image=_load_tray_icon(),
+                )
+                effects["tray"] = tray_ok
+                if not tray_ok:
+                    self.settings.update({"behavior": {"show_tray": prev_tray}})
+                    self.settings.save()
+                    raise RuntimeError("The system tray icon could not be started.")
+            else:
+                self.tray.stop()
+                effects["tray"] = True
+
+        # Push theme/opacity changes to the live UI.
+        try:
+            self.window.evaluate_js(
+                "window.PROMPTOIRE && PROMPTOIRE.onSettingsChanged && PROMPTOIRE.onSettingsChanged()"
+            )
+        except Exception:
+            pass
+        return effects
+
+    def _tray_settings(self):
+        self.show_window(at_cursor=False)
+        try:
+            self.window.evaluate_js("window.PROMPTOIRE && PROMPTOIRE.openSettings && PROMPTOIRE.openSettings()")
+        except Exception:
+            pass
+
+    def after_copy_paste(self):
+        from .platform import clipboard
+        threading.Thread(target=clipboard.paste_into_active_window, daemon=True).start()
+
+    # ---- persistence (debounced) -------------------------------------------
+
+    def save_library(self):
+        self.library.save(backup=False)
+
+    def save_library_soon(self, delay: float = 1.5):
+        if self._save_timer is not None:
+            self._save_timer.cancel()
+        self._save_timer = threading.Timer(delay, self.save_library)
+        self._save_timer.daemon = True
+        self._save_timer.start()
+
+    # ---- file dialogs -------------------------------------------------------
+
+    def save_file_dialog(self, default_name: str, file_types=None) -> str | None:
+        try:
+            res = self.window.create_file_dialog(
+                webview.SAVE_DIALOG, save_filename=default_name,
+                file_types=file_types or ("All files (*.*)",),
+            )
+            if isinstance(res, (list, tuple)):
+                return res[0] if res else None
+            return res
+        except Exception:
+            return None
+
+    def open_file_dialog(self, file_types=None) -> str | None:
+        try:
+            res = self.window.create_file_dialog(
+                webview.OPEN_DIALOG, allow_multiple=False,
+                file_types=file_types or ("All files (*.*)",),
+            )
+            if isinstance(res, (list, tuple)):
+                return res[0] if res else None
+            return res
+        except Exception:
+            return None
+
+    # ---- lifecycle ----------------------------------------------------------
+
+    def _on_closing(self):
+        # Frameless close button calls window.destroy(); treat as quit.
+        if not self._quitting:
+            self.quit()
+        return True
+
+    def quit(self):
+        if self._quitting:
+            return
+        self._quitting = True
+        try:
+            self._remember_geometry()
+            self.settings.save()
+            self.library.save(backup=True)
+        except Exception:
+            pass
+        try:
+            self.hotkey.unregister()
+        except Exception:
+            pass
+        try:
+            self.tray.stop()
+        except Exception:
+            pass
+        try:
+            if self.window is not None:
+                self.window.destroy()
+        except Exception:
+            pass
+
+
+# ---- module-level helpers ---------------------------------------------------
+
+def _cursor_pos():
+    import ctypes
+    pt = ctypes.wintypes.POINT() if sys.platform.startswith("win") else None
+    if pt is not None:
+        ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+        return pt.x, pt.y
+    return 200, 200
+
+
+def _screen_size():
+    if sys.platform.startswith("win"):
+        import ctypes
+        u = ctypes.windll.user32
+        return u.GetSystemMetrics(0), u.GetSystemMetrics(1)
+    return 1920, 1080
+
+
+def _load_tray_icon():
+    try:
+        from PIL import Image
+        ico = paths.assets_dir() / "tray.png"
+        if ico.exists():
+            return Image.open(str(ico))
+    except Exception:
+        pass
+    return None
+
+
+_LOCK_HANDLE = None
+
+
+def _acquire_single_instance_lock() -> bool:
+    """Windows named mutex; cross-platform lockfile fallback."""
+    global _LOCK_HANDLE
+    if sys.platform.startswith("win"):
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            _LOCK_HANDLE = kernel32.CreateMutexW(None, False, "Promptoire_SingleInstance_Mutex")
+            ERROR_ALREADY_EXISTS = 183
+            if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+                return False
+            return True
+        except Exception:
+            return True
+    # POSIX: lockfile
+    try:
+        lock = paths.data_dir() / ".promptoire.lock"
+        _LOCK_HANDLE = open(lock, "w")
+        import fcntl  # type: ignore
+        fcntl.flock(_LOCK_HANDLE, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except Exception:
+        return False
+
+
+def main():
+    import ctypes  # noqa: F401  (ensures wintypes available on win)
+    if sys.platform.startswith("win"):
+        import ctypes.wintypes  # noqa: F401
+    debug = "--debug" in sys.argv
+    selftest = "--selftest" in sys.argv
+    App(debug=debug, selftest=selftest).run()
+
+
+if __name__ == "__main__":
+    main()
