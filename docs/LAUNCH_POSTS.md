@@ -98,12 +98,16 @@ prompts with nested categories, favorites, tags, and drag-and-drop. Export a
 readable outline to any LLM, preview what comes back, and safely merge changes.
 No account or telemetry.
 
-**Thumbnail:** Export the Promptoire app icon as a square 240×240 PNG under
-3 MB.
+**Thumbnail:** `assets/product-hunt/promptoire-thumbnail-240.png` — the actual
+Promptoire app icon exported at 240×240, under 3 MB.
 
-**Gallery:** Prepare at least two 1270×760 images from the real screenshots.
-Lead with the launcher, then show Edit Library and Improve Library. Keep the
-native window visible and do not replace the real UI with a generated mockup.
+**Gallery:** Upload these real-UI 1270×760 images in order:
+
+1. `assets/product-hunt/promptoire-gallery-01-launcher.png`
+2. `assets/product-hunt/promptoire-gallery-02-workflow.png`
+
+Both retain the actual native Promptoire screenshots; no replacement UI is
+generated.
 
 **Maker's first comment:**
 
