@@ -1,5 +1,5 @@
 # Promptoire (pywebview rebuild) — runtime dependencies
-pywebview>=5.0        # system WebView (WebView2 on Windows, WKWebView on macOS)
+pywebview>=6.2.1        # system WebView (WebView2 on Windows, WKWebView on macOS)
 pyperclip>=1.8.2      # clipboard copy
 pystray>=0.19.5       # system tray icon
 keyboard>=0.13.5; platform_system=="Windows"   # global hotkey (Windows)
