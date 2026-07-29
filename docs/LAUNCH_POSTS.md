@@ -68,6 +68,71 @@ copy/export it or use the optional OpenAI action.
 Repository and portable download:
 https://github.com/diddlysquatt/Promptoire
 
+## Product Hunt — Prepared Second-Wave Launch
+
+Do not rush this onto the same day as the GitHub release. Product Hunt gives a
+launch its own 24-hour Pacific-time leaderboard, so use the first week to verify
+the public download, collect early feedback, finish the Product Hunt profile,
+and prepare the required image sizes. A Saturday launch suits a free solo side
+project and avoids competing only on weekday volume.
+
+**Recommended schedule:** Saturday, August 8, 2026 at 12:01 a.m. Pacific
+(2:01 a.m. Central), provided the maker's personal Product Hunt account is
+eligible and the draft preview is complete.
+
+**Product URL:** `https://diddlysquatt.github.io/Promptoire/`
+
+**Name:** Promptoire
+
+**Tagline (60 characters maximum):** Your prompt library, one global hotkey away
+
+**Pricing:** Free
+
+**Launch tags:** Productivity, Artificial Intelligence, Open Source
+
+**Description:**
+
+Promptoire is a free, local-first Windows prompt library. Press one global
+hotkey to search text or image prompts, fill placeholders, and copy. Organize
+prompts with nested categories, favorites, tags, and drag-and-drop. Export a
+readable outline to any LLM, preview what comes back, and safely merge changes.
+No account or telemetry.
+
+**Thumbnail:** Export the Promptoire app icon as a square 240×240 PNG under
+3 MB.
+
+**Gallery:** Prepare at least two 1270×760 images from the real screenshots.
+Lead with the launcher, then show Edit Library and Improve Library. Keep the
+native window visible and do not replace the real UI with a generated mockup.
+
+**Maker's first comment:**
+
+Hey Product Hunt — I built Promptoire because the prompts I actually reused
+were scattered across notes, chat histories, and text files.
+
+It is a compact Windows launcher that stays one global hotkey away. Search or
+browse nested categories, fill placeholders, and click a prompt to copy it.
+Text and image prompts live together without forcing advanced image-generation
+settings into the copied prompt.
+
+The feature I care most about is the library round trip: export a readable
+outline, run it through any LLM by copy/paste, preview the returned changes, and
+safely merge new or updated prompts without deleting or moving local content.
+The direct OpenAI action is optional.
+
+Promptoire is free and open source. There is no account, telemetry, or cloud
+database. I would genuinely value feedback on the import workflow and the
+small Windows launcher ergonomics.
+
+**Launch-day share:**
+
+Promptoire is live on Product Hunt today. It is a free, local-first Windows
+prompt library: one hotkey to find and copy text or image prompts, plus a safe
+outline round trip through any LLM. I would love feedback on the workflow:
+[PRODUCT HUNT URL]
+
+Ask for feedback or comments, never for upvotes.
+
 ## Reply Notes
 
 - Lead with what the person asked about; do not repeat the full pitch.

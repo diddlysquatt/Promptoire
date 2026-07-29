@@ -23,14 +23,18 @@ Pacific** so it receives a full Product Hunt day.
 
 ## Publish order
 
-Do these manually. The heartbeat never performs them.
+The scheduled launch heartbeats perform these steps under the maintainer's
+explicit launch authorization. If any required gate fails, stop before a
+partial publication and report the blocker.
 
 1. Merge PR #1 into `main`.
-2. Confirm CI is green on `main`.
+2. Confirm the full local release gate, dependency audit, private-history scan,
+   draft assets, and checksum are green. If private Actions billing prevents a
+   runner from starting, record that infrastructure-only failure and rerun CI
+   immediately after public visibility.
 3. Publish the prepared GitHub release.
 4. Change repository visibility from **Private** to **Public**.
-5. In **Settings → Pages**, select **GitHub Actions**, then manually run the
-   **Publish documentation site** workflow. Confirm
+5. Run the **Publish documentation site** workflow and confirm
    `https://diddlysquatt.github.io/Promptoire/` loads.
 6. Open the public repository in a signed-out browser and verify:
    - README images render.
@@ -52,7 +56,9 @@ Use the channel-specific copy in [LAUNCH_POSTS.md](LAUNCH_POSTS.md).
 - A carefully written Show HN after the public download and documentation have been verified.
 - Relevant communities only where self-promotion is permitted; tailor the post
   to each community instead of dropping the same link everywhere.
-- If using Product Hunt, schedule it separately for the start of its Pacific
+- Treat Product Hunt as a separate second-wave launch. Complete a personal maker
+  profile, prepare a square 240×240 thumbnail and at least two 1270×760 real-UI
+  gallery images, then schedule the prepared draft for the start of its Pacific
   Time launch day and be available throughout that day.
 
 ## After launch
