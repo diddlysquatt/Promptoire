@@ -10,4 +10,4 @@ Pillow>=12.3.0        # tray icon rendering; 12.3.0 includes current security fi
 # adds no optional SDK dependency. Manual copy/paste works without an API key.
 
 # Packaging (optional, for building a standalone app)
-pyinstaller>=6.7
+pyinstaller>=6.21.0
