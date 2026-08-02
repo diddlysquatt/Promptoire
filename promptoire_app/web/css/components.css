@@ -203,7 +203,13 @@ html[data-density="titles"] .card-meta { display: none; }
 @keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
 .toast .dot { width: 7px; height: 7px; border-radius: 99px; background: var(--good); flex: 0 0 auto; }
 .toast.bad .dot { background: var(--bad); }
-.toast .undo { margin-left: 4px; color: var(--accent); font-weight: 700; }
+.toast .undo {
+  margin-left: 2px; padding: 3px 7px; border-radius: 6px;
+  color: var(--accent); font: inherit; font-size: 11.5px; font-weight: 750;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+}
+.toast .undo:hover { color: var(--fg); border-color: var(--accent); }
+.toast .undo:disabled { opacity: 0.55; cursor: wait; }
 
 /* ---- modal -------------------------------------------------------------- */
 .modal-host {

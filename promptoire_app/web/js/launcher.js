@@ -122,6 +122,7 @@
 
   function setFilter(f) {
     PR.state.filter = f;
+    if (f === "recent") PR.state.catFilter = null;
     document.querySelectorAll("#filters .chip").forEach((c) =>
       c.classList.toggle("is-active", c.dataset.filter === f));
     runSearch();
@@ -143,7 +144,34 @@
     const f = PR.state.filter;
     if (f === "text" || f === "image") return (p.type || "text") === f;
     if (f === "favorites") return !!p.favorite;
+    if (f === "recent") return !!p.last_used;
     return true;
+  }
+
+  function recentHits() {
+    const hits = [];
+    function walk(cats, path, inheritedColor) {
+      (cats || []).forEach((cat) => {
+        const color = cat.color || inheritedColor || "";
+        const here = path.concat([cat.name]);
+        (cat.prompts || []).forEach((p) => {
+          if (!p.last_used) return;
+          hits.push(Object.assign({}, p, {
+            category_id: cat.id,
+            category_name: cat.name,
+            category_color: color,
+            category_icon: cat.icon || "",
+            path: here,
+          }));
+        });
+        walk(cat.subcategories, here, color);
+      });
+    }
+    walk(PR.state.categories, [], "");
+    hits.sort((a, b) =>
+      String(b.last_used).localeCompare(String(a.last_used)) ||
+      String(a.title || "").localeCompare(String(b.title || "")));
+    return hits;
   }
 
   // ids of a category and all its descendants (for search-mode cat filtering)
@@ -166,6 +194,12 @@
     const { query, filter } = PR.state;
     renderRail();
     if (!query.trim()) {
+      if (filter === "recent") {
+        PR.state.results = recentHits();
+        PR.state.selected = 0;
+        renderFlat();
+        return;
+      }
       renderBrowse();
       return;
     }
@@ -173,6 +207,11 @@
     const typeFilter = filter === "text" || filter === "image" ? filter : "all";
     const res = await PR.bridge.call("search", query, typeFilter, favOnly, "");
     let hits = (res && res.results) || [];
+    if (filter === "recent") {
+      hits = hits.filter((h) => h.last_used).sort((a, b) =>
+        String(b.last_used).localeCompare(String(a.last_used)) ||
+        String(a.title || "").localeCompare(String(b.title || "")));
+    }
     if (PR.state.catFilter) {
       const top = findTopCat(PR.state.catFilter);
       if (top) {
@@ -190,8 +229,9 @@
   function renderRail() {
     const cats = PR.state.categories || [];
     railEl.innerHTML = "";
-    railEl.classList.toggle("hidden", cats.length < 2);
-    if (cats.length < 2) return;
+    const hidden = cats.length < 2 || PR.state.filter === "recent";
+    railEl.classList.toggle("hidden", hidden);
+    if (hidden) return;
     cats.forEach((c) => {
       const n = countTree(c);
       const chip = el("button", {
@@ -316,6 +356,13 @@
   }
 
   function emptyState(query) {
+    if (PR.state.filter === "recent" && !query) {
+      return el("div", { class: "empty" }, [
+        el("div", { class: "emoji", text: "◷" }),
+        el("h3", { text: "No recent prompts yet" }),
+        el("p", { text: "Copied prompts appear here automatically, newest first." }),
+      ]);
+    }
     if (PR.state.filter === "favorites" && !query) {
       return el("div", { class: "empty" }, [
         el("div", { class: "emoji", text: "★" }),
@@ -433,8 +480,11 @@
   async function doCopy(id, text, node, title) {
     const r = await PR.bridge.call("copy_prompt", id, text, PR.state.pinned);
     if (r && r.ok) {
+      const local = PR.findPrompt(id);
+      if (local && r.last_used) local.p.last_used = r.last_used;
       if (node) { node.classList.add("flash"); setTimeout(() => node && node.classList.remove("flash"), 520); }
       toast("Copied “" + (title || "prompt") + "”");
+      if (PR.state.filter === "recent" && PR.state.pinned) runSearch(false);
     } else {
       toast((r && r.error) || "Copy failed", { bad: true });
     }

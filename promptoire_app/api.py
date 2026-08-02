@@ -84,8 +84,9 @@ class Api:
             text = resolved_text if resolved_text is not None else p.get("prompt", "")
             if not clipboard.copy(text):
                 return err("Clipboard unavailable")
+            last_used = None
             if p is not None:
-                self._app.library.record_use(prompt_id)
+                last_used = self._app.library.record_use(prompt_id)
                 self._app.save_library_soon()
             behavior = self._app.settings.get("behavior", default={})
             if behavior.get("paste_after_copy"):
@@ -93,7 +94,11 @@ class Api:
             spring = bool(behavior.get("copy_then_hide", True)) and not bool(keep_open)
             if spring:
                 self._app.hide_window()
-            return ok(spring=spring, title=(p or {}).get("title", "Prompt"))
+            return ok(
+                spring=spring,
+                title=(p or {}).get("title", "Prompt"),
+                last_used=last_used,
+            )
         except Exception as e:
             return err(str(e))
 

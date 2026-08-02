@@ -14,7 +14,7 @@ Every release includes a SHA-256 checksum file. Compare it with the downloaded
 ZIP before running the application:
 
 ```powershell
-Get-FileHash .\Promptoire-2.4.0-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\Promptoire-2.5.0-windows-x64.zip -Algorithm SHA256
 ```
 
 The resulting hash must exactly match the published `.sha256.txt` file. You can

@@ -295,7 +295,7 @@
     s.appendChild(el("div", { class: "about" }, [
       el("img", { class: "logo-big", src: "assets/tray.png", alt: "Promptoire magical scroll" }),
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
-      el("div", { class: "ver", text: "v" + (PR.state.version || "2.4.0") + " · local-first · open source" }),
+      el("div", { class: "ver", text: "v" + (PR.state.version || "2.5.0") + " · local-first · open source" }),
       el("div", { class: "creator-credit", text: "Brought to you by Stoned Ape" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("div", { class: "about-actions" }, [

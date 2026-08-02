@@ -76,13 +76,22 @@
   function toast(message, opts) {
     opts = opts || {};
     const host = document.getElementById("toastHost");
-    const t = el("div", { class: "toast" + (opts.bad ? " bad" : "") }, [
+    const t = el("div", { class: "toast" + (opts.bad ? " bad" : ""), role: "status" }, [
       el("span", { class: "dot" }),
       el("span", { text: message }),
     ]);
     if (opts.undo) {
-      const u = el("a", { class: "undo", text: "Undo", href: "#" });
-      u.addEventListener("click", (e) => { e.preventDefault(); opts.undo(); dismiss(); });
+      const u = el("button", { class: "undo", text: "Undo", type: "button" });
+      u.addEventListener("click", async () => {
+        u.disabled = true;
+        try {
+          if (await opts.undo() === false) { u.disabled = false; return; }
+          dismiss();
+        } catch (e) {
+          u.disabled = false;
+          toast("Could not restore that prompt", { bad: true });
+        }
+      });
       t.appendChild(u);
     }
     host.appendChild(t);
@@ -92,7 +101,7 @@
       t.classList.add("out");
       setTimeout(() => t.remove(), 220);
     }
-    timer = setTimeout(dismiss, opts.duration || (opts.undo ? 5000 : 2200));
+    timer = setTimeout(dismiss, opts.duration || (opts.undo ? 12000 : 2200));
     return dismiss;
   }
 

@@ -211,9 +211,9 @@
       else if (mod && e.key === "i") { e.preventDefault(); showView(PR.state.view === "bulk" ? "launcher" : "bulk"); }
       else if (mod && e.key === ",") { e.preventDefault(); showView(PR.state.view === "settings" ? "launcher" : "settings"); }
       else if (mod && e.key === "n") { e.preventDefault(); PR.editor.newPrompt(null); }
-      else if (mod && "1234".includes(e.key) && PR.state.view === "launcher") {
+      else if (mod && "12345".includes(e.key) && PR.state.view === "launcher") {
         e.preventDefault();
-        PR.launcher.setFilter(["all", "text", "image", "favorites"]["1234".indexOf(e.key)]);
+        PR.launcher.setFilter(["all", "text", "image", "favorites", "recent"]["12345".indexOf(e.key)]);
       }
     });
   }

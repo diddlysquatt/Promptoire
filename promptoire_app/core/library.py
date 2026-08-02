@@ -214,11 +214,14 @@ class PromptLibrary:
         p["updated_at"] = now_iso()
         return p["favorite"]
 
-    def record_use(self, prompt_id: str) -> None:
+    def record_use(self, prompt_id: str) -> str | None:
         p, _, _ = self.find_prompt(prompt_id)
         if p is not None:
             p["uses"] = int(p.get("uses", 0)) + 1
-            p["last_used"] = now_iso()
+            used_at = now_iso()
+            p["last_used"] = used_at
+            return used_at
+        return None
 
     # ---- category CRUD ------------------------------------------------------
 
@@ -340,6 +343,7 @@ class PromptLibrary:
                 "note": p.get("note", ""),
                 "favorite": p.get("favorite", False),
                 "uses": p.get("uses", 0),
+                "last_used": p.get("last_used", ""),
                 "category_id": cat.get("id") if cat else None,
                 "category_name": cat.get("name", "") if cat else "",
                 "category_color": cmeta.get("color", ""),

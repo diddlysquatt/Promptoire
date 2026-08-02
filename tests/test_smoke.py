@@ -312,6 +312,29 @@ def _run_checks():
     assert normal_copy.get("ok") and normal_copy.get("spring") is True, normal_copy
     assert hide_calls == ["hide"] and copied_text == ["Pinned copy", "Normal copy"], out["copy.pin_override"]
 
+    # Copy recency must survive a full save/reload; otherwise the Recent view
+    # silently resets whenever the app restarts.
+    recent_id = st["categories"][0]["prompts"][0]["id"]
+    original_clipboard_copy = clipboard.copy
+    clipboard.copy = lambda text: True
+    try:
+        recent_copy = api.copy_prompt(recent_id, keep_open=True)
+    finally:
+        clipboard.copy = original_clipboard_copy
+    app.save_library()
+    reloaded_library = PromptLibrary(app.library.path).load()
+    reloaded_prompt, _, _ = reloaded_library.find_prompt(recent_id)
+    recent_search = reloaded_library.search("")
+    recent_hit = next((hit for hit in recent_search if hit["id"] == recent_id), None)
+    out["recent.persistence"] = {
+        "response": recent_copy.get("last_used"),
+        "reloaded": (reloaded_prompt or {}).get("last_used"),
+        "search": (recent_hit or {}).get("last_used"),
+    }
+    assert recent_copy.get("ok") and recent_copy.get("last_used"), recent_copy
+    assert out["recent.persistence"]["response"] == out["recent.persistence"]["reloaded"]
+    assert out["recent.persistence"]["response"] == out["recent.persistence"]["search"]
+
     exp = api.get_export(False)
     assert exp["ok"], exp
     data = json.loads(exp["json"])
@@ -1026,6 +1049,7 @@ Question planner: Turn {notes} into prioritized interview questions.
     app_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "app.js").read_text(encoding="utf-8")
     launcher_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "launcher.js").read_text(encoding="utf-8")
     editor_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "editor.js").read_text(encoding="utf-8")
+    components_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "components.js").read_text(encoding="utf-8")
     settings_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "settings.js").read_text(encoding="utf-8")
     components_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "components.css").read_text(encoding="utf-8")
     base_css = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "css" / "base.css").read_text(encoding="utf-8")
@@ -1166,6 +1190,27 @@ Question planner: Turn {notes} into prioritized interview questions.
     }
     out["frontend.launcher_layout"] = launcher_layout
     assert all(launcher_layout.values()), launcher_layout
+    recent_contract = {
+        "chip": 'data-filter="recent"' in launcher_html and "◷ Recent" in launcher_html,
+        "newest_first": "function recentHits()" in launcher_js and "String(b.last_used).localeCompare" in launcher_js,
+        "copied_only": 'if (!p.last_used) return;' in launcher_js,
+        "searchable": 'hits = hits.filter((h) => h.last_used).sort' in launcher_js,
+        "copy_updates_state": "local.p.last_used = r.last_used" in launcher_js,
+        "keyboard_shortcut": '"all", "text", "image", "favorites", "recent"' in app_js,
+    }
+    out["frontend.recent_filter"] = recent_contract
+    assert all(recent_contract.values()), recent_contract
+    delete_prompt_block = editor_js.split("function deletePrompt", 1)[1].split("function deleteCategory", 1)[0]
+    undo_delete_contract = {
+        "no_confirmation": "confirmDialog" not in delete_prompt_block,
+        "immediate_delete": 'PR.bridge.call("delete_prompt", p.id)' in delete_prompt_block,
+        "exact_restore": 'PR.bridge.call("restore_prompt", cat.id, r.removed || p, index)' in delete_prompt_block,
+        "small_button": 'el("button", { class: "undo"' in components_js and ".toast .undo" in components_css,
+        "useful_window": "opts.undo ? 12000" in components_js,
+        "restore_failure_visible": "Could not restore that prompt" in delete_prompt_block,
+    }
+    out["frontend.undo_delete"] = undo_delete_contract
+    assert all(undo_delete_contract.values()), undo_delete_contract
     out["frontend.github_source_link"] = (
         "source-link" in settings_js
         and "configuredRepoUrl" in settings_js
@@ -1597,8 +1642,20 @@ Question planner: Turn {notes} into prioritized interview questions.
         reordered.get("ok") is True and destination_prompts[-1].get("id") == pid
     )
     assert out["reorder_prompt.ok"], reordered
+    delete_index = len(destination_prompts) - 1
     dele = api.delete_prompt(pid)
     out["delete.ok"] = dele["ok"]
+    restored = api.restore_prompt(target_id, dele.get("removed", {}), delete_index)
+    restored_prompt, restored_cat, _ = app.library.find_prompt(pid)
+    out["delete.undo_restore"] = (
+        restored.get("ok") is True
+        and restored_prompt is not None
+        and restored_cat is not None
+        and restored_cat.get("id") == target_id
+        and restored_cat.get("prompts", [])[delete_index].get("id") == pid
+    )
+    assert out["delete.undo_restore"], restored
+    api.delete_prompt(pid)
 
     print(json.dumps(out, indent=2, ensure_ascii=False))
     print("\nALL SMOKE CHECKS PASSED")

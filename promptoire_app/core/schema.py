@@ -29,6 +29,7 @@ round-trip reliable.
         "note": "",
         "favorite": false,
         "uses": 0,
+        "last_used": "",       # ISO-8601; set whenever the prompt is copied
         "created_at": "ISO-8601",
         "updated_at": "ISO-8601",
 
@@ -186,6 +187,7 @@ def new_prompt(
         "note": note,
         "favorite": False,
         "uses": 0,
+        "last_used": "",
         "created_at": ts,
         "updated_at": ts,
     }
@@ -292,6 +294,7 @@ def normalize_prompt(raw: Any, default_type: str = "text") -> dict | None:
         "note": _as_str(raw.get("note")),
         "favorite": bool(raw.get("favorite", False)),
         "uses": int(raw.get("uses", raw.get("usage_count", 0)) or 0),
+        "last_used": _as_str(raw.get("last_used")),
         "created_at": created,
         "updated_at": updated,
     }

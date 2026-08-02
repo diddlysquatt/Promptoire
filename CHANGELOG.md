@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 2.5.0 - 2026-08-02
+
+### Added
+
+- Add a compact **Recent** launcher filter that shows copied prompts newest-first and remains searchable.
+- Replace prompt-delete confirmation with immediate deletion and a twelve-second **Undo** button that restores the exact prompt and list position.
+
+### Fixed
+
+- Preserve each prompt's `last_used` timestamp across save, restart, search, and packaged-app reload so the Recent view remains reliable.
+
 ## 2.4.0 - 2026-08-01
 
 ### Changed

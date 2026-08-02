@@ -40,7 +40,7 @@
 
 Promptoire is a portable Windows 10/11 app. It has no installer, account, cloud service, or bundled browser.
 
-1. Download `Promptoire-2.4.0-windows-x64.zip` from the [latest release](https://github.com/diddlysquatt/Promptoire/releases/latest).
+1. Download `Promptoire-2.5.0-windows-x64.zip` from the [latest release](https://github.com/diddlysquatt/Promptoire/releases/latest).
 2. Extract the folder somewhere permanent.
 3. Run `Promptoire.exe`.
 4. Set your preferred global hotkey under **Settings → Activation**.
@@ -50,14 +50,14 @@ Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 
 ## How it works
 
 1. **Summon it anywhere.** Press your configurable hotkey and Promptoire opens near the cursor.
-2. **Find and copy fast.** Search, browse nested categories, or use favorites. Clicking a prompt copies it, and Promptoire can disappear immediately.
+2. **Find and copy fast.** Search, browse nested categories, use favorites, or jump through recently copied prompts newest-first. Clicking a prompt copies it, and Promptoire can disappear immediately.
 3. **Improve the whole system.** Export an outline to any LLM, ask it to rewrite or expand your prompts, then preview and safely merge the result back.
 
 ### Everyday controls
 
-- Use **All / Text / Image / Favorites** and the category rail to narrow the launcher. The density button beside **+ New** cycles Comfortable, Compact, and Titles-only without leaving the main view.
+- Use **All / Text / Image / Favorites / Recent** and the category rail to narrow the launcher. **Recent** is automatically ordered by the last time each prompt was copied. The density button beside **+ New** cycles Comfortable, Compact, and Titles-only without leaving the main view.
 - The **pin** at the top is the single auto-hide control. Pinned means the window stays open after copying and when focus changes; unpinned restores normal copy-and-hide behavior.
-- Open **Edit Library** to create, edit, reorder, or move prompts and nested categories. Its sticky filter searches prompt titles, tags, and category names.
+- Open **Edit Library** to create, edit, reorder, or move prompts and nested categories. Deleting a prompt is immediate and offers a small **Undo** action; category deletion retains its confirmation because it can remove an entire tree. The sticky filter searches prompt titles, tags, and category names.
 - Open **Settings → System** to make a timestamped backup, open the local data folder, control the tray icon, and enable Windows startup. On Windows, minimizing or closing the launcher hides it from the taskbar while Promptoire stays available in the notification area; choose **Quit** from the tray menu to fully exit.
 
 ## Why Promptoire
@@ -68,7 +68,7 @@ Most prompt tools are cloud apps, browser extensions that disappear outside the 
 - **✎ + ▦ Text *and* image prompts, first-class.** Keep LLM prompts beside Midjourney / Stable Diffusion / Flux prompts. Copyable flags such as `--ar` and `--stylize` live directly at the end of the main prompt, while supporting context belongs in the roomy Note field.
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
-Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, a compact **+ New** action beside the filters, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and mix-and-match themes, backgrounds, fonts, and category colors.
+Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, favorites and recently used prompts, a compact **+ New** action, `{placeholder}` fill-in before copy, tags, nested categories, drag-to-reorder, undoable prompt deletion, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and mix-and-match themes, backgrounds, fonts, and category colors.
 
 ## ✨ Highlights
 

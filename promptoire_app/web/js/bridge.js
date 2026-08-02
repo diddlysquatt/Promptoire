@@ -63,12 +63,12 @@
 
   const mockCats = [
     { id: "cat_code", name: "Coding", icon: "💻", color: "#3b82f6", collapsed:false, subcategories:[], prompts: [
-      { id: mkId("handoff"), type:"text", title:"New-chat handoff brief", prompt:"Create a NEW CHAT HANDOFF that summarizes everything needed to continue immediately: objective, current state, constraints, decisions, key files/paths, commands to run, known bugs, and next steps in priority order.", tags:["workflow","context"], note:"", favorite:true, uses:12 },
+      { id: mkId("handoff"), type:"text", title:"New-chat handoff brief", prompt:"Create a NEW CHAT HANDOFF that summarizes everything needed to continue immediately: objective, current state, constraints, decisions, key files/paths, commands to run, known bugs, and next steps in priority order.", tags:["workflow","context"], note:"", favorite:true, uses:12, last_used:"2026-08-02T04:40:00+00:00" },
       { id: mkId("secrev"), type:"text", title:"Pragmatic security review", prompt:"Perform a pragmatic security review. Identify attack surfaces and misconfigs: injection, authz/authn flaws, secrets leakage, insecure defaults, dependency risks, PII handling. Provide prioritized, minimal-scope fixes.", tags:["security"], note:"", favorite:false, uses:5 },
       { id: mkId("refactor"), type:"text", title:"Refactor for clarity", prompt:"Refactor {code} for readability without changing behavior. Keep the public API. Explain each change in one line.", tags:["refactor"], note:"", favorite:false, uses:2 },
     ]},
     { id: "cat_art", name: "AI Art", icon: "🎨", color: "#f472b6", collapsed:false, prompts: [
-      { id: mkId("cinematic"), type:"image", title:"Cinematic portrait", prompt:"cinematic portrait of {subject}, dramatic rim lighting, 85mm, shallow depth of field, film grain, moody color grade", negative:"blurry, lowres, extra fingers, watermark", model:"Midjourney v6", params:"--ar 4:5 --stylize 250", tags:["portrait","cinematic"], note:"", favorite:true, uses:9 },
+      { id: mkId("cinematic"), type:"image", title:"Cinematic portrait", prompt:"cinematic portrait of {subject}, dramatic rim lighting, 85mm, shallow depth of field, film grain, moody color grade", negative:"blurry, lowres, extra fingers, watermark", model:"Midjourney v6", params:"--ar 4:5 --stylize 250", tags:["portrait","cinematic"], note:"", favorite:true, uses:9, last_used:"2026-08-02T04:25:00+00:00" },
     ], subcategories: [
       { id: "cat_iso", name: "Game Assets", icon: "🕹️", color: "", collapsed:false, subcategories:[], prompts: [
         { id: mkId("iso"), type:"image", title:"Isometric game asset", prompt:"isometric {object}, clean vector style, soft studio lighting, pastel palette, game asset, centered", negative:"text, busy background", model:"SDXL", params:"Steps: 30, CFG: 6", tags:["isometric","asset"], note:"", favorite:false, uses:3 },
@@ -79,7 +79,7 @@
       ]},
     ]},
     { id: "cat_law", name: "Law", icon: "⚖️", color: "#34d399", collapsed:false, subcategories:[], prompts: [
-      { id: mkId("clause"), type:"text", title:"Contract clause explainer", prompt:"Explain the following clause in plain English, flag risks for the {party}, and suggest safer alternative language.", tags:["contracts"], note:"", favorite:false, uses:1 },
+      { id: mkId("clause"), type:"text", title:"Contract clause explainer", prompt:"Explain the following clause in plain English, flag risks for the {party}, and suggest safer alternative language.", tags:["contracts"], note:"", favorite:false, uses:1, last_used:"2026-08-01T22:10:00+00:00" },
     ]},
   ];
   const mockSettings = {
@@ -95,7 +95,7 @@
   function walk(cats, path, color){ let out=[]; path=path||[]; for(const c of cats){ const eff=c.color||color||""; const here=path.concat([c.name]); for(const p of c.prompts){ out.push({p,c,path:here,color:eff}); } if(c.subcategories) out=out.concat(walk(c.subcategories, here, eff)); } return out; }
 
   const MOCK = {
-    get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.4.0-preview",
+    get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.5.0-preview",
       hotkey_available:true, platform:"windows",
       settings: mockSettings }),
     search: (q="", type="all", fav=false) => {
@@ -115,7 +115,12 @@
       res.sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0));
       return { ok:true, results:res, count:res.length };
     },
-    copy_prompt: (id, resolved, keepOpen) => ({ ok:true, spring:!keepOpen, title:"Prompt" }),
+    copy_prompt: (id, resolved, keepOpen) => {
+      for(const {p} of walk(mockCats)){
+        if(p.id===id){ p.uses=(p.uses||0)+1; p.last_used=new Date().toISOString(); return {ok:true,spring:!keepOpen,title:p.title,last_used:p.last_used}; }
+      }
+      return {ok:false,error:"Prompt not found"};
+    },
     copy_text: () => ({ ok:true }),
     get_clipboard_text: () => ({ ok:true, text:"Path: AI Art > Characters > Portraits\nTitle: Cinematic portrait\nType: image\nPrompt: A dramatic 85mm portrait of {subject}, rim lighting, shallow depth of field --ar 4:5 --stylize 250\nTags: portrait, cinematic" }),
     toggle_favorite: (id) => { for(const {p} of walk(mockCats)){ if(p.id===id){ p.favorite=!p.favorite; return {ok:true,favorite:p.favorite}; } } return {ok:false}; },

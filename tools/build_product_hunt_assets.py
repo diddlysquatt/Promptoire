@@ -153,7 +153,7 @@ def build_launcher_gallery() -> None:
     )
     draw.text(
         (70, 682),
-        "Promptoire 2.4.0",
+        "Promptoire 2.5.0",
         font=font(FONT_SEMIBOLD, 19),
         fill="#8f8aa5",
     )

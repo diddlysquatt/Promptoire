@@ -13,7 +13,7 @@
 
     view: "launcher",       // launcher | editor | bulk | settings
     query: "",
-    filter: "all",          // all | text | image | favorites
+    filter: "all",          // all | text | image | favorites | recent
     catFilter: null,        // category id (with its subtree) or null = all
     results: [],
     selected: 0,

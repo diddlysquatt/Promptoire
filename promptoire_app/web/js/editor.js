@@ -433,8 +433,14 @@
       if (r && r.ok) {
         await PR.app.refreshState(); render();
         toast("Deleted “" + (p.title || "prompt") + "”", { undo: async () => {
-          await PR.bridge.call("restore_prompt", cat.id, r.removed || p, index);
+          const restored = await PR.bridge.call("restore_prompt", cat.id, r.removed || p, index);
+          if (!restored || !restored.ok) {
+            toast((restored && restored.error) || "Could not restore that prompt", { bad: true });
+            return false;
+          }
           await PR.app.refreshState(); render();
+          toast("Restored “" + (p.title || "prompt") + "”");
+          return true;
         }});
       }
     });

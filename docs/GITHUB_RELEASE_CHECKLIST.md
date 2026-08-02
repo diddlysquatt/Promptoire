@@ -74,11 +74,13 @@ gh auth refresh --scopes workflow
 - Confirm Settings -> About displays **Brought to you by Stoned Ape**.
 - Confirm the built-in `links.coffee` default points to the finished Promptoire Buy Me a Coffee profile; links with or without `https://` are normalized, and blank/generic root links never open a generic page.
 - Confirm Settings -> System can open the local data folder for `prompts.json`, `promptoire.config.json`, and backups.
-- Confirm the launcher has no bottom action footer, **+ New** sits beside All/Text/Image/Favorites, the pencil opens **Edit Library**, and the recovered height belongs to prompt results.
-- Confirm All/Text/Image/Favorites, **+ New**, and the density button stay on one row at the 360px minimum width in every density mode.
+- Confirm the launcher has no bottom action footer, **+ New** sits beside All/Text/Image/Favorites/Recent, the pencil opens **Edit Library**, and the recovered height belongs to prompt results.
+- Confirm All/Text/Image/Favorites/Recent, **+ New**, and the density button stay on one row at the 360px minimum width in every density mode.
+- Confirm **Recent** contains only copied prompts, orders them newest-first across categories, remains searchable, updates immediately after a pinned copy, and preserves its order after restarting the app.
 - Confirm the top pin prevents both blur hiding and copy-then-hide, unpinning restores auto-hide, and Settings has no duplicate **Copy then vanish** control.
 - Confirm category rail buttons select on the first click, clearly show their selected state, and can still be dragged horizontally.
 - Confirm the sticky Edit Library filter is fully opaque while categories and prompts scroll beneath it.
+- Confirm deleting one prompt opens no confirmation dialog, shows the small twelve-second **Undo** action, and restores the prompt to its exact category and row; category deletion must retain its confirmation dialog.
 - Confirm every window edge/corner resizes in both axes, the result list expands with the window, and 360×420 remains the minimum size.
 - Confirm Improve Library shows `Improve with AI now` near the top, keeps the improvement instructions visible, and offers `Copy instructions + library`, `Copy library only`, `Copy instructions only`, and `Save library outline` with unambiguous labels.
 - Confirm `Save instructions` changes the prompt used by `Copy instructions + library` and `Improve with AI now`; `Reset default` restores the built-in instruction; `Create prompts for a topic` accepts an optional topic/workflow; JSON instructions and exports stay under `More options`.
