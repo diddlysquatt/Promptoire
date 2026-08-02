@@ -6,7 +6,7 @@ post to its rules and audience.
 
 ## GitHub Release Summary
 
-**Promptoire 2.3.0 — a local-first prompt library for Windows**
+**Promptoire 2.4.0 — a local-first prompt library for Windows**
 
 Promptoire puts text and image prompts one global hotkey away. Search or browse
 nested categories, fill placeholders, and click once to copy. The launcher is

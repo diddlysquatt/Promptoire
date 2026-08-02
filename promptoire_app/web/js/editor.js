@@ -61,12 +61,17 @@
       t = setTimeout(() => { filterText = input.value.trim().toLowerCase(); rerenderKeepFilter(); }, 90);
     });
 
-    const expand = el("button", { class: "iconbtn", title: "Expand all", html: icon("expand"),
-      onclick: () => setAllCollapsed(false) });
-    const collapse = el("button", { class: "iconbtn", title: "Collapse all", html: icon("collapse"),
-      onclick: () => setAllCollapsed(true) });
+    const allCollapsed = allCategoriesCollapsed(PR.state.categories);
+    const toggleLabel = allCollapsed ? "Expand" : "Collapse";
+    const treeToggle = el("button", {
+      class: "tree-toggle",
+      title: toggleLabel + " all categories",
+      "aria-label": toggleLabel + " all categories",
+      html: icon(allCollapsed ? "expand" : "collapse") + `<span>${toggleLabel}</span>`,
+      onclick: () => setAllCollapsed(!allCollapsed),
+    });
 
-    return el("div", { class: "editor-toolbar" }, [input, expand, collapse]);
+    return el("div", { class: "editor-toolbar" }, [input, treeToggle]);
   }
 
   function rerenderKeepFilter() {
@@ -85,6 +90,19 @@
     })(PR.state.categories);
     render();
     await Promise.all(ops);
+  }
+
+  function allCategoriesCollapsed(cats) {
+    let any = false;
+    let all = true;
+    (function walk(items) {
+      items.forEach((cat) => {
+        any = true;
+        if (!cat.collapsed) all = false;
+        walk(cat.subcategories || []);
+      });
+    })(cats || []);
+    return any && all;
   }
 
   function matches(p) {
@@ -106,16 +124,16 @@
     if (filterText && !own.length && !subs.length && !catMatches(cat)) return null;
 
     const collapsed = filterText ? false : !!cat.collapsed; // filter forces open
+    const accent = cat.color || "";
     const group = el("div", {
       class: "cat-group" + (collapsed ? " collapsed" : ""),
       dataset: { id: cat.id },
+      style: accent ? { "--cat-accent": accent } : {},
     });
-    const accent = cat.color || "";
     const total = countTree(cat);
 
     const header = el("div", {
       class: "cat-header", draggable: "true",
-      style: accent ? { "--cat-accent": accent } : {},
     }, [
       el("span", { class: "cat-caret", html: icon("caret") }),
       cat.icon ? el("span", { class: "cat-icon", text: cat.icon }) : el("span", { class: "cat-dot" }),
@@ -172,7 +190,6 @@
   function promptRow(p, cat, index) {
     const row = el("div", { class: "prow", draggable: "true", dataset: { id: p.id, idx: index } }, [
       el("span", { class: "grip", html: icon("grip") }),
-      el("span", { class: "ptype " + (p.type === "image" ? "image" : ""), text: p.type === "image" ? "IMG" : "TXT" }),
       el("span", { class: "ptitle", text: p.title || "Untitled" }),
       p.favorite ? el("span", { class: "pfav", html: icon("star") }) : null,
       el("div", { class: "prow-actions" }, [
@@ -302,7 +319,7 @@
       const first = PR.state.categories[0];
       categoryId = first ? first.id : null;
     }
-    openPromptModal(Object.assign({ type: "text", title: "", prompt: "", tags: [], note: "" }, prefill || {}), categoryId, true);
+    openPromptModal(Object.assign({ title: "", prompt: "", tags: [], note: "" }, prefill || {}), categoryId, true);
   }
   function editPrompt(id) {
     const f = PR.findPrompt(id);
@@ -312,74 +329,42 @@
 
   function openPromptModal(p, categoryId, isNew) {
     PR.state.suppressBlur = true;
-    let type = p.type || "text";
 
     const title = el("input", { class: "input", value: p.title || "", placeholder: "Title" });
-    const body = el("textarea", { class: "textarea", placeholder: "The prompt…", style: { minHeight: "130px" } });
+    const body = el("textarea", { class: "textarea prompt-editor-prompt", placeholder: "Write the complete prompt here…" });
     body.value = p.prompt || "";
-    const tags = el("input", { class: "input", value: (p.tags || []).join(", "), placeholder: "tags, comma, separated" });
-    const note = el("input", { class: "input", value: p.note || "", placeholder: "Optional note" });
+    const tags = el("input", { class: "input prompt-editor-tags", value: (p.tags || []).join(", "), placeholder: "Add tags, separated by commas" });
+    const note = el("textarea", { class: "textarea prompt-editor-note", placeholder: "Add context, usage notes, model details, or reminders…" });
+    note.value = p.note || "";
 
     // category select
     const catSel = el("select", { class: "select" });
     flatCats(PR.state.categories).forEach(({ id, label }) =>
       catSel.appendChild(el("option", { value: id, text: label, selected: id === categoryId ? "selected" : null })));
 
-    // image fields
-    const neg = el("input", { class: "input", value: p.negative || "", placeholder: "things to avoid" });
-    const model = el("input", { class: "input", value: p.model || "", placeholder: "e.g. Midjourney v7, SDXL, Flux.1" });
-    const params = el("input", { class: "input", value: p.params || "", placeholder: "--ar 16:9 --stylize 250 / Steps, CFG…" });
-    const imageBlock = el("details", { class: "image-fields image-details" }, [
-      el("summary", { text: "Optional image details" }),
-      el("div", { class: "image-details-body" }, [
-        el("div", { class: "image-copy-hint", text:
-          "Put Midjourney flags and other copyable suffixes directly at the end of the Prompt above. These fields are optional metadata." }),
-        el("div", { class: "field" }, [el("label", { text: "Negative prompt" }), neg]),
-        el("div", { class: "field-row" }, [
-          el("div", { class: "field" }, [el("label", { text: "Model" }), model]),
-          el("div", { class: "field" }, [el("label", { text: "Parameters" }), params]),
-        ]),
-      ]),
-    ]);
-    imageBlock.open = !!(p.negative || p.model || p.params);
-    imageBlock.style.display = type === "image" ? "block" : "none";
-
-    const seg = el("div", { class: "segmented" }, [
-      segBtn("Text", type === "text", () => setType("text")),
-      segBtn("Image", type === "image", () => setType("image")),
-    ]);
-    function setType(t) {
-      type = t;
-      [...seg.children].forEach((b, i) => b.classList.toggle("on", (i === 0) === (t === "text")));
-      imageBlock.style.display = t === "image" ? "block" : "none";
-    }
-
-    const form = el("div", {}, [
-      el("div", { class: "field-row" }, [
-        el("div", { class: "field", style: { flex: "0 0 auto" } }, [el("label", { text: "Type" }), seg]),
+    const form = el("div", { class: "prompt-editor-form" }, [
+      el("div", { class: "prompt-editor-top" }, [
+        el("div", { class: "field" }, [el("label", { text: "Title" }), title]),
         el("div", { class: "field" }, [el("label", { text: "Category" }), catSel]),
       ]),
-      el("div", { class: "field" }, [el("label", { text: "Title" }), title]),
       el("div", { class: "field" }, [el("label", { text: "Prompt" }), body]),
-      imageBlock,
-      el("div", { class: "field-row" }, [
-        el("div", { class: "field" }, [el("label", { text: "Tags" }), tags]),
-        el("div", { class: "field" }, [el("label", { text: "Note" }), note]),
-      ]),
+      el("div", { class: "field" }, [el("label", { text: "Tags" }), tags]),
+      el("div", { class: "field" }, [el("label", { text: "Note" }), note]),
     ]);
 
     const save = el("button", { class: "btn btn-primary", text: isNew ? "Create" : "Save" });
     const cancel = el("button", { class: "btn btn-ghost", text: "Cancel", onclick: () => { PR.ui.closeModal(); PR.state.suppressBlur = false; } });
     const m = modal({ title: isNew ? "New prompt" : "Edit prompt", body: form, footer: [cancel, save], wide: true,
       onClose: () => { PR.state.suppressBlur = false; } });
+    m.sheet.classList.add("prompt-editor-modal");
 
     save.addEventListener("click", async () => {
       const fields = {
-        type, title: title.value.trim(), prompt: body.value,
+        title: title.value.trim(), prompt: body.value,
         tags: tags.value.split(",").map((t) => t.trim()).filter(Boolean),
         note: note.value.trim(),
-        negative: neg.value, model: model.value, params: params.value,
       };
+      if (isNew) fields.type = suggestedPromptType(catSel.value);
       if (!fields.title && !fields.prompt) { toast("Add a title or prompt", { bad: true }); return; }
       let r;
       if (isNew) r = await PR.bridge.call("add_prompt", catSel.value, fields);
@@ -397,14 +382,48 @@
     setTimeout(() => title.focus(), 50);
   }
 
-  function segBtn(label, on, onclick) { return el("button", { class: "" + (on ? "on" : ""), text: label, onclick }); }
-
   function flatCats(cats, depth = 0, out = []) {
     cats.forEach((c) => {
       out.push({ id: c.id, label: "  ".repeat(depth) + (depth ? "↳ " : "") + (c.icon ? c.icon + " " : "") + c.name });
       if (c.subcategories) flatCats(c.subcategories, depth + 1, out);
     });
     return out;
+  }
+
+  /* New prompts inherit a useful launcher filter from where they are filed.
+     Existing prompts keep their stored type because edits are partial updates. */
+  function suggestedPromptType(categoryId) {
+    const path = findCategoryPath(PR.state.categories || [], categoryId) || [];
+    const names = path.map((cat) => cat.name || "").join(" ");
+    if (/\b(image|images|art|visual|photo|photography|illustration|drawing|render|midjourney|sdxl|flux)\b/i.test(names)) {
+      return "image";
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      const counts = countPromptTypes(path[i]);
+      if (counts.image || counts.text) return counts.image > counts.text ? "image" : "text";
+    }
+    return "text";
+  }
+
+  function findCategoryPath(cats, id, path = []) {
+    for (const cat of cats) {
+      const next = path.concat(cat);
+      if (cat.id === id) return next;
+      const found = findCategoryPath(cat.subcategories || [], id, next);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function countPromptTypes(cat) {
+    const counts = { text: 0, image: 0 };
+    (cat.prompts || []).forEach((prompt) => counts[prompt.type === "image" ? "image" : "text"]++);
+    (cat.subcategories || []).forEach((sub) => {
+      const nested = countPromptTypes(sub);
+      counts.text += nested.text;
+      counts.image += nested.image;
+    });
+    return counts;
   }
 
   /* ---- deletes ---------------------------------------------------------- */
@@ -447,7 +466,11 @@
       body: el("div", {}, [
         el("div", { class: "field" }, [el("label", { text: "Name" }), name]),
         el("div", { class: "field" }, [el("label", { text: "Icon" }), emoji.node]),
-        el("div", { class: "field" }, [el("label", { text: "Accent color" }), color.node]),
+        el("div", { class: "field" }, [
+          el("label", { text: "Category color" }),
+          color.node,
+          el("div", { class: "hint", text: "Colors this category header; subcategories can use their own color." }),
+        ]),
       ]), footer: [cancel, save], onClose: () => { PR.state.suppressBlur = false; } });
     save.addEventListener("click", async () => {
       if (!name.value.trim()) { toast("Name it first", { bad: true }); return; }

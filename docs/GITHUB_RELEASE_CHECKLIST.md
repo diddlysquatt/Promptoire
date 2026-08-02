@@ -106,7 +106,8 @@ gh auth refresh --scopes workflow
 - Confirm `Create-PromptoireShortcut.ps1` creates or refreshes the `PROMPTOIRE` desktop shortcut.
 - Confirm `Check-PromptoireShortcut.ps1` verifies that the desktop shortcut launches this checkout.
 - If the folder display name is still lowercase, close tools that are inside it and run `Rename-PromptoireFolder.ps1`.
-- Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false`, `"native_hwnd": true`, `"window_icon": true`, `"minimum_window": [360, 420]`, and an empty `"error"`.
+- Launch `Promptoire.bat --selftest` once and confirm `_selftest.json` reports `"mock": false`, `"native_hwnd": true`, `"window_icon": true`, `"window_icon_applied": true`, `"minimum_window": [360, 420]`, and an empty `"error"`.
+- Require the release gate's isolated Windows tray probe to pass real minimize-to-tray, native close-to-tray, restore, notification-icon, and explicit-quit behavior.
 - Preview `docs/index.html`, `docs/privacy.html`, and `docs/smartscreen.html` at desktop and mobile widths; confirm all four current app screenshots render and contain only the clean starter library.
 - Keep `.github/workflows/pages.yml` manual-only while the repository is private. After making the repository public, select GitHub Actions under **Settings → Pages**, run **Publish documentation site**, and verify `https://diddlysquatt.github.io/Promptoire/` in a signed-out browser.
 

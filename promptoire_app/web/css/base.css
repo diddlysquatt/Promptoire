@@ -93,6 +93,63 @@
   --accent-soft:rgba(109,75,255,0.14); --accent-glow:rgba(109,75,255,0.40);
 }
 
+/* Surface presets are intentionally independent from accent themes. This gives
+   people real background choice while keeping contrast and controls coherent. */
+[data-background="obsidian"] {
+  color-scheme: dark;
+  --bg:#06070b; --bg-2:#0c0e14;
+  --surface:rgba(255,255,255,0.025); --surface-2:rgba(255,255,255,0.045); --surface-3:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08); --border-2:rgba(255,255,255,0.14);
+  --fg:#f3f4f8; --muted:#a8abb7; --faint:#707584;
+}
+[data-background="graphite"] {
+  color-scheme: dark;
+  --bg:#15161b; --bg-2:#1c1e25;
+  --surface:rgba(255,255,255,0.035); --surface-2:rgba(255,255,255,0.06); --surface-3:rgba(255,255,255,0.085);
+  --border:rgba(255,255,255,0.09); --border-2:rgba(255,255,255,0.16);
+  --fg:#f5f5f7; --muted:#b1b3bc; --faint:#797d89;
+}
+[data-background="midnight"] {
+  color-scheme: dark;
+  --bg:#071020; --bg-2:#0c1830;
+  --surface:rgba(151,190,255,0.035); --surface-2:rgba(151,190,255,0.065); --surface-3:rgba(151,190,255,0.095);
+  --border:rgba(178,207,255,0.10); --border-2:rgba(178,207,255,0.18);
+  --fg:#f0f5ff; --muted:#a7b5ce; --faint:#667794;
+}
+[data-background="forest"] {
+  color-scheme: dark;
+  --bg:#081510; --bg-2:#0d2019;
+  --surface:rgba(177,255,220,0.032); --surface-2:rgba(177,255,220,0.058); --surface-3:rgba(177,255,220,0.085);
+  --border:rgba(190,255,226,0.09); --border-2:rgba(190,255,226,0.16);
+  --fg:#effaf5; --muted:#a6bdb2; --faint:#687f74;
+}
+[data-background="plum"] {
+  color-scheme: dark;
+  --bg:#170d1c; --bg-2:#221229;
+  --surface:rgba(255,210,255,0.032); --surface-2:rgba(255,210,255,0.06); --surface-3:rgba(255,210,255,0.09);
+  --border:rgba(255,218,255,0.10); --border-2:rgba(255,218,255,0.17);
+  --fg:#fff2ff; --muted:#c4aeca; --faint:#856d8c;
+}
+[data-background="mist"] {
+  color-scheme: light;
+  --bg:#e7edf5; --bg-2:#f7f9fc;
+  --surface:rgba(25,43,68,0.035); --surface-2:rgba(25,43,68,0.06); --surface-3:rgba(25,43,68,0.09);
+  --border:rgba(25,43,68,0.11); --border-2:rgba(25,43,68,0.19);
+  --fg:#182235; --muted:#536078; --faint:#818ba0;
+}
+[data-background="linen"] {
+  color-scheme: light;
+  --bg:#eee7dc; --bg-2:#fbf7f0;
+  --surface:rgba(64,45,25,0.035); --surface-2:rgba(64,45,25,0.06); --surface-3:rgba(64,45,25,0.09);
+  --border:rgba(64,45,25,0.11); --border-2:rgba(64,45,25,0.19);
+  --fg:#2d251d; --muted:#6d5e50; --faint:#988b7d;
+}
+
+[data-font="system"] { --font: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; }
+[data-font="rounded"] { --font: "Arial Rounded MT Bold", "Segoe UI Variable Display", "Trebuchet MS", system-ui, sans-serif; }
+[data-font="humanist"] { --font: Candara, Calibri, "Segoe UI", system-ui, sans-serif; }
+[data-font="mono"] { --font: "Cascadia Code", "JetBrains Mono", Consolas, ui-monospace, monospace; }
+
 /* ---- reset -------------------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
@@ -139,7 +196,7 @@ button { cursor: pointer; border: none; background: none; }
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(124,92,255,0.10), transparent 60%),
+    radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
     linear-gradient(180deg, var(--bg-2), var(--bg) 60%);
   border-radius: 16px;
   border: 1px solid var(--border);
@@ -176,11 +233,8 @@ button { cursor: pointer; border: none; background: none; }
 .titlebar-drag { flex: 1 1 auto; min-width: 0; height: 26px; display: flex; align-items: center; }
 .brand { display: flex; align-items: center; gap: 9px; pointer-events: none; }
 .brand-mark {
-  display: grid; place-items: center;
-  width: 24px; height: 24px; border-radius: 7px;
-  font-weight: 800; font-size: 14px; color: var(--accent-ink);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 2px 10px -2px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.35);
+  display: block; width: 25px; height: 25px; object-fit: contain;
+  filter: drop-shadow(0 2px 5px color-mix(in srgb, var(--accent) 55%, transparent));
 }
 .brand-name { font-weight: 650; font-size: 14px; letter-spacing: 0.2px; }
 .brand-count {
@@ -393,7 +447,7 @@ html:is([data-density="compact"], [data-density="titles"]) .titlebar {
 }
 html:is([data-density="compact"], [data-density="titles"]) .brand { gap: 7px; }
 html:is([data-density="compact"], [data-density="titles"]) .brand-mark {
-  width: 22px; height: 22px; border-radius: 6px; font-size: 13px;
+  width: 24px; height: 24px;
 }
 html:is([data-density="compact"], [data-density="titles"]) .tbtn {
   width: 26px; height: 26px; border-radius: 8px;

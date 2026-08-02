@@ -6,6 +6,8 @@
   const views = { launcher: "viewLauncher", editor: "viewEditor", bulk: "viewBulk", settings: "viewSettings" };
   const DENSITIES = ["comfortable", "compact", "titles"];
   const DENSITY_NAMES = { comfortable: "Comfortable", compact: "Compact", titles: "Titles only" };
+  const BACKGROUNDS = ["", "obsidian", "graphite", "midnight", "forest", "plum", "mist", "linen"];
+  const FONTS = ["system", "rounded", "humanist", "mono"];
 
   async function boot() {
     let bootError = "";
@@ -46,6 +48,8 @@
           mock: PR.bridge.isMock(),
           theme: document.documentElement.getAttribute("data-theme"),
           density: document.documentElement.getAttribute("data-density"),
+          background: document.documentElement.getAttribute("data-background") || "theme",
+          font: document.documentElement.getAttribute("data-font") || "system",
           first: (document.querySelector(".card-title") || {}).textContent || "",
           get_state_type: typeof api.get_state,
           api_count: Object.keys(api).length,
@@ -78,7 +82,22 @@
     const t = (PR.state.settings && PR.state.settings.theme) || "matrix";
     document.documentElement.setAttribute("data-theme", t);
     applyAccent((PR.state.settings && PR.state.settings.accent) || "");
+    applyBackground((PR.state.settings && PR.state.settings.background) || "");
+    applyFont((PR.state.settings && PR.state.settings.font) || "system");
     applyDensity((PR.state.settings && PR.state.settings.density) || "compact");
+  }
+
+  function applyBackground(value) {
+    const background = BACKGROUNDS.includes(value) ? value : "";
+    if (background) document.documentElement.setAttribute("data-background", background);
+    else document.documentElement.removeAttribute("data-background");
+    return background;
+  }
+
+  function applyFont(value) {
+    const font = FONTS.includes(value) ? value : "system";
+    document.documentElement.setAttribute("data-font", font);
+    return font;
   }
 
   function applyDensity(value) {
@@ -254,7 +273,9 @@
     refreshState,
     showView,
     applyAccent,
+    applyBackground,
     applyDensity,
+    applyFont,
     openCoffee,
     onShown() { showView("launcher"); PR.launcher.runSearch().then(() => PR.launcher.focusSearch()); },
     openSettings() { showView("settings"); },

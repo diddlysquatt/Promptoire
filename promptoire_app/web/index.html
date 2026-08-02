@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Promptoire</title>
-  <!-- The packaged WebView uses the native executable icon. Suppress the
-       browser preview's otherwise-noisy /favicon.ico request. -->
-  <link rel="icon" href="data:," />
+  <link rel="icon" type="image/png" href="assets/tray.png" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
 </head>
@@ -20,7 +18,7 @@
     <header class="titlebar">
       <div class="titlebar-drag pywebview-drag-region">
         <div class="brand">
-          <span class="brand-mark">P</span>
+          <img class="brand-mark" src="assets/tray.png" alt="" draggable="false" />
           <span class="brand-name">Promptoire</span>
           <span class="brand-count" id="brandCount"></span>
         </div>

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.4.0 - 2026-08-01
+
 ### Changed
 
 - Remove the launcher footer so every recovered pixel belongs to prompt results; move **+ New** beside the All/Text/Image/Favorites filters and rename the pencil action to **Edit Library**.
@@ -28,6 +30,12 @@
 - Make the top pin the single visible copy/blur auto-hide override and remove the redundant **Copy then vanish** Settings row.
 - Ship the finished Promptoire Buy Me a Coffee profile as the built-in support link so the toolbar button also works on a fresh install.
 - Require Pillow 12.3.0 or newer, refresh the complete dependency set before packaging, and add weekly Dependabot checks.
+- Consolidate the prompt editor around Title, Category, Prompt, Tags, and Note; remove the type toggle and advanced image-detail controls while preserving legacy import data.
+- Add curated dark and light background surfaces, four font choices, and visible per-category header colors without changing plain-text prompt portability.
+- Make the global hotkey hide Promptoire on the first press whenever it is visible, even when another window has focus.
+- Minimize and native close requests now hide Promptoire to the Windows notification area instead of leaving a taskbar button or quitting; the tray menu remains the explicit exit path.
+- Replace the detailed legacy artwork with a crisp magical-scroll icon shared by the window, taskbar, notification area, desktop shortcut, and packaged executable.
+- Replace separate expand/collapse-all controls with one stateful tree button and tighten the Edit Library styling with solid category tints and outlined hover feedback.
 
 ### Fixed
 

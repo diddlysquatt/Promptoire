@@ -15,7 +15,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('promptoire_app/web', 'web'),   # HTML/CSS/JS frontend -> _MEIPASS/web
-        ('icons/replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico', 'icons'),
+        ('icons/promptoire.ico', 'icons'),
     ],
     hiddenimports=hiddenimports,
     hookspath=[],
@@ -49,7 +49,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icons\\replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico'],
+    icon=['icons\\promptoire.ico'],
     version='version_info.txt',
 )
 

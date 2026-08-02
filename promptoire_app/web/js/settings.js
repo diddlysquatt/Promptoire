@@ -14,6 +14,16 @@
     { id: "mono", name: "Mono", c1: "#e5e7eb", c2: "#9ca3af" },
     { id: "paper", name: "Paper", c1: "#ffffff", c2: "#cbd0dc", light: true },
   ];
+  const BACKGROUNDS = [
+    { id: "", name: "Theme", c: "linear-gradient(135deg, var(--accent), var(--accent-2))" },
+    { id: "obsidian", name: "Obsidian", c: "#08090e" },
+    { id: "graphite", name: "Graphite", c: "#18191f" },
+    { id: "midnight", name: "Midnight", c: "#0a1428" },
+    { id: "forest", name: "Forest", c: "#0d1d19" },
+    { id: "plum", name: "Plum", c: "#201427" },
+    { id: "mist", name: "Mist", c: "#eaf0f8", light: true },
+    { id: "linen", name: "Linen", c: "#f5efe5", light: true },
+  ];
 
   function render() {
     const host = document.getElementById("settingsBody");
@@ -39,23 +49,31 @@
       const sw = el("button", { class: "swatch" + (s.theme === t.id ? " on" : ""),
         style: { background: `linear-gradient(135deg, ${t.c1}, ${t.c2})` }, dataset: { theme: t.id } },
         [el("span", { class: "sw-name", text: t.name, style: nameStyle })]);
-      sw.addEventListener("click", () => {
+      sw.addEventListener("click", async () => {
+        const previous = (PR.state.settings && PR.state.settings.theme) || "matrix";
         document.documentElement.setAttribute("data-theme", t.id);
         themeGrid.querySelectorAll(".swatch").forEach((x) => x.classList.remove("on"));
         sw.classList.add("on");
-        s.theme = t.id; save({ theme: t.id });
+        if (!await save({ theme: t.id })) {
+          document.documentElement.setAttribute("data-theme", previous);
+          themeGrid.querySelectorAll(".swatch").forEach((x) => x.classList.toggle("on", x.dataset.theme === previous));
+        }
       });
       themeGrid.appendChild(sw);
     });
     host.appendChild(section("Appearance", el("div", {}, [
-      card([row("Prompt density", "Choose more context or fit more prompts at once.", densityPicker(s))]),
+      card([
+        row("Prompt density", "Choose more context or fit more prompts at once.", densityPicker(s)),
+        row("Font", "Change the app's reading style.", fontPicker(s)),
+      ]),
       themeGrid,
+      backgroundPicker(s),
       accentPicker(s),
     ])));
 
     /* System */
     host.appendChild(section("System", card([
-      toggleRow("Show tray icon", "Quick access from the system tray.", b.show_tray, (v) => save({ behavior: { show_tray: v } })),
+      toggleRow("Show tray icon", "Keep Promptoire in the Windows notification area when hidden.", b.show_tray, (v) => save({ behavior: { show_tray: v } })),
       toggleRow("Launch at startup", "Start Promptoire when you sign in.", b.launch_at_startup, async (v) => {
         const saved = await save({ behavior: { launch_at_startup: v } });
         if (saved) toast(v ? "Promptoire will start with Windows" : "Startup disabled");
@@ -79,13 +97,17 @@
     const current = names.some((x) => x.id === s.density) ? s.density : "compact";
     const seg = el("div", { class: "segmented density-picker" });
     names.forEach((item) => {
-      const button = sBtn(item.label, current === item.id, () => {
+      const button = sBtn(item.label, current === item.id, async () => {
+        const previous = (PR.state.settings && PR.state.settings.density) || "compact";
         seg.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
         button.classList.add("on");
-        s.density = item.id;
         if (PR.app && PR.app.applyDensity) PR.app.applyDensity(item.id);
-        save({ density: item.id });
+        if (!await save({ density: item.id })) {
+          seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x.dataset.density === previous));
+          if (PR.app && PR.app.applyDensity) PR.app.applyDensity(previous);
+        }
       });
+      button.dataset.density = item.id;
       button.title = item.id === "comfortable" ? "Two-line previews and full metadata" :
         item.id === "compact" ? "One-line previews with less metadata" : "Prompt titles only";
       seg.appendChild(button);
@@ -107,15 +129,75 @@
         style: { background: c }, title: c, onclick: () => setAccent(c) }));
     });
     wrap.appendChild(row);
-    function setAccent(color) {
-      s.accent = color;
+    async function setAccent(color) {
+      const previous = (PR.state.settings && PR.state.settings.accent) || "";
       row.querySelectorAll(".pick").forEach((x) => x.classList.remove("on"));
       if (!color) clear.classList.add("on");
       else [...row.querySelectorAll(".colorpick")].find((x) => x.title === color)?.classList.add("on");
       if (PR.app && PR.app.applyAccent) PR.app.applyAccent(color);
-      save({ accent: color });
+      if (!await save({ accent: color })) {
+        row.querySelectorAll(".pick").forEach((x) => x.classList.remove("on"));
+        if (!previous) clear.classList.add("on");
+        else [...row.querySelectorAll(".colorpick")].find((x) => x.title === previous)?.classList.add("on");
+        if (PR.app && PR.app.applyAccent) PR.app.applyAccent(previous);
+      }
     }
     return wrap;
+  }
+
+  function backgroundPicker(s) {
+    const wrap = el("div", { class: "appearance-picker" }, [
+      el("div", { class: "accent-label", text: "Background" }),
+    ]);
+    const choices = el("div", { class: "background-picker" });
+    BACKGROUNDS.forEach((item) => {
+      const button = el("button", {
+        class: "background-choice" + ((s.background || "") === item.id ? " on" : ""),
+        title: item.name,
+        "aria-label": item.name + " background",
+        dataset: { background: item.id },
+      }, [
+        el("span", { class: "background-chip", style: { background: item.c } }),
+        el("span", { text: item.name }),
+      ]);
+      button.addEventListener("click", async () => {
+        const previous = (PR.state.settings && PR.state.settings.background) || "";
+        choices.querySelectorAll(".background-choice").forEach((x) => x.classList.remove("on"));
+        button.classList.add("on");
+        if (PR.app && PR.app.applyBackground) PR.app.applyBackground(item.id);
+        if (!await save({ background: item.id })) {
+          choices.querySelectorAll(".background-choice").forEach((x) =>
+            x.classList.toggle("on", x.dataset.background === previous));
+          if (PR.app && PR.app.applyBackground) PR.app.applyBackground(previous);
+        }
+      });
+      choices.appendChild(button);
+    });
+    wrap.appendChild(choices);
+    return wrap;
+  }
+
+  function fontPicker(s) {
+    const fonts = [
+      { id: "system", name: "System" },
+      { id: "rounded", name: "Rounded" },
+      { id: "humanist", name: "Humanist" },
+      { id: "mono", name: "Mono" },
+    ];
+    const select = el("select", { class: "select appearance-select", "aria-label": "App font" });
+    fonts.forEach((item) => select.appendChild(el("option", {
+      value: item.id, text: item.name, selected: (s.font || "system") === item.id ? "selected" : null,
+    })));
+    select.addEventListener("change", async () => {
+      const previous = (PR.state.settings && PR.state.settings.font) || "system";
+      const next = select.value;
+      if (PR.app && PR.app.applyFont) PR.app.applyFont(next);
+      if (!await save({ font: next })) {
+        select.value = previous;
+        if (PR.app && PR.app.applyFont) PR.app.applyFont(previous);
+      }
+    });
+    return select;
   }
 
   function section(title, content) {
@@ -211,9 +293,9 @@
     const currentRepo = configuredRepoUrl(links.repo);
     const s = el("div", { class: "set-section" }, [el("div", { class: "set-title", text: "About" })]);
     s.appendChild(el("div", { class: "about" }, [
-      el("div", { class: "logo-big", text: "P" }),
+      el("img", { class: "logo-big", src: "assets/tray.png", alt: "Promptoire magical scroll" }),
       el("div", { style: { fontWeight: "700", fontSize: "15px" }, text: "Promptoire" }),
-      el("div", { class: "ver", text: "v" + (PR.state.version || "2.3.0") + " · local-first · open source" }),
+      el("div", { class: "ver", text: "v" + (PR.state.version || "2.4.0") + " · local-first · open source" }),
       el("div", { class: "creator-credit", text: "Brought to you by Stoned Ape" }),
       el("div", { class: "tagline", text: "A fast, beautiful home for your text and image prompts — with one-click AI bulk-improve." }),
       el("div", { class: "about-actions" }, [

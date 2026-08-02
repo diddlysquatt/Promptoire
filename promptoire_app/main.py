@@ -48,6 +48,7 @@ class App:
         self._quitting = False
         self._save_timer: threading.Timer | None = None
         self._hwnd = 0
+        self._window_icon_applied = False
 
     # ---- platform helpers ---------------------------------------------------
 
@@ -90,6 +91,7 @@ class App:
             zoomable=False,
         )
         self.window.events.closing += self._on_closing
+        self.window.events.minimized += self._on_minimized
 
         # Load via file:// (we use classic scripts, not ES modules, so no HTTP
         # server is needed). This is the most reliable pywebview path and keeps
@@ -113,7 +115,7 @@ class App:
         try:
             hwnd = self._resolve_hwnd()
             window_fx.apply_polish(hwnd, dark=True, rounded=True, acrylic=False)
-            window_fx.set_window_icon(hwnd, paths.app_icon())
+            self._window_icon_applied = window_fx.set_window_icon(hwnd, paths.app_icon())
         except Exception:
             pass
 
@@ -167,22 +169,12 @@ class App:
     # ---- window control -----------------------------------------------------
 
     def toggle_window(self):
-        # Proper launcher toggle: hide only if we're already the focused window;
-        # if visible-but-behind-something, bring forward instead.
-        if self._visible and self._is_foreground():
+        # A global shortcut should be a true visibility toggle. If Promptoire is
+        # already on screen, hide it even when another app currently has focus.
+        if self._visible:
             self.hide_window()
         else:
             self.show_window()
-
-    def _is_foreground(self) -> bool:
-        if not sys.platform.startswith("win"):
-            return True
-        try:
-            import ctypes
-            hwnd = self._resolve_hwnd()
-            return not hwnd or ctypes.windll.user32.GetForegroundWindow() == hwnd
-        except Exception:
-            return True
 
     def show_window(self, at_cursor: bool | None = None):
         if self.window is None:
@@ -192,6 +184,11 @@ class App:
                 at_cursor = bool(self.settings.get("behavior", "open_at_cursor", default=True))
             if at_cursor:
                 self._move_near_cursor()
+            # A native minimize leaves WinForms in the Minimized state even
+            # after the window is hidden. Restore first so the tray/hotkey
+            # always brings back a normal Promptoire window.
+            self.window.restore()
+            window_fx.restore_window(self._resolve_hwnd())
             self.window.show()
             self._visible = True
             # Pull to front + focus the search box.
@@ -451,11 +448,19 @@ class App:
 
     # ---- lifecycle ----------------------------------------------------------
 
-    def _on_closing(self):
-        # Frameless close button calls window.destroy(); treat as quit.
+    def _on_minimized(self):
+        """Turn a native Windows minimize into a true hide-to-tray action."""
         if not self._quitting:
-            self.quit()
-        return True
+            self.hide_window()
+
+    def _on_closing(self):
+        # Alt+F4 and other native close requests hide Promptoire instead of
+        # ending it. Returning False cancels pywebview's close; the tray menu's
+        # explicit Quit path marks _quitting before destroying the window.
+        if self._quitting:
+            return True
+        self.hide_window()
+        return False
 
     def quit(self):
         if self._quitting:
@@ -506,7 +511,8 @@ def _load_tray_icon():
         from PIL import Image
         ico = paths.assets_dir() / "tray.png"
         if ico.exists():
-            return Image.open(str(ico))
+            with Image.open(str(ico)) as source:
+                return source.convert("RGBA").copy()
     except Exception:
         pass
     return None
@@ -544,6 +550,7 @@ def main():
     import ctypes  # noqa: F401  (ensures wintypes available on win)
     if sys.platform.startswith("win"):
         import ctypes.wintypes  # noqa: F401
+        window_fx.set_process_app_id()
     debug = "--debug" in sys.argv
     selftest = "--selftest" in sys.argv
     App(debug=debug, selftest=selftest).run()

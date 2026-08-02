@@ -32,6 +32,7 @@ nul
 # Debug / temp files
 __diag*.py
 __tmp*.py
+tmp/
 .playwright-cli/
 output/playwright/
 .launch/

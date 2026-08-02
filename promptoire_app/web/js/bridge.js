@@ -95,7 +95,7 @@
   function walk(cats, path, color){ let out=[]; path=path||[]; for(const c of cats){ const eff=c.color||color||""; const here=path.concat([c.name]); for(const p of c.prompts){ out.push({p,c,path:here,color:eff}); } if(c.subcategories) out=out.concat(walk(c.subcategories, here, eff)); } return out; }
 
   const MOCK = {
-    get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.3.0-preview",
+    get_state: () => ({ ok:true, categories: mockCats, stats: stats(), version:"2.4.0-preview",
       hotkey_available:true, platform:"windows",
       settings: mockSettings }),
     search: (q="", type="all", fav=false) => {

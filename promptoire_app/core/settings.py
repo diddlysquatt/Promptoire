@@ -46,12 +46,16 @@ DEFAULT_OUTLINE_PROMPT = (
 )
 
 DENSITY_OPTIONS = ("comfortable", "compact", "titles")
+BACKGROUND_OPTIONS = ("", "obsidian", "graphite", "midnight", "forest", "plum", "mist", "linen")
+FONT_OPTIONS = ("system", "rounded", "humanist", "mono")
 OPENAI_MODEL_OPTIONS = ("gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")
 
 DEFAULTS: dict[str, Any] = {
     "version": 2,
     "theme": "matrix",          # key into the web theme registry
     "accent": "",                # optional override hex; "" = theme default
+    "background": "",            # curated surface override; "" = theme default
+    "font": "system",            # readable app-wide font family
     "density": "compact",        # "comfortable" | "compact" | "titles"
     "hotkey": "ctrl+alt+space",  # global toggle for the launcher
     "behavior": {
@@ -157,6 +161,13 @@ def _sanitize_density(data: dict) -> None:
         data["density"] = DEFAULTS["density"]
 
 
+def _sanitize_appearance(data: dict) -> None:
+    if data.get("background") not in BACKGROUND_OPTIONS:
+        data["background"] = DEFAULTS["background"]
+    if data.get("font") not in FONT_OPTIONS:
+        data["font"] = DEFAULTS["font"]
+
+
 def _official_openai_source(ai: dict) -> bool:
     provider = str(ai.get("provider") or "").strip().lower()
     base_url = str(ai.get("base_url") or "").strip()
@@ -207,6 +218,7 @@ class Settings:
             self.data = copy.deepcopy(DEFAULTS)
         _sanitize_links(self.data)
         _sanitize_density(self.data)
+        _sanitize_appearance(self.data)
         _sanitize_ai(self.data, source_ai)
         if (isinstance(source_ai, dict) and source_ai.get("api_key")
                 and not _official_openai_source(source_ai)):
@@ -243,4 +255,5 @@ class Settings:
         self.data = _deep_merge(self.data, patch or {})
         _sanitize_links(self.data)
         _sanitize_density(self.data)
+        _sanitize_appearance(self.data)
         _sanitize_ai(self.data)

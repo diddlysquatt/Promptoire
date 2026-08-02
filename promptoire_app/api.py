@@ -454,10 +454,12 @@ class Api:
             hwnd = self._app._resolve_hwnd()
             report["native_hwnd"] = bool(hwnd)
             report["window_icon"] = window_fx.has_window_icon(hwnd)
+            report["window_icon_applied"] = bool(self._app._window_icon_applied)
             report["minimum_window"] = [360, 420]
         except Exception:
             report["native_hwnd"] = False
             report["window_icon"] = False
+            report["window_icon_applied"] = False
         print(f"[selftest] report via bridge: {report}", file=_sys.stderr, flush=True)
         try:
             from .core import paths

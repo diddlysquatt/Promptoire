@@ -54,7 +54,7 @@ def assets_dir() -> Path:
 
 
 def app_icon() -> Path:
-    name = "replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico"
+    name = "promptoire.ico"
     if getattr(sys, "frozen", False):
         return Path(sys._MEIPASS) / "icons" / name  # type: ignore[attr-defined]
     return app_root() / "icons" / name

@@ -42,6 +42,7 @@ RESIZE_HIT_TESTS = {
 }
 
 _ICON_HANDLES: list[int] = []
+PROMPTOIRE_APP_ID = "StonedApe.Promptoire"
 
 
 def _is_windows() -> bool:
@@ -75,6 +76,16 @@ def apply_polish(hwnd: int, *, dark: bool = True, rounded: bool = True,
         _set_attr(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_TRANSIENTWINDOW)
 
 
+def set_process_app_id(app_id: str = PROMPTOIRE_APP_ID) -> bool:
+    """Give source and packaged runs one stable Windows taskbar identity."""
+    if not _is_windows():
+        return False
+    try:
+        return ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(str(app_id)) == 0
+    except Exception:
+        return False
+
+
 def set_window_icon(hwnd: int, icon_path: str | Path) -> bool:
     """Apply the Promptoire icon to the native window and taskbar entry."""
     if not _is_windows() or not hwnd:
@@ -86,19 +97,38 @@ def set_window_icon(hwnd: int, icon_path: str | Path) -> bool:
         user32 = ctypes.windll.user32
         IMAGE_ICON = 1
         LR_LOADFROMFILE = 0x0010
-        LR_DEFAULTSIZE = 0x0040
         WM_SETICON = 0x0080
         ICON_SMALL = 0
         ICON_BIG = 1
+        SM_CXICON = 11
+        SM_CYICON = 12
+        SM_CXSMICON = 49
+        SM_CYSMICON = 50
         user32.LoadImageW.restype = wintypes.HANDLE
-        handle = user32.LoadImageW(
-            None, str(path), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE
+        big_handle = user32.LoadImageW(
+            None,
+            str(path),
+            IMAGE_ICON,
+            user32.GetSystemMetrics(SM_CXICON),
+            user32.GetSystemMetrics(SM_CYICON),
+            LR_LOADFROMFILE,
         )
-        if not handle:
+        small_handle = user32.LoadImageW(
+            None,
+            str(path),
+            IMAGE_ICON,
+            user32.GetSystemMetrics(SM_CXSMICON),
+            user32.GetSystemMetrics(SM_CYSMICON),
+            LR_LOADFROMFILE,
+        )
+        if not big_handle and not small_handle:
             return False
-        user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, ICON_BIG, handle)
-        user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, ICON_SMALL, handle)
-        _ICON_HANDLES.append(int(handle))  # Keep alive for the window lifetime.
+        if big_handle:
+            user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, ICON_BIG, big_handle)
+            _ICON_HANDLES.append(int(big_handle))
+        if small_handle:
+            user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, ICON_SMALL, small_handle)
+            _ICON_HANDLES.append(int(small_handle))
         return True
     except Exception:
         return False
@@ -134,6 +164,20 @@ def find_hwnd_for_title(title: str) -> int:
         return 0
 
 
+def restore_window(hwnd: int) -> bool:
+    """Show a hidden/minimized native window in its normal restored state."""
+    if not _is_windows() or not hwnd:
+        return False
+    try:
+        user32 = ctypes.windll.user32
+        SW_RESTORE = 9
+        return bool(user32.ShowWindow(wintypes.HWND(hwnd), SW_RESTORE)) or bool(
+            user32.IsWindowVisible(wintypes.HWND(hwnd))
+        )
+    except Exception:
+        return False
+
+
 def show_existing_window(title: str) -> bool:
     """Reveal and focus an existing Promptoire window after a duplicate launch."""
     if not _is_windows():
@@ -143,14 +187,15 @@ def show_existing_window(title: str) -> bool:
         if not hwnd:
             return False
         user32 = ctypes.windll.user32
-        SW_SHOW = 5
         HWND_TOPMOST = -1
         HWND_NOTOPMOST = -2
         SWP_NOSIZE = 0x0001
         SWP_NOMOVE = 0x0002
         SWP_SHOWWINDOW = 0x0040
         flags = SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW
-        user32.ShowWindow(wintypes.HWND(hwnd), SW_SHOW)
+        # Handle both an ordinary hidden window and one hidden immediately
+        # after a native minimize-to-tray event.
+        restore_window(hwnd)
         user32.SetWindowPos(wintypes.HWND(hwnd), HWND_TOPMOST, 0, 0, 0, 0, flags)
         user32.SetWindowPos(wintypes.HWND(hwnd), HWND_NOTOPMOST, 0, 0, 0, 0, flags)
         user32.BringWindowToTop(wintypes.HWND(hwnd))

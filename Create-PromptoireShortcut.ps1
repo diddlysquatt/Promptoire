@@ -4,7 +4,7 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $launcher = Join-Path $root "Promptoire.bat"
 $desktop = [Environment]::GetFolderPath("Desktop")
 $shortcutPath = Join-Path $desktop "PROMPTOIRE.lnk"
-$iconPath = Join-Path $root "icons\replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico"
+$iconPath = Join-Path $root "icons\promptoire.ico"
 
 if (-not (Test-Path -LiteralPath $launcher)) {
   throw "Promptoire.bat was not found next to this script."

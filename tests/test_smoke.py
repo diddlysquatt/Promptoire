@@ -97,6 +97,31 @@ def _run_checks():
         sanitized_density = Settings(density_path).load().get("density")
     out["settings.invalid_density_fallback"] = sanitized_density
     assert sanitized_density == "compact", sanitized_density
+    with tempfile.TemporaryDirectory() as appearance_dir:
+        appearance_path = Path(appearance_dir) / "promptoire.config.json"
+        appearance_path.write_text(
+            json.dumps({"background": "unsafe-custom-css", "font": "comic-sans"}),
+            encoding="utf-8",
+        )
+        sanitized_appearance = Settings(appearance_path).load().data
+    out["settings.invalid_appearance_fallback"] = {
+        "background": sanitized_appearance["background"],
+        "font": sanitized_appearance["font"],
+    }
+    assert sanitized_appearance["background"] == "", sanitized_appearance
+    assert sanitized_appearance["font"] == "system", sanitized_appearance
+    with tempfile.TemporaryDirectory() as appearance_save_dir:
+        appearance_save_path = Path(appearance_save_dir) / "promptoire.config.json"
+        appearance_settings = Settings(appearance_save_path).load()
+        appearance_settings.update({"background": "mist", "font": "rounded"})
+        appearance_settings.save()
+        persisted_appearance = Settings(appearance_save_path).load().data
+    out["settings.appearance_persists"] = {
+        "background": persisted_appearance["background"],
+        "font": persisted_appearance["font"],
+    }
+    assert persisted_appearance["background"] == "mist", persisted_appearance
+    assert persisted_appearance["font"] == "rounded", persisted_appearance
     assert SETTINGS_DEFAULTS["ai"]["provider"] == "openai", SETTINGS_DEFAULTS["ai"]
     assert SETTINGS_DEFAULTS["ai"]["model"] == "gpt-5.6", SETTINGS_DEFAULTS["ai"]
     with tempfile.TemporaryDirectory() as ai_dir:
@@ -179,9 +204,75 @@ def _run_checks():
     assert resize_geometry["right"] == (100, 100, 640, 660), resize_geometry
     assert resize_geometry["top_left"] == (130, 140, 560, 660), resize_geometry
     assert resize_geometry["minimum"] == (100, 100, 460, 520), resize_geometry
+    assert window_fx.restore_window(0) is False
     native_resize = api.begin_window_resize("left")
     out["window.resize_api_shape"] = native_resize
     assert native_resize.get("ok") is True and native_resize.get("started") is False, native_resize
+
+    # The global hotkey is a visibility toggle, not a focus toggle: a visible
+    # window must hide on the first press even when some other app has focus.
+    toggle_calls = []
+    original_show_window = app.show_window
+    original_toggle_hide_window = app.hide_window
+    original_visible = app._visible
+    app.show_window = lambda *args, **kwargs: (toggle_calls.append("show"), setattr(app, "_visible", True))[-1]
+    app.hide_window = lambda: (toggle_calls.append("hide"), setattr(app, "_visible", False))[-1]
+    try:
+        app._visible = True
+        app.toggle_window()
+        app.toggle_window()
+    finally:
+        app.show_window = original_show_window
+        app.hide_window = original_toggle_hide_window
+        app._visible = original_visible
+    out["window.hotkey_true_visibility_toggle"] = toggle_calls
+    assert toggle_calls == ["hide", "show"], toggle_calls
+
+    # Native minimize and close requests hide to the notification area. Only
+    # the explicit tray Quit path is allowed to destroy the window.
+    lifecycle_calls = []
+    original_lifecycle_hide_window = app.hide_window
+    original_quitting = app._quitting
+    app.hide_window = lambda: lifecycle_calls.append("hide")
+    try:
+        app._quitting = False
+        app._on_minimized()
+        close_cancelled = app._on_closing() is False
+        app._quitting = True
+        quit_close_allowed = app._on_closing() is True
+    finally:
+        app.hide_window = original_lifecycle_hide_window
+        app._quitting = original_quitting
+    out["window.hide_to_tray_lifecycle"] = {
+        "calls": lifecycle_calls,
+        "close_cancelled": close_cancelled,
+        "quit_close_allowed": quit_close_allowed,
+    }
+    assert lifecycle_calls == ["hide", "hide"], lifecycle_calls
+    assert close_cancelled and quit_close_allowed, out["window.hide_to_tray_lifecycle"]
+
+    restore_calls = []
+    original_window = app.window
+    original_raise_to_front = app._raise_to_front
+    class _RestoreProbeWindow:
+        def restore(self):
+            restore_calls.append("restore")
+
+        def show(self):
+            restore_calls.append("show")
+
+        def evaluate_js(self, _script):
+            restore_calls.append("focus")
+
+    try:
+        app.window = _RestoreProbeWindow()
+        app._raise_to_front = lambda: restore_calls.append("raise")
+        app.show_window(at_cursor=False)
+    finally:
+        app.window = original_window
+        app._raise_to_front = original_raise_to_front
+    out["window.restore_before_tray_show"] = restore_calls
+    assert restore_calls == ["restore", "show", "focus", "raise"], restore_calls
 
     s = api.search("review")
     assert s["ok"], s
@@ -890,8 +981,9 @@ Question planner: Turn {notes} into prioritized interview questions.
     out["example.total"] = schema.count_prompts(example)
     assert out["example.total"] >= 5, out
 
+    web_index_text = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8")
     shell = _ShellParser()
-    shell.feed((Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8"))
+    shell.feed(web_index_text)
     required_ids = {
         "app", "brandCount", "btnPin", "btnImprove", "btnEditor", "btnSettings", "btnDensity",
         "btnCoffee", "btnClose", "viewLauncher", "search", "filters", "catrail",
@@ -907,6 +999,28 @@ Question planner: Turn {notes} into prioritized interview questions.
     ]
     out["frontend.script_order"] = shell.scripts
     assert shell.scripts == expected_scripts, shell.scripts
+    from PIL import Image
+    icon_root = Path(__file__).resolve().parents[1]
+    with Image.open(icon_root / "icons" / "promptoire.ico") as app_icon:
+        bundled_icon_sizes = sorted(app_icon.ico.sizes())
+    with Image.open(icon_root / "promptoire_app" / "web" / "assets" / "tray.png") as tray_icon:
+        tray_contract = {
+            "mode": tray_icon.mode,
+            "size": tray_icon.size,
+            "transparent_corner": tray_icon.convert("RGBA").getpixel((0, 0))[3] == 0,
+        }
+    out["frontend.shared_app_icon"] = {
+        "ico_sizes": bundled_icon_sizes,
+        "tray": tray_contract,
+        "header_uses_asset": 'class="brand-mark" src="assets/tray.png"' in web_index_text,
+        "about_uses_asset": 'class: "logo-big", src: "assets/tray.png"' in (
+            icon_root / "promptoire_app" / "web" / "js" / "settings.js"
+        ).read_text(encoding="utf-8"),
+    }
+    assert (16, 16) in bundled_icon_sizes and (256, 256) in bundled_icon_sizes, bundled_icon_sizes
+    assert tray_contract == {"mode": "RGBA", "size": (128, 128), "transparent_corner": True}, tray_contract
+    assert out["frontend.shared_app_icon"]["header_uses_asset"], out["frontend.shared_app_icon"]
+    assert out["frontend.shared_app_icon"]["about_uses_asset"], out["frontend.shared_app_icon"]
     bulk_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bulk.js").read_text(encoding="utf-8")
     bridge_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "bridge.js").read_text(encoding="utf-8")
     app_js = (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "js" / "app.js").read_text(encoding="utf-8")
@@ -1017,12 +1131,16 @@ Question planner: Turn {notes} into prioritized interview questions.
         and "RAIL_DRAG_THRESHOLD = 10" in launcher_js
     )
     assert out["frontend.category_rail_jump"], "category rail should navigate to the selected group"
-    out["frontend.optional_image_details"] = (
-        "Optional image details" in editor_js
-        and "copyable suffixes directly at the end" in editor_js
-        and ".image-details" in components_css
-    )
-    assert out["frontend.optional_image_details"], "optional image details disclosure"
+    prompt_editor_contract = {
+        "title_and_category_one_row": "prompt-editor-top" in editor_js and ".prompt-editor-top" in components_css,
+        "expanded_prompt_and_note": all(token in editor_js for token in ("prompt-editor-prompt", "prompt-editor-note", "prompt-editor-tags")),
+        "no_type_selector": 'label", { text: "Type"' not in editor_js and "segBtn(" not in editor_js,
+        "no_image_details": "Optional image details" not in editor_js and ".image-details" not in components_css,
+        "preserves_legacy_fields": all(token not in editor_js for token in ("negative: neg.value", "model: model.value", "params: params.value")),
+        "new_type_from_category": "suggestedPromptType" in editor_js and "findCategoryPath" in editor_js and "countPromptTypes" in editor_js,
+    }
+    out["frontend.compact_prompt_editor"] = prompt_editor_contract
+    assert all(prompt_editor_contract.values()), prompt_editor_contract
     out["frontend.support_button_compact"] = (
         'id="btnCoffee"' in (Path(__file__).resolve().parents[1] / "promptoire_app" / "web" / "index.html").read_text(encoding="utf-8")
         and "Buy Me a Coffee" not in settings_js
@@ -1066,6 +1184,26 @@ Question planner: Turn {notes} into prioritized interview questions.
         and "position: sticky; top: 0; z-index: 2;" in components_css
     )
     assert out["frontend.editor_toolbar_opaque"], "Edit Library filter must be opaque while sticky"
+    out["frontend.single_tree_toggle"] = (
+        "tree-toggle" in editor_js
+        and "allCategoriesCollapsed" in editor_js
+        and 'title: "Expand all"' not in editor_js
+        and 'title: "Collapse all"' not in editor_js
+        and ".tree-toggle:hover" in components_css
+    )
+    assert out["frontend.single_tree_toggle"], "Edit Library should use one stateful expand/collapse button"
+    appearance_contract = {
+        "background_presets": "backgroundPicker" in settings_js and "applyBackground" in app_js and 'data-background="mist"' in base_css,
+        "font_picker": "fontPicker" in settings_js and "applyFont" in app_js and 'data-font="rounded"' in base_css,
+        "category_header_color": (
+            "Category color" in editor_js
+            and "--cat-accent" in components_css
+            and ".cat-group:has(> .cat-header:hover)" in components_css
+            and "linear-gradient(90deg" not in components_css
+        ),
+    }
+    out["frontend.appearance_customization"] = appearance_contract
+    assert all(appearance_contract.values()), appearance_contract
     out["frontend.generic_coffee_guard"] = (
         "isGenericCoffeeUrl" in app_js
         and "normalizeUrl" in app_js
@@ -1233,6 +1371,7 @@ Question planner: Turn {notes} into prioritized interview questions.
             and '"mock": false' in release_checklist
             and '"native_hwnd": true' in release_checklist
             and '"window_icon": true' in release_checklist
+            and '"window_icon_applied": true' in release_checklist
             and '"minimum_window": [360, 420]' in release_checklist
         ),
         "release_changelog_check": "CHANGELOG.md" in release_checklist,
@@ -1242,6 +1381,12 @@ Question planner: Turn {notes} into prioritized interview questions.
         "release_batch_selftest_guard": (
             "--selftest" in release_bat and "mock" in release_bat
             and "native_hwnd" in release_bat and "window_icon" in release_bat
+            and "window_icon_applied" in release_bat
+        ),
+        "release_batch_native_tray_guard": (
+            "tests\\test_native_tray.py" in release_bat
+            and "minimize-to-tray" in release_checklist
+            and (root / "tests" / "test_native_tray.py").exists()
         ),
         "release_batch_fresh_selftest": 'del /q "_selftest.json"' in release_bat,
         "packaged_version_metadata": (
@@ -1255,7 +1400,9 @@ Question planner: Turn {notes} into prioritized interview questions.
         "native_window_icon": (
             "set_window_icon" in (root / "promptoire_app" / "main.py").read_text(encoding="utf-8")
             and "def set_window_icon" in (root / "promptoire_app" / "platform" / "window_fx.py").read_text(encoding="utf-8")
-            and "replicate-prediction-2j5y20xssnrmc0crx40tp1mzjc.ico" in spec_text
+            and "promptoire.ico" in spec_text
+            and (root / "icons" / "promptoire.ico").exists()
+            and (root / "promptoire_app" / "web" / "assets" / "tray.png").exists()
         ),
         "full_python_compile": "compileall -q promptoire_app tests" in release_checklist and "compileall -q promptoire_app tests" in ci_workflow,
         "all_frontend_js_checked": (
@@ -1315,7 +1462,11 @@ Question planner: Turn {notes} into prioritized interview questions.
         ),
         "launcher_passes_args": "-m promptoire_app %*" in launcher_bat,
         "outline_file_dialogs": "*.txt;*.md;*.csv" in (root / "promptoire_app" / "api.py").read_text(encoding="utf-8"),
-        "shortcut_setup": "Create-PromptoireShortcut.ps1" in setup_bat and "PROMPTOIRE.lnk" in shortcut_script,
+        "shortcut_setup": (
+            "Create-PromptoireShortcut.ps1" in setup_bat
+            and "PROMPTOIRE.lnk" in shortcut_script
+            and "icons\\promptoire.ico" in shortcut_script
+        ),
         "shortcut_check_script": (
             "Check-PromptoireShortcut.ps1" in release_bat
             and "PROMPTOIRE.lnk" in shortcut_check_script

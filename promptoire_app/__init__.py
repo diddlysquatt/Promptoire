@@ -5,5 +5,5 @@ one-pass outline/JSON ⇄ LLM "bulk-improve" loop. Python backend + HTML/CSS/JS 
 rendered through the system WebView via pywebview.
 """
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 __app_name__ = "Promptoire"

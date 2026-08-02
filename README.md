@@ -40,7 +40,7 @@
 
 Promptoire is a portable Windows 10/11 app. It has no installer, account, cloud service, or bundled browser.
 
-1. Download `Promptoire-2.3.0-windows-x64.zip` from the [latest release](https://github.com/diddlysquatt/Promptoire/releases/latest).
+1. Download `Promptoire-2.4.0-windows-x64.zip` from the [latest release](https://github.com/diddlysquatt/Promptoire/releases/latest).
 2. Extract the folder somewhere permanent.
 3. Run `Promptoire.exe`.
 4. Set your preferred global hotkey under **Settings → Activation**.
@@ -58,17 +58,17 @@ Promptoire uses Microsoft Edge WebView2, which is already present on Windows 11 
 - Use **All / Text / Image / Favorites** and the category rail to narrow the launcher. The density button beside **+ New** cycles Comfortable, Compact, and Titles-only without leaving the main view.
 - The **pin** at the top is the single auto-hide control. Pinned means the window stays open after copying and when focus changes; unpinned restores normal copy-and-hide behavior.
 - Open **Edit Library** to create, edit, reorder, or move prompts and nested categories. Its sticky filter searches prompt titles, tags, and category names.
-- Open **Settings → System** to make a timestamped backup, open the local data folder, control the tray icon, and enable Windows startup.
+- Open **Settings → System** to make a timestamped backup, open the local data folder, control the tray icon, and enable Windows startup. On Windows, minimizing or closing the launcher hides it from the taskbar while Promptoire stays available in the notification area; choose **Quit** from the tray menu to fully exit.
 
 ## Why Promptoire
 
 Most prompt tools are cloud apps, browser extensions that disappear outside the browser, or generic clipboard managers that don't understand prompt libraries. Promptoire keeps a deliberately focused combination in one quiet Windows launcher:
 
 - **🧠→📄→🧠 Bulk-improve loop.** Export your *entire* library as a simple outline, paste it into ChatGPT / Claude / any LLM with a built-in "improve & expand these" instruction, then re-import. Outline and JSON changes are shown in a **diff preview** before anything is written.
-- **✎ + ▦ Text *and* image prompts, first-class.** Keep LLM prompts beside Midjourney / Stable Diffusion / Flux prompts. Copyable flags such as `--ar` and `--stylize` live directly at the end of the main prompt; optional model metadata stays tucked inside a collapsed details panel.
+- **✎ + ▦ Text *and* image prompts, first-class.** Keep LLM prompts beside Midjourney / Stable Diffusion / Flux prompts. Copyable flags such as `--ar` and `--stylize` live directly at the end of the main prompt, while supporting context belongs in the roomy Note field.
 - **🔒 Local-first, free, open source.** Your prompts live in a plain `prompts.json` on your machine. No account, no cloud, no telemetry. Back up by copying a file.
 
-Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, a compact **+ New** action beside the filters, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and a handful of themes.
+Plus the basics done well: a global hotkey that pops the launcher at your cursor, fuzzy search with keyboard nav, a compact **+ New** action beside the filters, `{placeholder}` fill-in before copy, favorites, tags, nested categories, drag-to-reorder, three prompt-density modes, a resizable window, timestamped backups, a one-click local data folder, and mix-and-match themes, backgrounds, fonts, and category colors.
 
 ## ✨ Highlights
 
@@ -82,7 +82,7 @@ Plus the basics done well: a global hotkey that pops the launcher at your cursor
 | 🔣 **Placeholders** | `{topic}`, `{tone}`, `{code}` → quick fill-in form before copy. |
 | 🗂️ **Real organization** | Subcategories, emoji icons, accent colors, drag prompts between categories, drag to reorder categories, filter the manage view. |
 | 🪶 **Light & fast** | Renders through the system WebView, stays quiet at idle, and does not bundle a second browser. |
-| 🎨 **Themeable** | Matrix, Cyber, Aurora, Ember, Sunset, Emerald, Mono, Paper (light). |
+| 🎨 **Comfortably customizable** | Mix eight accent themes with curated dark or light backgrounds, four readable fonts, and independent category colors. |
 | 💾 **Safe** | Atomic saves + rolling timestamped backups. |
 
 ## Run from source
