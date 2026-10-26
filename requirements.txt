@@ -4,10 +4,10 @@ pyperclip>=1.11.0     # clipboard copy
 pystray>=0.19.5       # system tray icon
 keyboard>=0.13.5; platform_system=="Windows"   # global hotkey (Windows)
 pynput>=1.8.2; platform_system!="Windows"        # global hotkey (macOS/Linux fallback)
-Pillow>=12.3.0        # tray icon rendering; 12.3.0 includes current security fixes
+Pillow>=13.0.0        # tray icon rendering; 12.3.0 includes current security fixes
 
 # "Improve with AI now" calls OpenAI over Python's standard library, so it
 # adds no optional SDK dependency. Manual copy/paste works without an API key.
 
 # Packaging (optional, for building a standalone app)
-pyinstaller>=6.21.0
+pyinstaller>=6.22.3
